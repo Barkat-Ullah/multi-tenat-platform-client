@@ -1,0 +1,23 @@
+allowBuilds:
+  '@heroui/shared-utils': true
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
+overrides:
+  postcss: ^8.5.14
+  '@vercel/node>path-to-regexp': ^6.3.0
+  '@vercel/remix-builder>path-to-regexp': ^6.3.0
+  '@vercel/backends>path-to-regexp': ^8.4.2
+  '@vercel/express>path-to-regexp': ^8.4.2
+  '@vercel/fun>path-to-regexp': ^8.4.2
+  '@vercel/hono>path-to-regexp': ^8.4.2
+  '@vercel/fun>tar': ^7.5.16
+  '@vercel/fun>@tootallnate/once': ^3.0.1
+  '@vercel/node>undici': ^6.26.0
+  '@vercel/static-config>ajv': ^8.18.0
+  '@vercel/python-analysis>minimatch': ^10.2.5
+  smol-toml: ^1.6.1
+  srvx: ^0.11.16
+peerDependencyRules:
+  allowedVersions:
+    tailwindcss: '>=3.4.0'
