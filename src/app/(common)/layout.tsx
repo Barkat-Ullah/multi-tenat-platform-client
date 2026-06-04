@@ -8,8 +8,9 @@ import type { Metadata } from "next";
 
 
 export const metadata: Metadata = {
-  title: "IRendity - A Real Estate Company",
-  description: " A Real Estate Company, Providing you with the best properties in the world. We are a team of professionals who are passionate about helping you find the perfect property for your needs.",
+  title: "Compliance Medicals - HGV, Bus, Taxi & Occupational Health Medicals",
+  description:
+    "Get professional, fast, and compliant medical examinations. Compliance Medicals provides HGV/Bus medicals, Taxi licensing medicals, and comprehensive Occupational Health services.",
 };
 
 export default function RootLayout({

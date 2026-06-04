@@ -2,7 +2,7 @@ import ScrollToTopButton from "@/components/ui/ScrollToTopButton/ScrollToTopButt
 import { HeroUiProvider } from "@/lib/providers/HeroUIProvider";
 import ReduxProvider from "@/redux/ReduxProvider";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Poppins } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -17,10 +17,18 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
+const poppins = Poppins({
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
+  style: ["normal", "italic"],
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-poppins",
+});
+
 export const metadata: Metadata = {
-  title: "IRendity - A Real Estate Company",
+  title: "Compliance Medicals - HGV, Bus, Taxi & Occupational Health Medicals",
   description:
-    " A Real Estate Company, Providing you with the best properties in the world. We are a team of professionals who are passionate about helping you find the perfect property for your needs.",
+    "Get professional, fast, and compliant medical examinations. Compliance Medicals provides HGV/Bus medicals, Taxi licensing medicals, and comprehensive Occupational Health services.",
 };
 
 export default function RootLayout({
@@ -33,7 +41,7 @@ export default function RootLayout({
       <head></head>
       <body
         suppressHydrationWarning={true}
-        className={`${inter.variable} antialiased !bg-white`}
+        className={`${poppins.variable} ${inter.variable} antialiased !bg-white`}
       >
         <HeroUiProvider>
           <ReduxProvider>

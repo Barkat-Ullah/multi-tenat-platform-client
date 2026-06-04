@@ -11,9 +11,10 @@ export default {
   theme: {
     extend: {
       fontFamily: {
+        sans: ["var(--font-poppins)", "Poppins", "sans-serif"],
         inter: ["var(--font-inter)"],
         roboto: ["Roboto", "sans-serif"],
-        poppins: ["Poppins", "sans-serif"],
+        poppins: ["var(--font-poppins)", "Poppins", "sans-serif"],
         lato: ["Lato", "sans-serif"],
         sans3: ["Source Sans 3", "sans-serif"],
         robotomono: ["Roboto Mono", "monospace"]

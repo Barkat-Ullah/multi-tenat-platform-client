@@ -3,7 +3,8 @@ import AgenciesSection from "@/components/pages/home/AgenciesSection/AgenciesSec
 import ContactUsSection from "@/components/pages/home/ContactUsSection/ContactUsSection";
 import FAQPage from "@/components/pages/home/FaqSection/Faq";
 import FinalCTASection from "@/components/pages/home/FinalCTASection/FinalCTASection";
-import FeaturedPropertise from "@/components/pages/home/FindProperties/FindProperties";
+import MedicalTypesSection from "@/components/pages/home/MedicalTypesSection/MedicalTypesSection";
+import ClinicSearchFilter from "@/components/pages/home/ClinicSearchFilter/ClinicSearchFilter";
 // import FocusCardsPage from "@/components/pages/home/FocusCard/FocusCard";
 import HeroSection from "@/components/pages/home/HeroSection/HeroSection";
 import HowItWorksSection from "@/components/pages/home/HowItWorksSection/HowItWorksSection";
@@ -15,7 +16,8 @@ const HompPage = () => {
   return (
     <div className="overflow-hidden bg-white">
       <HeroSection />
-      <FeaturedPropertise />
+      <ClinicSearchFilter />
+      <MedicalTypesSection />
       <PositioningSection />
       <HowItWorksSection />
       <SubscriptionManagement/>

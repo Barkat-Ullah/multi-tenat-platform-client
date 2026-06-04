@@ -1,71 +1,96 @@
-import Link from "next/link";
-import HeroSearchForm from "./HeroSearchForm";
+"use client";
 
-const HeroSection = () => {
+import { Award, Sparkles, CalendarCheck, ShieldCheck, MapPin } from "lucide-react";
+import heroImage from "@/assets/herosection/hero-image.png";
+import scribbleUnderline from "@/assets/herosection/hero-scribble.png";
+
+export default function HeroSection() {
   return (
-    <div
-      className="relative poppins mb-32 flex min-h-[750px] items-center bg-cover bg-center transition-all duration-700 md:mb-28"
+    <section
+      className="relative w-full min-h-[550px] sm:min-h-[600px] md:min-h-[680px] lg:min-h-[760px] flex items-center bg-cover bg-no-repeat bg-top-center overflow-hidden  transition-all duration-700 poppins"
       style={{
-        backgroundImage: "url('/images/hero-image.png')",
+        backgroundImage: `url(${heroImage.src})`,
       }}
     >
-      {/* Dynamic Overlay: Darker at bottom for search bar contrast, subtle at top */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/60"></div>
+      {/* Soft gradient overlay to ensure text contrast on all devices */}
+      <div className="absolute inset-0  pointer-events-none" />
 
-      <div className="container relative z-10 w-full px-4 py-20 sm:px-6 lg:px-8">
-        <div className="flex flex-col items-center justify-center text-center">
-          <span className="mb-4 inline-block rounded-full bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-[#E2C59F] backdrop-blur-md border border-white/10">
-            Premium Real Estate Marketplace
-          </span>
+      <div className="container mx-auto px-6 sm:px-8 lg:px-12 py-16 md:py-24 relative z-10">
+        <div className="max-w-[650px] flex flex-col items-start text-left">
           
-          <h1 className="mb-6 max-w-5xl text-4xl font-bold leading-[1.1] text-white md:text-5xl lg:text-7xl">
-            Italy&apos;s Marketplace for <span className="text-[#E2C59F]">Income-Producing</span> Real Estate
+          {/* Badge: GMC Registered Doctors */}
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#00B2D6]/20 bg-white/95 px-4 py-1.5 text-xs font-semibold text-[#0F2E4A] shadow-sm backdrop-blur-md mb-6">
+            <Award className="h-4 w-4 text-[#00B2D6]" />
+            <span className="tracking-wide">GMC Registered Doctors</span>
+            <Sparkles className="h-3.5 w-3.5 text-[#00B2D6]" />
+          </div>
+
+          {/* Heading: Driver Medicals Made Simple */}
+          <h1 className="text-[#0F2E4A] font-extrabold text-4xl sm:text-5xl md:text-6xl lg:text-7xl tracking-tight leading-[1.1] mb-6">
+            Driver Medicals <br />
+            <span className="font-light italic text-[#0F2E4A]">Made </span>
+            <span className="relative inline-block text-[#00B2D6] font-semibold italic">
+              Simple
+              {/* Scribble Underline Illustration */}
+              <span className="absolute left-0 right-0 -bottom-7 h-10 pointer-events-none select-none">
+                <img 
+                  src={scribbleUnderline.src}
+                  alt="Scribble Underline"
+                  className="w-full h-full object-contain"
+                />
+              </span>
+            </span>
           </h1>
-          
-          <p className="mb-10 max-w-3xl text-lg leading-relaxed text-white/90 md:text-xl">
-            Acquire already leased properties with active contracts, defined duration,
-            and measurable yield. Purpose-built for serious investors.
+
+          {/* Subheading Description */}
+          <p className="text-[#55697A] text-base md:text-lg font-medium leading-relaxed max-w-xl mb-12">
+            Fast, DVLA-approved medicals for HGV, Taxi, Ambulance, Forklift & more.
+            <br className="hidden sm:inline" />
+            {" "}Same-day appointments available nationwide.
           </p>
 
-          {/* Value Props - Horizontal Grid */}
-          <div className="mb-12 grid grid-cols-1 gap-6 sm:grid-cols-3 md:gap-12">
-            {[
-              "Exclusively income-generating",
-              "Transparent lease structures",
-              "Yield-focused ecosystem"
-            ].map((prop, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <div className="h-1.5 w-1.5 rounded-full bg-[#E2C59F]"></div>
-                <span className="text-sm font-medium tracking-wide text-white/80 uppercase">{prop}</span>
+          {/* Feature Badges Row */}
+          <div className="flex items-center gap-4 sm:gap-6 md:gap-8 w-full max-w-xl">
+            {/* Same Day Appointments */}
+            <div className="flex-1 flex flex-col items-center text-center">
+              <div className="w-12 h-12 md:w-14 md:h-14 rounded-full border-2 border-[#00B2D6]/60 flex items-center justify-center text-[#00B2D6] bg-white shadow-sm hover:border-[#00B2D6] hover:scale-105 transition-all duration-300">
+                <CalendarCheck className="h-5 w-5 md:h-6 md:w-6" />
               </div>
-            ))}
+              <span className="text-[#0F2E4A] font-bold text-xs md:text-sm mt-3 leading-tight block">
+                Same Day <br /> Appointments
+              </span>
+            </div>
+
+            {/* Divider */}
+            <div className="w-[1px] h-10 md:h-12 bg-slate-300/60 self-center" />
+
+            {/* DVLA Approved */}
+            <div className="flex-1 flex flex-col items-center text-center">
+              <div className="w-12 h-12 md:w-14 md:h-14 rounded-full border-2 border-[#00B2D6]/60 flex items-center justify-center text-[#00B2D6] bg-white shadow-sm hover:border-[#00B2D6] hover:scale-105 transition-all duration-300">
+                <ShieldCheck className="h-5 w-5 md:h-6 md:w-6" />
+              </div>
+              <span className="text-[#0F2E4A] font-bold text-xs md:text-sm mt-3 leading-tight block">
+                DVLA <br /> Approved
+              </span>
+            </div>
+
+            {/* Divider */}
+            <div className="w-[1px] h-10 md:h-12 bg-slate-300/60 self-center" />
+
+            {/* 80+ Nationwide */}
+            <div className="flex-1 flex flex-col items-center text-center">
+              <div className="w-12 h-12 md:w-14 md:h-14 rounded-full border-2 border-[#00B2D6]/60 flex items-center justify-center text-[#00B2D6] bg-white shadow-sm hover:border-[#00B2D6] hover:scale-105 transition-all duration-300">
+                <MapPin className="h-5 w-5 md:h-6 md:w-6" />
+              </div>
+              <span className="text-[#0F2E4A] font-bold text-xs md:text-sm mt-3 leading-tight block">
+                80+ <br /> Nationwide
+              </span>
+            </div>
           </div>
 
-          <div className="flex flex-col gap-4 sm:flex-row">
-            <Link
-              href="/all-property"
-              className="group relative inline-flex items-center justify-center overflow-hidden rounded-full bg-[#004E60] px-10 py-4 font-inter font-bold text-white transition-all duration-300 hover:bg-[#003944] hover:shadow-[0_0_20px_rgba(0,78,96,0.4)]"
-            >
-              <span className="relative z-10">Explore Assets</span>
-              <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full"></div>
-            </Link>
-            
-            <Link
-              href="/register"
-              className="inline-flex items-center justify-center rounded-full border-2 border-white/30 bg-white/5 px-10 py-4 font-inter font-bold text-white backdrop-blur-md transition-all duration-300 hover:border-white hover:bg-white/10"
-            >
-              List as an Agency
-            </Link>
-          </div>
         </div>
       </div>
-
-      {/* Modern Floating Search Bar */}
-      <div className="absolute bottom-0 left-1/2 w-full max-w-5xl -translate-x-1/2 translate-y-1/2 px-4">
-        <HeroSearchForm />
-      </div>
-    </div>
+    </section>
   );
-};
+}
 
-export default HeroSection;

@@ -7,14 +7,8 @@ import {
   LayoutDashboard,
   Home,
   Users,
-  XCircle,
-  CheckCircle,
-  CreditCard,
-  History,
   Settings,
-  DollarSign,
   LandPlot,
-  MessageSquare,
 } from "lucide-react";
 
 const navItems = [
