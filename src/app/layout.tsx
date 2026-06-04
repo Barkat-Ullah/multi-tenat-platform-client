@@ -2,7 +2,7 @@ import ScrollToTopButton from "@/components/ui/ScrollToTopButton/ScrollToTopButt
 import { HeroUiProvider } from "@/lib/providers/HeroUIProvider";
 import ReduxProvider from "@/redux/ReduxProvider";
 import type { Metadata } from "next";
-import { Inter, Poppins } from "next/font/google";
+import { Inter, Poppins, Ribeye_Marrow } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -25,6 +25,13 @@ const poppins = Poppins({
   variable: "--font-poppins",
 });
 
+const ribeyeMarrow = Ribeye_Marrow({
+  weight: "400",
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-ribeye-marrow",
+});
+
 export const metadata: Metadata = {
   title: "Compliance Medicals - HGV, Bus, Taxi & Occupational Health Medicals",
   description:
@@ -41,7 +48,7 @@ export default function RootLayout({
       <head></head>
       <body
         suppressHydrationWarning={true}
-        className={`${poppins.variable} ${inter.variable} antialiased !bg-white`}
+        className={`${poppins.variable} ${inter.variable} ${ribeyeMarrow.variable} antialiased !bg-white`}
       >
         <HeroUiProvider>
           <ReduxProvider>

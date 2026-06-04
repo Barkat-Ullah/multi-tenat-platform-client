@@ -59,7 +59,7 @@ const RegisterPage = () => {
   return (
     <div className=" flex items-center justify-center p-4">
       <div className="container min-h-[90vh] flex items-center justify-center py-10">
-        <div className="flex flex-col md:flex-row items-center gap-12 max-w-6xl w-full p-8">
+        <div className="flex flex-col md:flex-row items-center gap-12 max-w-7xl w-full p-8">
           {/* Left Side - Illustration */}
           <div className="w-full md:w-1/2 md:flex hidden items-center justify-center">
             <div className="w-full max-w-md">
@@ -219,51 +219,51 @@ const RegisterPage = () => {
 
                 {/* Divider */}
 
-                  <div className="grid grid-cols-2 gap-3">
-                    {[
-                      { role: "Admin", email: "admin@example.com" },
-                      { role: "User", email: "agent@gmail.com" },
-                    ].map((guest) => (
-                      <button
-                        key={guest.role}
-                        type="button"
-                        onClick={async () => {
-                          const guestEmail = guest.email;
-                          const guestPassword = "123456";
-                          setEmail(guestEmail);
-                          setPassword(guestPassword);
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { role: "Admin", email: "admin@example.com" },
+                    { role: "User", email: "agent@gmail.com" },
+                  ].map((guest) => (
+                    <button
+                      key={guest.role}
+                      type="button"
+                      onClick={async () => {
+                        const guestEmail = guest.email;
+                        const guestPassword = "123456";
+                        setEmail(guestEmail);
+                        setPassword(guestPassword);
 
-                          try {
-                            const payload = { email: guestEmail, password: guestPassword };
-                            const res = await login(payload).unwrap();
-                            if (res?.success) {
-                              const { accessToken, refreshToken } = res.data;
-                              let decodedUser: UserType | null = null;
-                              decodedUser = jwtDecode<UserType>(accessToken);
-                              decodedUser = {
-                                ...decodedUser,
-                                role: normalizeRole(decodedUser.role),
-                              };
-                              dispatch(setUser({ user: decodedUser, accessToken, refreshToken }));
-                              const accessTokenExpiry = new Date(decodedUser.exp * 1000);
-                              const refreshTokenExpiry = new Date();
-                              refreshTokenExpiry.setDate(refreshTokenExpiry.getDate() + 30);
-                              Cookies.set("accessToken", accessToken, { expires: accessTokenExpiry, path: "/" });
-                              Cookies.set("refreshToken", refreshToken, { expires: refreshTokenExpiry, path: "/" });
-                              router.push(getDashboardPathByRole(decodedUser.role));
-                              toast.success(`Logged in as ${guest.role}`);
-                            }
-                          } catch {
-                            toast.error(`${guest.role} login failed.`);
+                        try {
+                          const payload = { email: guestEmail, password: guestPassword };
+                          const res = await login(payload).unwrap();
+                          if (res?.success) {
+                            const { accessToken, refreshToken } = res.data;
+                            let decodedUser: UserType | null = null;
+                            decodedUser = jwtDecode<UserType>(accessToken);
+                            decodedUser = {
+                              ...decodedUser,
+                              role: normalizeRole(decodedUser.role),
+                            };
+                            dispatch(setUser({ user: decodedUser, accessToken, refreshToken }));
+                            const accessTokenExpiry = new Date(decodedUser.exp * 1000);
+                            const refreshTokenExpiry = new Date();
+                            refreshTokenExpiry.setDate(refreshTokenExpiry.getDate() + 30);
+                            Cookies.set("accessToken", accessToken, { expires: accessTokenExpiry, path: "/" });
+                            Cookies.set("refreshToken", refreshToken, { expires: refreshTokenExpiry, path: "/" });
+                            router.push(getDashboardPathByRole(decodedUser.role));
+                            toast.success(`Logged in as ${guest.role}`);
                           }
-                        }}
-                        className="flex flex-col items-center justify-center p-2 border border-gray-200 rounded-md hover:border-[#004E60] hover:bg-gray-50 transition-all duration-200 group"
-                      >
-                        <span className="text-xs font-semibold text-gray-500 group-hover:text-[#004E60]">Login as</span>
-                        <span className="text-sm font-bold text-[#004E60]">{guest.role}</span>
-                      </button>
-                    ))}
-                  </div>
+                        } catch {
+                          toast.error(`${guest.role} login failed.`);
+                        }
+                      }}
+                      className="flex flex-col items-center justify-center p-2 border border-gray-200 rounded-md hover:border-[#004E60] hover:bg-gray-50 transition-all duration-200 group"
+                    >
+                      <span className="text-xs font-semibold text-gray-500 group-hover:text-[#004E60]">Login as</span>
+                      <span className="text-sm font-bold text-[#004E60]">{guest.role}</span>
+                    </button>
+                  ))}
+                </div>
               </form>
 
               <div className="mt-6 text-center text-sm text-gray-600">

@@ -20,10 +20,10 @@ import { useGetSinglePropertyDetailsQuery } from "@/redux/service/agent/properti
 
 
 export default function EditHome() {
-const propertyId = useParams().id as string;
+  const propertyId = useParams().id as string;
 
   console.log(propertyId, "propertyId");
-  
+
 
   const router = useRouter();
 
@@ -37,7 +37,7 @@ const propertyId = useParams().id as string;
 
 
   console.log(propertyData, "propertyData");
-  
+
 
 
   const steps = [
@@ -105,7 +105,7 @@ const propertyId = useParams().id as string;
 
   return (
     <div className="px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto rounded-lg shadow-lg p-8 max-w-6xl">
+      <div className="mx-auto rounded-lg shadow-lg p-8 max-w-7xl">
         {/* ✅ PROPERTY HEADER */}
         {propertyData?.data && (
           <div className="mb-8 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
@@ -136,21 +136,19 @@ const propertyId = useParams().id as string;
             <div key={index} className="relative flex items-center">
               {index > 0 && (
                 <div
-                  className={`absolute left-[-32px] top-1/2 w-[64px] h-0.5 transform -translate-y-1/2 ${
-                    index <= currentStep ? "bg-[#D2B48C]" : "bg-[#D4D4D4]"
-                  }`}
+                  className={`absolute left-[-32px] top-1/2 w-[64px] h-0.5 transform -translate-y-1/2 ${index <= currentStep ? "bg-[#D2B48C]" : "bg-[#D4D4D4]"
+                    }`}
                   style={{ pointerEvents: "none" }}
                 />
               )}
               <button
                 onClick={() => setCurrentStep(index)}
-                className={`w-10 h-10 rounded-full flex items-center justify-center text-base font-semibold transition-all duration-200 z-10 ${
-                  index === currentStep
+                className={`w-10 h-10 rounded-full flex items-center justify-center text-base font-semibold transition-all duration-200 z-10 ${index === currentStep
                     ? "bg-[#D2B48C] text-white text-lg hover:bg-[#D2B48C]"
                     : index < currentStep
-                    ? "bg-[#D2B48C] text-white"
-                    : "bg-[#D4D4D4] text-[#2B2B2B] hover:bg-gray-400"
-                }`}
+                      ? "bg-[#D2B48C] text-white"
+                      : "bg-[#D4D4D4] text-[#2B2B2B] hover:bg-gray-400"
+                  }`}
               >
                 {step.label}
               </button>

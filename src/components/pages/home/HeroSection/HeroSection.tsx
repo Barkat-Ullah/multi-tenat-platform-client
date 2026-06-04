@@ -16,8 +16,8 @@ export default function HeroSection() {
       <div className="absolute inset-0  pointer-events-none" />
 
       <div className="container mx-auto px-6 sm:px-8 lg:px-12 py-16 md:py-24 relative z-10">
-        <div className="max-w-[650px] flex flex-col items-start text-left">
-          
+        <div className="max-w-7xl flex flex-col items-start text-left">
+
           {/* Badge: GMC Registered Doctors */}
           <div className="inline-flex items-center gap-2 rounded-full border border-[#00B2D6]/20 bg-white/95 px-4 py-1.5 text-xs font-semibold text-[#0F2E4A] shadow-sm backdrop-blur-md mb-6">
             <Award className="h-4 w-4 text-[#00B2D6]" />

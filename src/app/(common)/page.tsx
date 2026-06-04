@@ -18,7 +18,7 @@ const HompPage = () => {
       <HeroSection />
       <ClinicSearchFilter />
       <MedicalTypesSection />
-      <PositioningSection />
+      {/* <PositioningSection /> */}
       <HowItWorksSection />
       <SubscriptionManagement/>
       <InvestorValueSection />

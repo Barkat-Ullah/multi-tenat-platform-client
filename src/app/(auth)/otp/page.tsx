@@ -126,7 +126,7 @@ const OTPage = () => {
   return (
     <div className=" flex items-center justify-center p-4">
       <div className="container min-h-[85vh] flex items-center justify-center py-10">
-        <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12 max-w-6xl w-full p-4 md:p-8">
+        <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12 max-w-7xl w-full p-4 md:p-8">
           {/* Illustration */}
           <div className="w-full md:w-1/2 flex items-center justify-center">
             <Link href="/" className="w-full max-w-md">

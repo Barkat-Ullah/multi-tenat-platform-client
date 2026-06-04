@@ -262,7 +262,7 @@ export default function Navbar() {
           )}
         >
         {/* Desktop Navbar */}
-        <div className="hidden lg:flex max-w-[1440px] mx-auto py-4 items-center justify-between px-8">
+        <div className="hidden lg:flex container mx-auto py-4 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="font-bold">
             <Logo />

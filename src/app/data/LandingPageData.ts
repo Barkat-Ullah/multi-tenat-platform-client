@@ -61,3 +61,32 @@ export const otherMedicalsData: OtherMedicalItem[] = [
   { name: "Visa & Emigration Medical", description: "Visa clearance checks for AU, CA, US & NZ" },
   { name: "Police & Emergency Services", description: "Fitness reports for police, fire, & rescue" },
 ];
+
+export interface HowItWorksStep {
+  number: string;
+  title: string;
+  description: string;
+  iconName: "Search" | "Clock" | "UserCheck";
+}
+
+export const howItWorksStepsData: HowItWorksStep[] = [
+  {
+    number: "01",
+    title: "Find Location",
+    description: "Enter your postcode and choose from 80+ clinic locations across the UK.",
+    iconName: "Search",
+  },
+  {
+    number: "02",
+    title: "Select Slot",
+    description: "Choose a convenient date and time. Evening and weekend slots are available.",
+    iconName: "Clock",
+  },
+  {
+    number: "03",
+    title: "Attend Medical",
+    description: "Complete your assessment and leave with your D4 form.",
+    iconName: "UserCheck",
+  },
+];
+

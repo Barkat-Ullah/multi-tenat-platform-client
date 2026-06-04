@@ -17,7 +17,8 @@ export default {
         poppins: ["var(--font-poppins)", "Poppins", "sans-serif"],
         lato: ["Lato", "sans-serif"],
         sans3: ["Source Sans 3", "sans-serif"],
-        robotomono: ["Roboto Mono", "monospace"]
+        robotomono: ["Roboto Mono", "monospace"],
+        ribeye: ["var(--font-ribeye-marrow)", "serif"]
       },
       colors: {
         black: "#000",
