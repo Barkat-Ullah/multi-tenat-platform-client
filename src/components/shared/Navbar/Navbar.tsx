@@ -4,41 +4,44 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { DownOutlined, HeartFilled, UserOutlined } from "@ant-design/icons";
+import { DownOutlined } from "@ant-design/icons";
 import type { MenuProps } from "antd";
-import { Avatar, Drawer, Dropdown, Typography } from "antd";
-import Image from "next/image";
+import { Drawer, Dropdown, Typography } from "antd";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { IoClose, IoMenu } from "react-icons/io5";
-import logo from "@/assets/logo/logo.png";
 import { useSelector, useDispatch } from "react-redux";
-import type { RootState } from "@/redux/store"; // 👈 adjust path if needed
-import { logout } from "@/redux/features/auth"; // 👈 your logout action
+import type { RootState } from "@/redux/store";
+import { logout } from "@/redux/features/auth";
 import Cookies from "js-cookie";
 import { useGetProfileDataQuery } from "@/redux/service/profile/profileApi";
 import { getDashboardPathByRole, normalizeRole } from "@/utils/roles";
+import { Logo } from "@/components/ui/Logo";
+import { TopBar } from "@/components/layout/TopBar";
+import { ArrowRight } from "lucide-react";
+import Image from "next/image";
 
 const { Text } = Typography;
 
 export default function Navbar() {
   const [isSticky, setIsSticky] = useState(false);
   const [open, setOpen] = useState(false);
+  const navbarRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
-  // 🔑 Get auth state from Redux
+  // Get auth state from Redux
   const { user, accessToken } = useSelector((state: RootState) => state.auth);
   const role = normalizeRole(user?.role);
-
 
   const dispatch = useDispatch();
 
   const handleLogOut = () => {
-    dispatch(logout())
-    Cookies.remove("accessToken")
-    Cookies.remove("refreshToken")
-  }
+    dispatch(logout());
+    Cookies.remove("accessToken");
+    Cookies.remove("refreshToken");
+  };
+  
   const isAuthenticated = !!accessToken && !!user;
   
   // 👤 Get full profile data for avatar and name
@@ -47,23 +50,21 @@ export default function Navbar() {
   
   const avatarUrl = profile?.avatar?.trim() || null;
   const displayName = profile?.name || user?.name || user?.email?.split("@")[0] || "User";
-  const roleName = normalizeRole(profileResponse?.data?.role || user?.role);
-
   const fallbackInitial = (displayName?.[0] || user?.email?.[0] || "U").toUpperCase();
 
   // ===== Navigation Links =====
   const navLinks = [
-    { href: "/", label: "Home" },
-    { href: "/#demo", label: "Demo" },
-    { href: "/#how-it-works", label: "How it Works" },
-    { href: "/#pricing", label: "Pricing" },
-    { href: "/#contact", label: "Contact Us" },
-
+    { href: "/#hgv-bus", label: "HGV/Bus Medicals" },
+    { href: "/#taxi", label: "Taxi Medicals" },
+    { href: "/#other", label: "Other Medicals" },
+    { href: "/#business", label: "Business" },
+    { href: "/#occupational", label: "Occupational Health" },
+    { href: "/#location", label: "Location" },
+    { href: "/#faq", label: "FAQ's" },
   ];
 
   const isActive = (href: string) => pathname === href;
 
-  // ===== Profile Dropdown Menu =====
   // ===== Profile Dropdown Menu =====
   const avatarMenuItems: MenuProps["items"] = [
     {
@@ -74,18 +75,17 @@ export default function Navbar() {
         </Link>
       ),
     },
-    // Conditionally add Dashboard link
     ...(role
       ? [
-        {
-          key: "dashboard",
-          label: (
-            <Link href={getDashboardPathByRole(role)} className="block w-full">
-              <Text strong>Dashboard</Text>
-            </Link>
-          ),
-        },
-      ]
+          {
+            key: "dashboard",
+            label: (
+              <Link href={getDashboardPathByRole(role)} className="block w-full">
+                <Text strong>Dashboard</Text>
+              </Link>
+            ),
+          },
+        ]
       : []),
     { type: "divider" },
     {
@@ -103,11 +103,31 @@ export default function Navbar() {
   ];
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsSticky(window.scrollY > 20);
+    const handleScrollAndResize = () => {
+      const currentScroll = window.scrollY;
+      const isDesktop = window.innerWidth >= 1024;
+      
+      const stickyThreshold = isDesktop ? 38 : 5;
+      setIsSticky(currentScroll > stickyThreshold);
+      
+      if (navbarRef.current) {
+        if (isDesktop) {
+          const translateY = Math.min(currentScroll, 38);
+          navbarRef.current.style.transform = `translateY(-${translateY}px)`;
+        } else {
+          navbarRef.current.style.transform = "translateY(0px)";
+        }
+      }
     };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    
+    handleScrollAndResize();
+    window.addEventListener("scroll", handleScrollAndResize, { passive: true });
+    window.addEventListener("resize", handleScrollAndResize, { passive: true });
+    
+    return () => {
+      window.removeEventListener("scroll", handleScrollAndResize);
+      window.removeEventListener("resize", handleScrollAndResize);
+    };
   }, []);
 
   // ===== Mobile Drawer =====
@@ -115,25 +135,19 @@ export default function Navbar() {
     return (
       <Drawer
         title={
-          <Link href="/" className="font-bold text-xl text-[#8B7355]">
-            <Image
-              src={logo}
-              width={100}
-              height={100}
-              alt="logo"
-              className="h-8 w-auto"
-            />
+          <Link href="/" className="font-bold">
+            <Logo />
           </Link>
         }
         placement="left"
-        width={280}
+        width={300}
         open={open}
         onClose={() => setOpen(false)}
         closeIcon={false}
         extra={
           <button
             onClick={() => setOpen(false)}
-            className="p-2 rounded-full hover:bg-gray-200 transition-colors"
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
             aria-label="Close menu"
           >
             <IoClose size={20} className="text-gray-700" />
@@ -155,10 +169,11 @@ export default function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`flex items-center px-4 py-3 rounded-lg font-medium transition-all duration-200 ${isActive(link.href)
-                  ? "bg-green-50 text-[#4CAF50] border-l-4 border-[#4CAF50]"
-                  : "text-gray-700 hover:bg-gray-50 hover:text-[#4CAF50]"
-                  }`}
+                className={`flex items-center px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                  isActive(link.href)
+                    ? "bg-[#E6FAFF] text-[#00B2D6] border-l-4 border-[#00B2D6]"
+                    : "text-gray-700 hover:bg-gray-50 hover:text-[#00B2D6]"
+                }`}
                 onClick={() => setOpen(false)}
               >
                 {link.label}
@@ -172,38 +187,13 @@ export default function Navbar() {
           <div className="space-y-2">
             {isAuthenticated ? (
               <>
-                {
-                  role === "USER" &&
-                  <Link
-                    href="/dashboard/user/property-list/add-property"
-                    className="flex items-center gap-3 w-full px-4 py-3 bg-white rounded-lg shadow-sm border border-gray-200 text-gray-800 font-medium hover:bg-gray-50 hover:border-[#4CAF50] hover:text-[#4CAF50] transition-all"
-                    onClick={() => setOpen(false)}
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <line x1="12" y1="5" x2="12" y2="19" />
-                      <line x1="5" y1="12" x2="19" y2="12" />
-                    </svg>
-                    <span>Add Listing</span>
-                  </Link>
-                }
-
-                <div className="border-t border-gray-200 my-3"></div>
-
                 <Dropdown
                   menu={{ items: avatarMenuItems }}
                   trigger={["click"]}
                   arrow
                 >
                   <div className="flex items-center gap-3 w-full px-4 py-3 bg-white rounded-lg shadow-sm border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors">
-                    <div className="w-8 h-8 rounded-full overflow-hidden bg-[#4CAF50] flex items-center justify-center border-2 border-white shadow-sm flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full overflow-hidden bg-[#00B2D6] flex items-center justify-center border-2 border-white shadow-sm flex-shrink-0">
                       {avatarUrl ? (
                         <Image
                           src={avatarUrl}
@@ -222,8 +212,8 @@ export default function Navbar() {
                       <p className="text-sm font-medium text-gray-800 truncate">
                         {displayName}
                       </p>
-                      <p className="text-xs text-gray-500">
-                        {roleName}
+                      <p className="text-xs text-gray-500 uppercase font-semibold">
+                        {role}
                       </p>
                     </div>
                     <DownOutlined className="text-gray-400 text-xs" />
@@ -235,18 +225,14 @@ export default function Navbar() {
               <div className="flex flex-col gap-2">
                 <Link
                   href="/login"
-                  className="w-full px-4 py-3 bg-gradient-to-r from-[#3da800] to-[#4caf50] text-white font-bold rounded-full text-center hover:from-[#359200] hover:to-[#439e47] transition-all"
+                  className="w-full inline-flex items-center justify-between rounded-full bg-[#00B2D6] pl-6 pr-1.5 py-1.5 font-sans font-bold text-white hover:bg-[#0092B3]"
                   onClick={() => setOpen(false)}
                 >
-                  Sign In
+                  <span className="text-sm font-semibold tracking-wide">Log In</span>
+                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[#00B2D6]">
+                    <ArrowRight size={16} strokeWidth={2.5} />
+                  </div>
                 </Link>
-                {/* <Link
-                  href="/register"
-                  className="w-full px-4 py-3 bg-white border border-[#004E60] text-[#004E60] font-medium rounded-lg text-center hover:bg-gray-50 transition-colors"
-                  onClick={() => setOpen(false)}
-                >
-                  Register
-                </Link> */}
               </div>
             )}
           </div>
@@ -257,38 +243,42 @@ export default function Navbar() {
 
   return (
     <div className="w-full">
-      {/* Sticky Navbar */}
+      {/* Placeholder to reserve space in document flow and prevent layout shift */}
+      <div className="h-[73px] lg:h-[111px]" />
+
+      {/* Fixed Container wrapping both TopBar and Main Navbar */}
       <div
-        className={cn(
-          "bg-white border-b border-gray-100 transition-all duration-300",
-          isSticky
-            ? "fixed top-0 left-0 right-0 z-50 shadow-sm"
-            : "relative shadow-sm",
-        )}
+        ref={navbarRef}
+        className="fixed top-0 left-0 right-0 z-50 w-full"
       >
+        {/* Top Bar */}
+        <TopBar />
+
+        {/* Main Navbar */}
+        <div
+          className={cn(
+            "bg-white border-b border-gray-100 w-full transition-shadow duration-300",
+            isSticky ? "shadow-md" : "shadow-none"
+          )}
+        >
         {/* Desktop Navbar */}
-        <div className="hidden lg:flex container py-3 items-center justify-between">
+        <div className="hidden lg:flex max-w-[1440px] mx-auto py-4 items-center justify-between px-8">
           {/* Logo */}
-          <Link href="/" className="font-bold text-xl text-[#8B7355]">
-            <Image
-              src={logo}
-              width={120}
-              height={120}
-              alt="logo"
-              className="h-10 w-auto"
-            />
+          <Link href="/" className="font-bold">
+            <Logo />
           </Link>
 
           {/* Nav Links */}
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-6 xl:gap-8">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`text-sm md:text-[15px] font-medium transition-all duration-200 ${isActive(link.href)
-                  ? "text-[#4CAF50]"
-                  : "text-gray-600 hover:text-[#4CAF50]"
-                  }`}
+                className={`text-[14px] xl:text-[15px] font-semibold transition-all duration-200 ${
+                  isActive(link.href)
+                    ? "text-[#00B2D6]"
+                    : "text-[#0F2E4A] hover:text-[#00B2D6]"
+                }`}
               >
                 {link.label}
               </Link>
@@ -299,18 +289,9 @@ export default function Navbar() {
           <div className="flex items-center gap-4">
             {isAuthenticated ? (
               <>
-                {
-                  role === "USER" &&
-                  <Link
-                    href="/dashboard/user/property-list/add-property"
-                    className="text-sm px-4 py-2 rounded-[16px] bg-[#4CAF50] text-white font-medium hover:bg-[#439e47] transition-colors"
-                  >
-                    Add Listing
-                  </Link>
-                }
                 <Dropdown menu={{ items: avatarMenuItems }} trigger={["click"]}>
-                  <div className="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white transition-colors border border-[#D4D4D4]">
-                    <div className="w-8 h-8 rounded-full overflow-hidden bg-[#4CAF50] flex items-center justify-center flex-shrink-0">
+                  <div className="flex items-center gap-2 cursor-pointer p-1.5 pr-3 rounded-full hover:bg-gray-50 transition-colors border border-gray-200">
+                    <div className="w-8 h-8 rounded-full overflow-hidden bg-[#00B2D6] flex items-center justify-center flex-shrink-0">
                       {avatarUrl ? (
                         <Image
                           src={avatarUrl}
@@ -325,7 +306,7 @@ export default function Navbar() {
                         </span>
                       )}
                     </div>
-                    <span className="text-sm font-medium text-gray-800 hidden md:inline">
+                    <span className="text-sm font-semibold text-[#0F2E4A] hidden md:inline">
                       {displayName}
                     </span>
                     <DownOutlined className="text-xs text-gray-500" />
@@ -333,48 +314,38 @@ export default function Navbar() {
                 </Dropdown>
               </>
             ) : (
-              // Guest: Login & Register buttons
-              <>
-                <Link
-                  href="/login"
-                  className="text-sm px-6 py-2.5 rounded-full bg-gradient-to-r from-[#3da800] to-[#4caf50] hover:from-[#359200] hover:to-[#439e47] text-white font-bold transition-all duration-200 shadow-sm"
-                >
-                  Sign In
-                </Link>
-                {/* <Link
-                  href="/register"
-                  className="text-sm px-4 py-2 rounded-[16px] border border-[#004E60] text-[#004E60] font-medium hover:bg-gray-50 transition-colors"
-                >
-                  Register
-                </Link> */}
-              </>
+              // Guest: Log In Pill Button
+              <Link
+                href="/login"
+                className="inline-flex items-center justify-between rounded-full bg-[#00B2D6] pl-6 pr-1.5 py-1.5 font-sans font-bold text-white transition-all duration-300 hover:bg-[#0092B3] group"
+              >
+                <span className="text-sm font-semibold tracking-wide mr-4">Log In</span>
+                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[#00B2D6] group-hover:translate-x-0.5 transition-transform">
+                  <ArrowRight size={16} strokeWidth={2.5} />
+                </div>
+              </Link>
             )}
           </div>
         </div>
 
         {/* Mobile Header */}
-        <div className="flex lg:hidden items-center justify-between px-6 py-4 bg-white border-b border-gray-100">
-          <Link href="/" className="font-bold text-xl text-[#8B7355]">
-            <Image
-              src={logo}
-              width={80}
-              height={80}
-              alt="logo"
-              className="h-8 w-auto"
-            />
+        <div className="flex lg:hidden items-center justify-between px-6 py-4 bg-white">
+          <Link href="/" className="font-bold">
+            <Logo />
           </Link>
           <button
             onClick={() => setOpen(true)}
-            className="p-2"
+            className="p-2 rounded-lg hover:bg-gray-50 transition-colors"
             aria-label="Open menu"
           >
             <IoMenu size={24} className="text-gray-700" />
           </button>
         </div>
       </div>
-
-      {/* Mobile Drawer */}
-      <MobileDrawer />
     </div>
+
+    {/* Mobile Drawer */}
+    <MobileDrawer />
+  </div>
   );
 }
