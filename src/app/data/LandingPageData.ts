@@ -1,7 +1,14 @@
 // TypeScript Interfaces for Landing Page Mock Data
+import type { StaticImageData } from "next/image";
+import hgvBusImage from "@/assets/home/hgv-bus.png";
+import taxiPcoImage from "@/assets/home/taxi-pco.png";
+import ambulanceImage from "@/assets/home/ambulance.png";
+import forkliftImage from "@/assets/home/forklift.png";
+import motorsportImage from "@/assets/home/motorsport.png";
+import preEmploymentImage from "@/assets/home/pre-employment.png";
 
 export interface MedicalTypeCard {
-  image: string;
+  image: string | StaticImageData;
   title: string;
   description: string;
   link: string;
@@ -15,37 +22,37 @@ export interface OtherMedicalItem {
 // 6 Primary Medical Types
 export const medicalTypesData: MedicalTypeCard[] = [
   {
-    image: "/images/hgv-bus.png",
+    image: hgvBusImage,
     title: "HGV/Bus Medicals",
     description: "For HGV & LGV drivers",
     link: "/booking?type=hgv-bus",
   },
   {
-    image: "/images/taxi-pco.png",
+    image: taxiPcoImage,
     title: "Taxi & PCO Medical",
     description: "For Taxi & PCO Medical",
     link: "/booking?type=taxi-pco",
   },
   {
-    image: "/images/ambulance.png",
+    image: ambulanceImage,
     title: "Ambulance Medical",
     description: "For Ambulance Medical",
     link: "/booking?type=ambulance",
   },
   {
-    image: "/images/forklift.png",
+    image: forkliftImage,
     title: "Forklift/Crane Medical",
     description: "For Forklift/Crane Medical",
     link: "/booking?type=forklift",
   },
   {
-    image: "/images/motorsport.png",
+    image: motorsportImage,
     title: "Motorsport Medical",
     description: "For Motorsport Medical",
     link: "/booking?type=motorsport",
   },
   {
-    image: "/images/pre-employment.png",
+    image: preEmploymentImage,
     title: "Pre-Employment Medicals",
     description: "For Pre-Employment Medicals.",
     link: "/booking?type=pre-employment",
@@ -178,7 +185,6 @@ export const nearestClinicsData: ClinicLocationItem[] = [
   { city: "Croydon", count: 8, nextAvailable: "Today" },
   { city: "Cambridge", count: 9, nextAvailable: "Today" },
 ];
-
 
 
 

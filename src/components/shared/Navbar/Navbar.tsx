@@ -54,6 +54,7 @@ export default function Navbar() {
 
   // ===== Navigation Links =====
   const navLinks = [
+    { href: "/", label: "Home" },
     { href: "/#hgv-bus", label: "HGV/Bus Medicals" },
     { href: "/#taxi", label: "Taxi Medicals" },
     { href: "/#other", label: "Other Medicals" },
