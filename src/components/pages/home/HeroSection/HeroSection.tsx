@@ -19,7 +19,7 @@ export default function HeroSection() {
         <div className="max-w-7xl flex flex-col items-start text-left">
 
           {/* Badge: GMC Registered Doctors */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#00B2D6]/20 bg-white/95 px-4 py-1.5 text-xs font-semibold text-[#0F2E4A] shadow-sm backdrop-blur-md mb-6">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#00B2D6]/20 bg-white/95 px-4 py-1.5 text-xs font-semibold text-[#0F2E4A] shadow-sm backdrop-blur-md">
             <Award className="h-4 w-4 text-[#00B2D6]" />
             <span className="tracking-wide">GMC Registered Doctors</span>
             <Sparkles className="h-3.5 w-3.5 text-[#00B2D6]" />

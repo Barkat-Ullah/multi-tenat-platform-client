@@ -90,3 +90,46 @@ export const howItWorksStepsData: HowItWorksStep[] = [
   },
 ];
 
+export interface WhyChooseUsFeature {
+  title: string;
+  description: string;
+  iconName: "Award" | "ShieldCheck" | "Clock" | "MapPin" | "Zap" | "Users";
+}
+
+export const whyChooseUsLeftFeatures: WhyChooseUsFeature[] = [
+  {
+    title: "GMC Registered Doctors",
+    description: "All medicals conducted by qualified, GMC registered medical professionals.",
+    iconName: "Award",
+  },
+  {
+    title: "DVLA Compliant",
+    description: "Fully compliant with DVLA medical standards and requirements.",
+    iconName: "ShieldCheck",
+  },
+  {
+    title: "Same Day Appointments",
+    description: "Urgent medical needed? We offer same-day appointments at most locations.",
+    iconName: "Clock",
+  },
+];
+
+export const whyChooseUsRightFeatures: WhyChooseUsFeature[] = [
+  {
+    title: "Nationwide Clinics",
+    description: "Over 100 clinics across the UK for your convenience.",
+    iconName: "MapPin",
+  },
+  {
+    title: "Fast & Easy Process",
+    description: "Quick 20-minute appointments with instant certificate issuance.",
+    iconName: "Zap",
+  },
+  {
+    title: "Trusted by Thousands",
+    description: "Highly rated by drivers nationwide with thousands of 5-star reviews.",
+    iconName: "Users",
+  },
+];
+
+

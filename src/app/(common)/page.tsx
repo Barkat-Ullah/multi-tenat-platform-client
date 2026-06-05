@@ -8,6 +8,7 @@ import ClinicSearchFilter from "@/components/pages/home/ClinicSearchFilter/Clini
 // import FocusCardsPage from "@/components/pages/home/FocusCard/FocusCard";
 import HeroSection from "@/components/pages/home/HeroSection/HeroSection";
 import HowItWorksSection from "@/components/pages/home/HowItWorksSection/HowItWorksSection";
+import WhyChooseUsSection from "@/components/pages/home/WhyChooseUsSection/WhyChooseUsSection";
 import InvestorValueSection from "@/components/pages/home/InvestorValueSection/InvestorValueSection";
 import PositioningSection from "@/components/pages/home/PositioningSection/PositioningSection";
 import SubscriptionManagement from "@/components/pages/home/SubcriptionSection/SubscriptionSection";
@@ -20,7 +21,8 @@ const HompPage = () => {
       <MedicalTypesSection />
       {/* <PositioningSection /> */}
       <HowItWorksSection />
-      <SubscriptionManagement/>
+      <WhyChooseUsSection />
+      {/* <SubscriptionManagement/> */}
       <InvestorValueSection />
       <AgenciesSection />
       <FinalCTASection />
