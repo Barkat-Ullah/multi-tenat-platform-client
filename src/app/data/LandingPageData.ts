@@ -132,4 +132,53 @@ export const whyChooseUsRightFeatures: WhyChooseUsFeature[] = [
   },
 ];
 
+export interface TestimonialItem {
+  id: number;
+  name: string;
+  role: string;
+  company: string;
+  content: string;
+}
+
+export const testimonialsData: TestimonialItem[] = [
+  {
+    id: 1,
+    name: "Jerry Cloony",
+    role: "CEO",
+    company: "Intel",
+    content: "I arrived 20 minutes early, but the location was easy to find. Compliance Driver Medicals - Hounslow is conveniently located inside the Premier Inn....",
+  },
+  {
+    id: 2,
+    name: "Mark Thomson",
+    role: "HGV Driver",
+    company: "Logistics Ltd",
+    content: "Excellent service! The doctor was very professional and friendly. The appointment took less than 20 minutes and I got my D4 form sorted on the spot.",
+  },
+  {
+    id: 3,
+    name: "Sarah Jenkins",
+    role: "Operations Manager",
+    company: "Hounslow Bus Co.",
+    content: "We send all our new drivers to Compliance Medicals. The booking process is simple and the locations are great. Highly recommended for bus & taxi drivers.",
+  },
+];
+
+export interface ClinicLocationItem {
+  city: string;
+  count: number;
+  nextAvailable: string;
+}
+
+export const nearestClinicsData: ClinicLocationItem[] = [
+  { city: "Aylesbury", count: 12, nextAvailable: "Today" },
+  { city: "Peterborough", count: 11, nextAvailable: "Today" },
+  { city: "Basildon", count: 10, nextAvailable: "Today" },
+  { city: "Dobwick", count: 6, nextAvailable: "Today" },
+  { city: "Croydon", count: 8, nextAvailable: "Today" },
+  { city: "Cambridge", count: 9, nextAvailable: "Today" },
+];
+
+
+
 

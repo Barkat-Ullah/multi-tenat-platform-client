@@ -34,12 +34,20 @@ export default function WhyChooseUsSection() {
         {/* Header Block */}
         <div className="text-center max-w-3xl mx-auto mb-16 md:mb-24">
           <div className="flex items-center justify-center gap-4 mb-4">
-            <div className="h-[1px] w-8 sm:w-16 bg-[#00B2D6]/30" />
+            {/* Left Dot-Line Decorator */}
+            <div className="flex items-center gap-0">
+              <div className="h-1.5 w-1.5 rounded-full bg-[#00B2D6]" />
+              <div className="h-[1.5px] w-8 sm:w-16 bg-gradient-to-r from-[#00B2D6] to-[#00B2D6]/20" />
+            </div>
             <div className="flex items-center gap-1.5 text-[#00B2D6] font-bold text-xs sm:text-sm uppercase tracking-widest">
               <Sparkles className="h-3.5 w-3.5" />
               <span>Why Choose Us</span>
             </div>
-            <div className="h-[1px] w-8 sm:w-16 bg-[#00B2D6]/30" />
+            {/* Right Line-Dot Decorator */}
+            <div className="flex items-center gap-0">
+              <div className="h-[1.5px] w-8 sm:w-16 bg-gradient-to-l from-[#00B2D6] to-[#00B2D6]/20" />
+              <div className="h-1.5 w-1.5 rounded-full bg-[#00B2D6]" />
+            </div>
           </div>
 
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-[#0F2E4A] tracking-tight leading-tight">
