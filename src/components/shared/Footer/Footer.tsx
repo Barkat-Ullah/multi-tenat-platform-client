@@ -45,8 +45,8 @@ const Footer = () => (
         />
       </svg>
 
-      <div className="mx-auto max-w-7xl px-5 pb-8 pt-16 sm:px-8 lg:px-0 lg:pb-8 lg:pt-[94px]">
-        <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-[268px_183px_189px_268px] lg:gap-[62px]">
+      <div className="mx-auto max-w-[1440px] px-5 pb-8 pt-16 sm:px-8 lg:pb-8 lg:pt-[94px]">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-[minmax(268px,1fr)_183px_189px_minmax(268px,1fr)] lg:gap-[62px]">
           <div>
             <Link href="/" aria-label="Compliance Medicals home" className="inline-flex">
               <Logo />

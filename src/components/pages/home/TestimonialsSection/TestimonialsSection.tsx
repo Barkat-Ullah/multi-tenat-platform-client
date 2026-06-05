@@ -41,7 +41,7 @@ export default function TestimonialsSection() {
 
   return (
     <section className="py-14 sm:py-20 md:py-28 bg-white poppins overflow-hidden">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-12 relative z-10">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 
         {/* Header Block */}
         <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-16 md:mb-20">
@@ -71,7 +71,7 @@ export default function TestimonialsSection() {
         </div>
 
         {/* Testimonial Panel Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
 
           {/* Left Column: Dark Slider Card */}
           <div className="lg:col-span-6 flex">

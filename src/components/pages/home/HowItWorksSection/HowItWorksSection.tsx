@@ -23,7 +23,7 @@ export default function HowItWorksSection() {
 
   return (
     <section className="py-14 sm:py-16 md:py-24 bg-white poppins">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* Header Block */}
         <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-14 md:mb-16">
@@ -45,7 +45,7 @@ export default function HowItWorksSection() {
         </div>
 
         {/* Staggered steps & image grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
 
           {/* Left Column: Staggered Steps */}
           <div className="lg:col-span-7 pr-0 lg:pr-10 relative">

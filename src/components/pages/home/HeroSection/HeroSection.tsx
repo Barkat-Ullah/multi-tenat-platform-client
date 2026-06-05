@@ -15,8 +15,8 @@ export default function HeroSection() {
       {/* Soft gradient overlay to ensure text contrast on all devices */}
       <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-white/30 sm:to-white/10 lg:from-white/95 lg:via-white/65 lg:to-transparent pointer-events-none" />
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-12 py-12 sm:py-16 md:py-24 relative z-10">
-        <div className="max-w-7xl flex flex-col items-start text-left">
+      <div className="max-w-[1440px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-24 relative z-10">
+        <div className="flex flex-col items-start text-left">
 
           {/* Badge: GMC Registered Doctors */}
           <div className="inline-flex items-center gap-2 rounded-full border border-[#00B2D6]/20 bg-white/95 px-4 py-1.5 text-xs font-semibold text-[#0F2E4A] shadow-sm backdrop-blur-md">

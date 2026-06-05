@@ -11,7 +11,7 @@ import bookingBgRight from "@/assets/home/bookingBgRight.png";
 export default function BookingCTASection() {
   return (
     <section className="py-14 sm:py-16 md:py-24 bg-[#FCFDFE] poppins relative overflow-hidden">
-      <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 
         {/* Main Card Wrapper */}
         <motion.div

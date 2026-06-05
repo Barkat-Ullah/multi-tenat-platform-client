@@ -16,7 +16,7 @@ export default function NearestClinicSection() {
 
   return (
     <section className="py-14 sm:py-20 md:py-28 bg-[#FCFDFE] poppins relative overflow-hidden">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-12 relative z-10">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 
         {/* Header Block */}
         <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-16">
@@ -60,7 +60,7 @@ export default function NearestClinicSection() {
         </div>
 
         {/* Clinics Grid Layout */}
-        <div className="max-w-7xl mx-auto">
+        <div>
           <motion.div
             layout
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"

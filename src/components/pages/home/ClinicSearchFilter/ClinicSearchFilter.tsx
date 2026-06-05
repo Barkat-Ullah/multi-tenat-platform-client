@@ -48,7 +48,7 @@ export default function ClinicSearchFilter() {
   };
 
   return (
-    <div className="relative z-20 max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 -mt-10 sm:-mt-16 md:-mt-24 poppins">
+    <div className="relative z-20 max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 -mt-10 sm:-mt-16 md:-mt-24 poppins">
       <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-100 shadow-[0_15px_50px_rgba(0,0,0,0.06)] p-4 sm:p-6 md:p-8 lg:p-10">
 
         {/* Title Block */}

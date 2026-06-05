@@ -29,7 +29,7 @@ export default function WhyChooseUsSection() {
   };
   return (
     <section className="py-14 sm:py-20 md:py-28 bg-[#FCFDFE] poppins relative overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 
         {/* Header Block */}
         <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-16 md:mb-24">
@@ -59,7 +59,7 @@ export default function WhyChooseUsSection() {
         </div>
 
         {/* 3-Column Layout: Left Cards | Center Doctor with Background Rings | Right Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 items-center max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 items-center">
 
           {/* Left Column (Benefits) */}
           <div className="lg:col-span-4 flex flex-col gap-6 md:gap-8">
