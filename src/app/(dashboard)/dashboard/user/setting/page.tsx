@@ -1,6 +1,6 @@
 "use client";
 
-import ActivePropertiesSection from "@/components/pages/All-Property/ActivePropertiesSection";
+// import ActivePropertiesSection from "@/components/pages/All-Property/ActivePropertiesSection";
 import ChangePasswordForm from "@/components/pages/Profile/ChangesPassword";
 import Spinner from "@/components/ui/Spinner";
 import {
@@ -410,7 +410,7 @@ export default function Page() {
           <h1>fgsdfgsrgsregseg</h1>
         </div> */}
 
-        <ActivePropertiesSection />
+        {/* <ActivePropertiesSection /> */}
 
         {/*  */}
 

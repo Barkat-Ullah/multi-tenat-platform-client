@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 
 const quickLinksOne = [
-  { name: "HGV/Bus Medicals", href: "/#hgv-bus" },
+  { name: "HGV/Bus Medicals", href: "/hgv-bus-medicals" },
   { name: "Taxi Medicals", href: "/#taxi" },
   { name: "Other Medicals", href: "/#other" },
   { name: "Business", href: "/#business" },
