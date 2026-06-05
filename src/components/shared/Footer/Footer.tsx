@@ -1,84 +1,123 @@
-import { Instagram, Facebook, Linkedin, Twitter } from "lucide-react";
+import { ChevronRight, Mail, Phone } from "lucide-react";
 import Link from "next/link";
-import React from "react";
+import { Logo } from "@/components/ui/Logo";
 
-const menu = {
-  Properties: [
-    { name: "All Property", href: "/all-property" },
-    { name: "Professionals", href: "/professionals" },
-  ],
-  iRendity: [
-    { name: "Home", href: "/" },
-    { name: "About Us", href: "/about" },
-    { name: "Join Us", href: "/register" },
-  ],
-  Contact: [
-    { name: "Investor Guides", href: "/investor-guides" },
-    { name: "Tax & Legal Info", href: "/tax-legal" },
-    { name: "Contact Us", href: "/contact" },
-  ],
-};
-
-const socials = [
-  { icon: Instagram, href: "#" },
-  { icon: Facebook, href: "#" },
-  { icon: Linkedin, href: "#" },
-  { icon: Twitter, href: "#" },
+const quickLinksOne = [
+  { name: "HGV/Bus Medicals", href: "/#hgv-bus" },
+  { name: "Taxi Medicals", href: "/#taxi" },
+  { name: "Other Medicals", href: "/#other" },
+  { name: "Business", href: "/#business" },
 ];
 
-const Footer = () => (
-  <div className="bg-[#171A1C] text-[#F8F8F6]">
-    <div className="py-12  container mx-auto grid grid-cols-1 md:grid-cols-3 gap-10">
-      {Object.entries(menu).map(([title, links]) => (
-        <div key={title}>
-          <h3 className="text-xl md:text-3xl font-semibold mb-6">{title}</h3>
-          <ul className="space-y-3">
-            {links.map(({ name, href }) => (
-              <li key={name}>
-                <Link href={href} className="hover:text-gray-300 md:text-lg text-sm font-normal transition">
-                  {name}
-                </Link>
-              </li>
-            ))}
-          </ul>
-          {title === "iRendity" && (
-            <div className="mt-8">
-              <h4 className="font-medium mb-4">Follow Us</h4>
-              <div className="flex space-x-4">
-                {socials.map(({ icon: Icon, href }, i) => (
-                  <Link
-                    key={i}
-                    href={href}
-                    className="w-8 h-8 flex items-center justify-center rounded-full border border-[#E2C59F] hover:border-gold-500 hover:bg-gray-800 transition"
-                  >
-                    <Icon className="text-sm" />
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
+const quickLinksTwo = [
+  { name: "Occupational Health", href: "/#occupational" },
+  { name: "Location", href: "/#location" },
+  { name: "FAQ's", href: "/#faq" },
+];
 
-    <div className="bg-[#171A1C] py-4 px-6 md:px-10 lg:px-20">
-      <div className="container mx-auto flex flex-col md:flex-row items-center justify-between text-sm">
-        <div className="flex flex-wrap items-center gap-4 md:gap-6 mb-3 md:mb-0">
-          {["Terms of Service", "Privacy Policy", "Cookies"].map((item, i) => (
-            <React.Fragment key={item}>
-              {i !== 0 && <span>•</span>}
-              <Link href={`/${item.toLowerCase().replace(/\s/g, "-")}`} className="hover:underline">
-                {item}
-              </Link>
-            </React.Fragment>
-          ))}
+const FooterLink = ({ href, name }: { href: string; name: string }) => (
+  <li>
+    <Link
+      href={href}
+      className="group inline-flex items-center gap-2 text-[15px] font-medium leading-none text-[#1D2B34] transition-colors hover:text-[#00B2D6]"
+    >
+      <span className="relative flex h-4 w-4 items-center justify-center">
+        <ChevronRight className="absolute h-4 w-4 stroke-[2.4] transition-transform group-hover:translate-x-0.5" />
+        <ChevronRight className="absolute left-1.5 h-4 w-4 stroke-[2.4] transition-transform group-hover:translate-x-0.5" />
+      </span>
+      {name}
+    </Link>
+  </li>
+);
+
+const Footer = () => (
+  <footer className="relative bg-white pt-14 text-[#111827] poppins">
+    <div className="relative bg-[#DFF6FC]">
+      <svg
+        className="pointer-events-none absolute left-0 top-0 hidden h-14 w-full -translate-y-full lg:block"
+        viewBox="0 0 1280 56"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <path
+          fill="#DFF6FC"
+          d="M0 0H390C420 0 421 42 456 42H824C859 42 860 0 890 0H1280V56H0Z"
+        />
+      </svg>
+
+      <div className="mx-auto max-w-7xl px-5 pb-8 pt-16 sm:px-8 lg:px-0 lg:pb-8 lg:pt-[94px]">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-[268px_183px_189px_268px] lg:gap-[62px]">
+          <div>
+            <Link href="/" aria-label="Compliance Medicals home" className="inline-flex">
+              <Logo />
+            </Link>
+            <p className="mt-7 max-w-[270px] text-[15px] font-normal leading-[1.35] text-[#18232B]">
+              All driver medicals are completed by GMC registered doctors in accordance with current DVLA Group 2 guidelines
+            </p>
+          </div>
+
+          <nav aria-label="Quick Link 1">
+            <h3 className="text-lg font-bold leading-none text-[#0D1820]">Quick Link 1</h3>
+            <div className="mt-6 h-[2px] w-full bg-[#50CBE1]" />
+            <ul className="mt-6 space-y-5">
+              {quickLinksOne.map((link) => (
+                <FooterLink key={link.name} {...link} />
+              ))}
+            </ul>
+          </nav>
+
+          <nav aria-label="Quick Link 2">
+            <h3 className="text-lg font-bold leading-none text-[#0D1820]">Quick Link 2</h3>
+            <div className="mt-6 h-[2px] w-full bg-[#50CBE1]" />
+            <ul className="mt-6 space-y-5">
+              {quickLinksTwo.map((link) => (
+                <FooterLink key={link.name} {...link} />
+              ))}
+            </ul>
+          </nav>
+
+          <div>
+            <h3 className="text-lg font-bold leading-none text-[#0D1820]">Contact Information's</h3>
+            <div className="mt-6 h-[2px] w-full bg-[#50CBE1]" />
+            <div className="mt-[18px] space-y-[18px]">
+              <a
+                href="tel:+02039855800"
+                className="flex items-center gap-4 text-[16px] font-medium leading-tight text-[#1D2B34] transition-colors hover:text-[#00B2D6]"
+              >
+                <span className="flex h-[34px] w-[34px] flex-shrink-0 items-center justify-center rounded-full bg-white/50 text-[#00B2D6]">
+                  <Phone className="h-[17px] w-[17px]" />
+                </span>
+                +020 3985 5800
+              </a>
+              <a
+                href="mailto:Bookings@compliancemedicals.uk"
+                className="flex items-start gap-4 text-[16px] font-medium leading-tight text-[#1D2B34] transition-colors hover:text-[#00B2D6]"
+              >
+                <span className="flex h-[34px] w-[34px] flex-shrink-0 items-center justify-center rounded-full bg-white/50 text-[#00B2D6]">
+                  <Mail className="h-[17px] w-[17px]" />
+                </span>
+                <span className="break-words">Bookings@compliancemedicals.uk</span>
+              </a>
+            </div>
+          </div>
         </div>
-        <div className="text-center ">
-          © 1999 - 2026 iRendity International Real Estate all rights reserved.
+
+        <div className="mt-6 border-t border-[#C6E1E7] pt-5 lg:mt-[22px]">
+          <div className="flex flex-col gap-4 text-[13px] font-normal text-[#26353D] sm:flex-row sm:items-center sm:justify-between">
+            <p>Compliance Medicals Ltd &copy; 2026. All rights reserved.</p>
+            <div className="flex items-center gap-5">
+              <Link href="/privacy-policy" className="underline underline-offset-2 transition-colors hover:text-[#00B2D6]">
+                Privacy Policy
+              </Link>
+              <Link href="/terms" className="underline underline-offset-2 transition-colors hover:text-[#00B2D6]">
+                Terms
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
+  </footer>
 );
 
 export default Footer;

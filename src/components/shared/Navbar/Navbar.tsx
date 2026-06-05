@@ -105,7 +105,7 @@ export default function Navbar() {
   useEffect(() => {
     const handleScrollAndResize = () => {
       const currentScroll = window.scrollY;
-      const isDesktop = window.innerWidth >= 1024;
+      const isDesktop = window.innerWidth >= 1280;
       
       const stickyThreshold = isDesktop ? 38 : 5;
       setIsSticky(currentScroll > stickyThreshold);
@@ -244,7 +244,7 @@ export default function Navbar() {
   return (
     <div className="w-full">
       {/* Placeholder to reserve space in document flow and prevent layout shift */}
-      <div className="h-[73px] lg:h-[111px]" />
+      <div className="h-[73px] xl:h-[111px]" />
 
       {/* Fixed Container wrapping both TopBar and Main Navbar */}
       <div
@@ -262,7 +262,7 @@ export default function Navbar() {
           )}
         >
         {/* Desktop Navbar */}
-        <div className="hidden lg:flex container mx-auto py-4 items-center justify-between">
+        <div className="hidden xl:flex container mx-auto py-4 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="font-bold">
             <Logo />
@@ -329,7 +329,7 @@ export default function Navbar() {
         </div>
 
         {/* Mobile Header */}
-        <div className="flex lg:hidden items-center justify-between px-6 py-4 bg-white">
+        <div className="flex xl:hidden items-center justify-between px-6 py-4 bg-white">
           <Link href="/" className="font-bold">
             <Logo />
           </Link>

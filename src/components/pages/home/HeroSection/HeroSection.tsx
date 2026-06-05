@@ -7,15 +7,15 @@ import scribbleUnderline from "@/assets/herosection/hero-scribble.png";
 export default function HeroSection() {
   return (
     <section
-      className="relative w-full min-h-[550px] sm:min-h-[600px] md:min-h-[680px] lg:min-h-[760px] flex items-center bg-cover bg-no-repeat bg-top-center overflow-hidden  transition-all duration-700 poppins"
+      className="relative w-full min-h-[520px] sm:min-h-[600px] md:min-h-[680px] lg:min-h-[760px] flex items-center bg-cover bg-no-repeat bg-[position:62%_top] sm:bg-top overflow-hidden transition-all duration-700 poppins"
       style={{
         backgroundImage: `url(${heroImage.src})`,
       }}
     >
       {/* Soft gradient overlay to ensure text contrast on all devices */}
-      <div className="absolute inset-0  pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-white/30 sm:to-white/10 lg:from-white/95 lg:via-white/65 lg:to-transparent pointer-events-none" />
 
-      <div className="container mx-auto px-6 sm:px-8 lg:px-12 py-16 md:py-24 relative z-10">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-12 py-12 sm:py-16 md:py-24 relative z-10">
         <div className="max-w-7xl flex flex-col items-start text-left">
 
           {/* Badge: GMC Registered Doctors */}
@@ -26,14 +26,14 @@ export default function HeroSection() {
           </div>
 
           {/* Heading: Driver Medicals Made Simple */}
-          <h1 className="text-[#0F2E4A] font-extrabold text-4xl sm:text-5xl md:text-6xl lg:text-7xl tracking-tight leading-[1.1] mb-6">
+          <h1 className="text-[#0F2E4A] font-extrabold text-4xl sm:text-5xl md:text-6xl lg:text-7xl tracking-tight leading-[1.08] mb-6 max-w-[12ch] sm:max-w-none">
             Driver Medicals <br />
             <span className="font-light italic text-[#0F2E4A]">Made </span>
             <span className="relative inline-block text-[#00B2D6] font-semibold italic">
               Simple
               {/* Scribble Underline Illustration */}
-              <span className="absolute left-0 right-0 -bottom-7 h-10 pointer-events-none select-none">
-                <img 
+              <span className="absolute left-0 right-0 -bottom-5 sm:-bottom-7 h-8 sm:h-10 pointer-events-none select-none">
+                <img
                   src={scribbleUnderline.src}
                   alt="Scribble Underline"
                   className="w-full h-full object-contain"
@@ -43,20 +43,20 @@ export default function HeroSection() {
           </h1>
 
           {/* Subheading Description */}
-          <p className="text-[#55697A] text-base md:text-lg font-medium leading-relaxed max-w-xl mb-12">
+          <p className="text-[#55697A] text-sm sm:text-base md:text-lg font-medium leading-relaxed max-w-xl mb-8 sm:mb-12">
             Fast, DVLA-approved medicals for HGV, Taxi, Ambulance, Forklift & more.
             <br className="hidden sm:inline" />
             {" "}Same-day appointments available nationwide.
           </p>
 
           {/* Feature Badges Row */}
-          <div className="flex items-center gap-4 sm:gap-6 md:gap-8 w-full max-w-xl">
+          <div className="flex items-start gap-3 sm:gap-6 md:gap-8 w-full max-w-xl">
             {/* Same Day Appointments */}
             <div className="flex-1 flex flex-col items-center text-center">
               <div className="w-12 h-12 md:w-14 md:h-14 rounded-full border-2 border-[#00B2D6]/60 flex items-center justify-center text-[#00B2D6] bg-white shadow-sm hover:border-[#00B2D6] hover:scale-105 transition-all duration-300">
                 <CalendarCheck className="h-5 w-5 md:h-6 md:w-6" />
               </div>
-              <span className="text-[#0F2E4A] font-bold text-xs md:text-sm mt-3 leading-tight block">
+              <span className="text-[#0F2E4A] font-bold text-[11px] sm:text-xs md:text-sm mt-3 leading-tight block">
                 Same Day <br /> Appointments
               </span>
             </div>
@@ -69,7 +69,7 @@ export default function HeroSection() {
               <div className="w-12 h-12 md:w-14 md:h-14 rounded-full border-2 border-[#00B2D6]/60 flex items-center justify-center text-[#00B2D6] bg-white shadow-sm hover:border-[#00B2D6] hover:scale-105 transition-all duration-300">
                 <ShieldCheck className="h-5 w-5 md:h-6 md:w-6" />
               </div>
-              <span className="text-[#0F2E4A] font-bold text-xs md:text-sm mt-3 leading-tight block">
+              <span className="text-[#0F2E4A] font-bold text-[11px] sm:text-xs md:text-sm mt-3 leading-tight block">
                 DVLA <br /> Approved
               </span>
             </div>
@@ -82,7 +82,7 @@ export default function HeroSection() {
               <div className="w-12 h-12 md:w-14 md:h-14 rounded-full border-2 border-[#00B2D6]/60 flex items-center justify-center text-[#00B2D6] bg-white shadow-sm hover:border-[#00B2D6] hover:scale-105 transition-all duration-300">
                 <MapPin className="h-5 w-5 md:h-6 md:w-6" />
               </div>
-              <span className="text-[#0F2E4A] font-bold text-xs md:text-sm mt-3 leading-tight block">
+              <span className="text-[#0F2E4A] font-bold text-[11px] sm:text-xs md:text-sm mt-3 leading-tight block">
                 80+ <br /> Nationwide
               </span>
             </div>

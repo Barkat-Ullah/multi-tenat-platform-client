@@ -15,11 +15,11 @@ export default function NearestClinicSection() {
   );
 
   return (
-    <section className="py-20 md:py-28 bg-[#FCFDFE] poppins relative overflow-hidden">
-      <div className="container mx-auto px-6 sm:px-8 lg:px-12 relative z-10">
-        
+    <section className="py-14 sm:py-20 md:py-28 bg-[#FCFDFE] poppins relative overflow-hidden">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-12 relative z-10">
+
         {/* Header Block */}
-        <div className="text-center max-w-3xl mx-auto mb-16">
+        <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-16">
           <div className="flex items-center justify-center gap-4 mb-4">
             {/* Left Dot-Line Decorator */}
             <div className="flex items-center gap-0">
@@ -36,7 +36,7 @@ export default function NearestClinicSection() {
               <div className="h-1.5 w-1.5 rounded-full bg-[#00B2D6]" />
             </div>
           </div>
-          
+
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-[#0F2E4A] tracking-tight leading-tight">
             Find Your Nearest Clinic
           </h2>
@@ -46,8 +46,8 @@ export default function NearestClinicSection() {
         </div>
 
         {/* Search Input Bar (Refined Pill design with cyan outline glow) */}
-        <div className="relative max-w-xl mx-auto mb-16 shadow-[0_8px_30px_rgba(0,0,0,0.03)] border border-[#00B2D6]/20 focus-within:border-[#00B2D6]/40 rounded-full bg-white transition-all duration-300 h-14 sm:h-[60px] flex items-center">
-          <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-slate-400">
+        <div className="relative max-w-xl mx-auto mb-10 sm:mb-16 shadow-[0_8px_30px_rgba(0,0,0,0.03)] border border-[#00B2D6]/20 focus-within:border-[#00B2D6]/40 rounded-full bg-white transition-all duration-300 h-14 sm:h-[60px] flex items-center">
+          <div className="absolute inset-y-0 left-4 sm:left-5 flex items-center pointer-events-none text-slate-400">
             <Search className="h-5 w-5 text-black" />
           </div>
           <input
@@ -55,12 +55,12 @@ export default function NearestClinicSection() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Enter your city and postcode"
-            className="w-full pl-12 pr-6 h-full rounded-full text-[#0F2E4A] placeholder-slate-400 focus:outline-none font-semibold text-sm sm:text-base border-none bg-transparent"
+            className="w-full pl-11 sm:pl-12 pr-4 sm:pr-6 h-full rounded-full text-[#0F2E4A] placeholder-slate-400 focus:outline-none font-semibold text-sm sm:text-base border-none bg-transparent"
           />
         </div>
 
         {/* Clinics Grid Layout */}
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <motion.div
             layout
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
@@ -76,7 +76,7 @@ export default function NearestClinicSection() {
                   viewport={{ once: true }}
                   transition={{ duration: 0.3 }}
                   whileHover={{ y: -4, borderColor: "rgba(0, 178, 214, 0.25)", boxShadow: "0 10px 30px rgba(0, 178, 214, 0.04)" }}
-                  className="flex flex-col justify-between p-6 bg-white border border-[#00B2D6]/10 shadow-[0_4px_25px_rgba(0,0,0,0.02)] rounded-2xl transition-all duration-300 min-h-[140px]"
+                  className="flex flex-col justify-between p-5 sm:p-6 bg-white border border-[#00B2D6]/10 shadow-[0_4px_25px_rgba(0,0,0,0.02)] rounded-2xl transition-all duration-300 min-h-[140px]"
                 >
                   <div className="flex justify-between items-start">
                     <div className="min-w-0 pr-2">
@@ -89,7 +89,7 @@ export default function NearestClinicSection() {
                     </div>
                     <MapPin className="h-5 w-5 text-slate-400 flex-shrink-0" />
                   </div>
-                  
+
                   <div className="flex items-center gap-1.5 mt-4 text-[#00B2D6] font-bold text-xs sm:text-sm">
                     <Clock className="h-3.5 w-3.5" />
                     <span>Next available: {clinic.nextAvailable}</span>
@@ -107,7 +107,7 @@ export default function NearestClinicSection() {
               className="text-center py-12"
             >
               <MapPin className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-              <p className="text-slate-500 font-semibold text-lg">No clinics found for "{searchQuery}"</p>
+              <p className="text-slate-500 font-semibold text-lg">No clinics found for &quot;{searchQuery}&quot;</p>
               <p className="text-slate-400 text-sm mt-1">Try searching another UK city or postcode.</p>
             </motion.div>
           )}

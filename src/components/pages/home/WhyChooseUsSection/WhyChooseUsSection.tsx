@@ -28,11 +28,11 @@ export default function WhyChooseUsSection() {
     }
   };
   return (
-    <section className="py-20 md:py-28 bg-[#FCFDFE] poppins relative overflow-hidden">
-      <div className="container mx-auto px-6 sm:px-8 lg:px-12 relative z-10">
+    <section className="py-14 sm:py-20 md:py-28 bg-[#FCFDFE] poppins relative overflow-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 
         {/* Header Block */}
-        <div className="text-center max-w-3xl mx-auto mb-16 md:mb-24">
+        <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-16 md:mb-24">
           <div className="flex items-center justify-center gap-4 mb-4">
             {/* Left Dot-Line Decorator */}
             <div className="flex items-center gap-0">
@@ -59,7 +59,7 @@ export default function WhyChooseUsSection() {
         </div>
 
         {/* 3-Column Layout: Left Cards | Center Doctor with Background Rings | Right Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 items-center max-w-7xl mx-auto">
 
           {/* Left Column (Benefits) */}
           <div className="lg:col-span-4 flex flex-col gap-6 md:gap-8">
@@ -71,7 +71,7 @@ export default function WhyChooseUsSection() {
                 viewport={{ once: true, margin: "-100px" }}
                 transition={{ duration: 0.5, delay: idx * 0.15 }}
                 whileHover={{ y: -4, boxShadow: "0 10px 30px rgba(0, 178, 214, 0.05)" }}
-                className="flex items-start gap-4 px-5 py-4 bg-white border border-[#00B2D6]/10 shadow-[0_4px_25px_rgba(0,0,0,0.02)] rounded-2xl transition-all duration-300"
+                className="flex items-start gap-3 sm:gap-4 px-4 sm:px-5 py-4 bg-white border border-[#00B2D6]/10 shadow-[0_4px_25px_rgba(0,0,0,0.02)] rounded-2xl transition-all duration-300"
               >
                 <div className="w-12 h-12 rounded-full bg-[#EBFBFF] flex items-center justify-center text-[#00B2D6] flex-shrink-0">
                   {getIcon(feature.iconName)}
@@ -91,40 +91,40 @@ export default function WhyChooseUsSection() {
           {/* Middle Column (Doctor Card + Animated Concentric Rings + Decorative SVGs) */}
           <div className="lg:col-span-4 flex justify-center items-center relative py-12 lg:py-0">
 
-{/* Concentric Circle Background Animations */}
-<div className="absolute inset-0 flex items-center justify-center pointer-events-none -z-10">
-  {/* Concentric Circle Illustration Image */}
-  <motion.div
-    animate={{ rotate: 360 }}
-    transition={{ repeat: Infinity, duration: 80, ease: "linear" }}
-    className="absolute w-[400px] h-[400px] md:w-[540px] md:h-[540px] opacity-40"
-  >
-    <Image
-      src={whyChooseUsBg}
-      alt="Background illustration pattern"
-      fill
-      className="object-contain"
-      sizes="(max-width: 768px) 400px, 540px"
-    />
-  </motion.div>
+            {/* Concentric Circle Background Animations */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none -z-10">
+              {/* Concentric Circle Illustration Image */}
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 80, ease: "linear" }}
+                className="absolute w-[280px] h-[280px] sm:w-[400px] sm:h-[400px] md:w-[540px] md:h-[540px] opacity-40"
+              >
+                <Image
+                  src={whyChooseUsBg}
+                  alt="Background illustration pattern"
+                  fill
+                  className="object-contain"
+                  sizes="(max-width: 768px) 400px, 540px"
+                />
+              </motion.div>
 
-  {/* Inner Dashed Ring */}
-  <motion.div
-    animate={{ rotate: -360 }}
-    transition={{ repeat: Infinity, duration: 25, ease: "linear" }}
-    className="absolute w-[340px] h-[340px] md:w-[430px] md:h-[430px] border border-dashed border-[#00B2D6]/20 rounded-full"
-  />
+              {/* Inner Dashed Ring */}
+              <motion.div
+                animate={{ rotate: -360 }}
+                transition={{ repeat: Infinity, duration: 25, ease: "linear" }}
+                className="absolute w-[240px] h-[240px] sm:w-[340px] sm:h-[340px] md:w-[430px] md:h-[430px] border border-dashed border-[#00B2D6]/20 rounded-full"
+              />
 
-  {/* Middle Thin Solid Ring */}
-  <div className="absolute w-[400px] h-[400px] md:w-[500px] md:h-[500px] border border-solid border-[#00B2D6]/5 rounded-full" />
+              {/* Middle Thin Solid Ring */}
+              <div className="absolute w-[280px] h-[280px] sm:w-[400px] sm:h-[400px] md:w-[500px] md:h-[500px] border border-solid border-[#00B2D6]/5 rounded-full" />
 
-  {/* Outer Dashed Ring */}
-  <motion.div
-    animate={{ rotate: 360 }}
-    transition={{ repeat: Infinity, duration: 45, ease: "linear" }}
-    className="absolute w-[460px] h-[460px] md:w-[600px] md:h-[600px] border border-dashed border-[#00B2D6]/10 rounded-full"
-  />
-</div>
+              {/* Outer Dashed Ring */}
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 45, ease: "linear" }}
+                className="absolute w-[320px] h-[320px] sm:w-[460px] sm:h-[460px] md:w-[600px] md:h-[600px] border border-dashed border-[#00B2D6]/10 rounded-full"
+              />
+            </div>
 
             {/* Decorative Spiral Arrow: Top-Right */}
             <div className="absolute -top-10 -right-10 w-16 h-16 text-[#00B2D6]/80 hidden md:block select-none pointer-events-none">
@@ -196,7 +196,7 @@ export default function WhyChooseUsSection() {
                 viewport={{ once: true, margin: "-100px" }}
                 transition={{ duration: 0.5, delay: idx * 0.15 }}
                 whileHover={{ y: -4, boxShadow: "0 10px 30px rgba(0, 178, 214, 0.05)" }}
-                className="flex items-start gap-4 px-5 py-5 bg-white border border-[#00B2D6]/10 shadow-[0_4px_25px_rgba(0,0,0,0.02)] rounded-2xl transition-all duration-300"
+                className="flex items-start gap-3 sm:gap-4 px-4 sm:px-5 py-4 sm:py-5 bg-white border border-[#00B2D6]/10 shadow-[0_4px_25px_rgba(0,0,0,0.02)] rounded-2xl transition-all duration-300"
               >
                 <div className="w-12 h-12 rounded-full bg-[#EBFBFF] flex items-center justify-center text-[#00B2D6] flex-shrink-0">
                   {getIcon(feature.iconName)}

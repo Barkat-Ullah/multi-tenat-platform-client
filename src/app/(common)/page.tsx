@@ -2,7 +2,7 @@ import AboutUsSection from "@/components/pages/home/AboutUsSection/AboutUsSectio
 import AgenciesSection from "@/components/pages/home/AgenciesSection/AgenciesSection";
 import ContactUsSection from "@/components/pages/home/ContactUsSection/ContactUsSection";
 import FAQPage from "@/components/pages/home/FaqSection/Faq";
-import FinalCTASection from "@/components/pages/home/FinalCTASection/FinalCTASection";
+import BookingCTASection from "@/components/pages/home/BookingCTASection/BookingCTASection";
 import MedicalTypesSection from "@/components/pages/home/MedicalTypesSection/MedicalTypesSection";
 import ClinicSearchFilter from "@/components/pages/home/ClinicSearchFilter/ClinicSearchFilter";
 // import FocusCardsPage from "@/components/pages/home/FocusCard/FocusCard";
@@ -26,13 +26,13 @@ const HompPage = () => {
       <WhyChooseUsSection />
       <TestimonialsSection />
       <NearestClinicSection />
+      <BookingCTASection />
       {/* <SubscriptionManagement/> */}
-      <InvestorValueSection />
+      {/* <InvestorValueSection />
       <AgenciesSection />
-      <FinalCTASection />
       <AboutUsSection />
-      <ContactUsSection />
-      <FAQPage />
+      <ContactUsSection /> */}
+      {/* <FAQPage /> */}
     </div>
   );
 };

@@ -48,9 +48,9 @@ export default function ClinicSearchFilter() {
   };
 
   return (
-    <div className="relative z-20 max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-12 -mt-16 sm:-mt-20 md:-mt-24 poppins">
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-[0_15px_50px_rgba(0,0,0,0.06)] p-6 md:p-8 lg:p-10">
-        
+    <div className="relative z-20 max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 -mt-10 sm:-mt-16 md:-mt-24 poppins">
+      <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-100 shadow-[0_15px_50px_rgba(0,0,0,0.06)] p-4 sm:p-6 md:p-8 lg:p-10">
+
         {/* Title Block */}
         <div className="mb-6 md:mb-8">
           <h2 className="text-xl md:text-2xl lg:text-3xl font-extrabold text-[#0F2E4A] tracking-tight">
@@ -62,12 +62,12 @@ export default function ClinicSearchFilter() {
         </div>
 
         {/* Input & Action buttons Form */}
-        <form 
-          onSubmit={handleSearchSubmit} 
-          className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-6"
+        <form
+          onSubmit={handleSearchSubmit}
+          className="flex flex-col lg:flex-row lg:items-center gap-3 sm:gap-4 lg:gap-6"
         >
           {/* Input field */}
-          <div className="relative flex items-center flex-1 bg-white rounded-full border border-slate-200 focus-within:border-[#00B2D6] focus-within:shadow-[0_0_0_1px_#00B2D6] transition-all duration-300 px-5 py-3.5 md:py-4 group">
+          <div className="relative flex items-center flex-1 bg-white rounded-2xl sm:rounded-full border border-slate-200 focus-within:border-[#00B2D6] focus-within:shadow-[0_0_0_1px_#00B2D6] transition-all duration-300 px-4 sm:px-5 py-3.5 md:py-4 group">
             <Search className="h-5 w-5 text-slate-400 group-focus-within:text-[#00B2D6] transition-colors flex-shrink-0" />
             <input
               type="text"
@@ -81,7 +81,7 @@ export default function ClinicSearchFilter() {
           {/* Find Clinic Button */}
           <button
             type="submit"
-            className="rounded-full bg-[#00B2D6] hover:bg-[#0092B3] text-white font-bold px-8 py-3.5 md:py-4.5 transition-all duration-300 shadow-sm hover:shadow text-sm md:text-base flex-shrink-0 text-center"
+            className="w-full sm:w-auto rounded-full bg-[#00B2D6] hover:bg-[#0092B3] text-white font-bold px-8 py-3.5 md:py-4 transition-all duration-300 shadow-sm hover:shadow text-sm md:text-base flex-shrink-0 text-center"
           >
             Find Clinic
           </button>
@@ -105,7 +105,7 @@ export default function ClinicSearchFilter() {
             type="button"
             onClick={handleGetLocation}
             disabled={isLocating}
-            className="flex items-center gap-3 px-6 py-3 bg-[#E6F8FC] rounded-2xl hover:bg-[#D5F3FA] disabled:opacity-75 transition-all duration-300 cursor-pointer flex-shrink-0 text-left"
+            className="flex w-full sm:w-auto items-center justify-center sm:justify-start gap-3 px-5 sm:px-6 py-3 bg-[#E6F8FC] rounded-2xl hover:bg-[#D5F3FA] disabled:opacity-75 transition-all duration-300 cursor-pointer flex-shrink-0 text-left"
           >
             <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-[#00B2D6] flex-shrink-0 shadow-sm">
               {isLocating ? (

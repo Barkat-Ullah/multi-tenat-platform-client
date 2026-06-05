@@ -4,8 +4,8 @@ import { StarIcon, XIcon } from "@/components/ui/Icons";
 
 export const TopBar = () => {
   return (
-    <div className="w-full bg-[#E5F9FD] border-b border-[#D8F3F7] py-2 hidden lg:block">
-      <div className="max-w-[1440px] mx-auto flex items-center justify-between px-8">
+    <div className="w-full bg-[#E5F9FD] border-b border-[#D8F3F7] py-2 hidden xl:block">
+      <div className="container mx-auto flex items-center justify-between px-8">
         {/* Left: Phone */}
         <div className="flex items-center gap-2 text-[14px] font-medium text-[#0F2E4A]">
           <Phone size={14} className="text-[#0F2E4A]" />
