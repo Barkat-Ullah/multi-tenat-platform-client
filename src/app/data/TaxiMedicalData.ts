@@ -27,3 +27,32 @@ export const taxiMedicalHeroData: TaxiMedicalHeroData = {
   image: taxiHeroImage,
   imageAlt: "Black taxi cab for driver medicals",
 };
+
+export interface TaxiFeatureItem {
+  iconName: string;
+  title: string;
+  description: string;
+}
+
+export const taxiFeaturesData: TaxiFeatureItem[] = [
+  {
+    iconName: "Calendar",
+    title: "7 Day Week",
+    description: "Weekend and Evening Appointments available",
+  },
+  {
+    iconName: "ClipboardList",
+    title: "Simple & Fast",
+    description: "Easy online booking and quick medicals",
+  },
+  {
+    iconName: "CarFront",
+    title: "Accept by 100+ Councils",
+    description: "We meet local and national licensing requirements",
+  },
+  {
+    iconName: "Stethoscope",
+    title: "GMC Registered Doctors",
+    description: "Medicals carried out by fully qualified professionals",
+  },
+];
