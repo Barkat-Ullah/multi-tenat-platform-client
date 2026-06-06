@@ -57,7 +57,7 @@ export default function HgvBusIntroSection({ intro }: HgvBusIntroSectionProps) {
         <div className="flex justify-center lg:justify-end">
           <div className="relative w-full max-w-[560px]">
             {intro.backgroundIllustration && (
-              <div className="absolute -left-10 -top-10 h-[calc(100%+2.5rem)] w-[calc(100%+2.5rem)]">
+              <div className="absolute -left-20 -top-14 h-[calc(100%+2.5rem)] w-[calc(100%+2.5rem)]">
                 <Image
                   src={intro.backgroundIllustration}
                   alt={intro.backgroundIllustrationAlt || ""}

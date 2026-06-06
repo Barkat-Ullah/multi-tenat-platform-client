@@ -40,7 +40,7 @@ export default function TestimonialsSection() {
   const currentTestimonial = testimonialsData[currentIndex];
 
   return (
-    <section className="py-14 sm:py-20 md:py-28 bg-white poppins overflow-hidden">
+    <section className="py-14 sm:py-20 md:py-28 bg-[#FAFAFA] poppins overflow-hidden">
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 
         {/* Header Block */}
