@@ -58,7 +58,8 @@ export default function Navbar() {
     { href: "/hgv-bus-medicals", label: "HGV/Bus Medicals" },
     { href: "/taxi-medicals", label: "Taxi Medicals" },
     { href: "/other-medicals", label: "Other Medicals" },
-    { href: "/#business", label: "Business" },
+    { href: "/business", label: "Business" },
+
     { href: "/#occupational", label: "Occupational Health" },
     { href: "/#location", label: "Location" },
     { href: "/#faq", label: "FAQ's" },
