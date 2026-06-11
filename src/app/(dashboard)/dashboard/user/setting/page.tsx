@@ -13,6 +13,7 @@ import Image from "next/image";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { appAlert } from "@/utils/appAlert";
+import { getImageUrl } from "@/utils/getImageUrl";
 
 export default function Page() {
   const { data: profileResponse, isLoading } = useGetAgencyProfileDataQuery();
@@ -238,6 +239,11 @@ export default function Page() {
   const hasValue = (value: string | null | undefined) =>
     !!value && value.trim() !== "";
 
+  const getValidImageSrc = (value: string | null | undefined) => {
+    const trimmedValue = value?.trim();
+    return trimmedValue ? getImageUrl(trimmedValue) : null;
+  };
+
   const ProfileField = ({
     label,
     value,
@@ -254,6 +260,8 @@ export default function Page() {
     );
   };
   const user = profileData;
+  const profileAvatarSrc = getValidImageSrc(user.profile.avatar);
+  const previewImageSrc = getValidImageSrc(imagePreview);
 
   // console.log("Profile Data:", statData);
 
@@ -277,9 +285,9 @@ export default function Page() {
             <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-8">
               <div className="flex flex-col items-center text-center">
                 <div className="w-32 h-32 rounded-full bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center mb-4 overflow-hidden">
-                  {user.profile.avatar ? (
+                  {profileAvatarSrc ? (
                     <Image
-                      src={user?.profile?.avatar}
+                      src={profileAvatarSrc}
                       alt="Profile"
                       width={128}
                       height={128}
@@ -588,10 +596,10 @@ export default function Page() {
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
                 >
-                  {imagePreview ? (
+                  {previewImageSrc ? (
                     <div className="space-y-3">
                       <Image
-                        src={imagePreview}
+                        src={previewImageSrc}
                         alt="Preview"
                         width={80}
                         height={80}

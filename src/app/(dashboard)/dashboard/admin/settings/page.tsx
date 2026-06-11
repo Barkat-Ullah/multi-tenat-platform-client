@@ -12,6 +12,7 @@ import Image from "next/image";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { appAlert } from "@/utils/appAlert";
+import { getImageUrl } from "@/utils/getImageUrl";
 
 export default function Profile() {
   const { data: profileResponse, isLoading } = useGetProfileDataQuery();
@@ -212,6 +213,11 @@ export default function Profile() {
   const hasValue = (value: string | null | undefined) =>
     !!value && value.trim() !== "";
 
+  const getValidImageSrc = (value: string | null | undefined) => {
+    const trimmedValue = value?.trim();
+    return trimmedValue ? getImageUrl(trimmedValue) : null;
+  };
+
   const ProfileField = ({
     label,
     value,
@@ -231,6 +237,8 @@ export default function Profile() {
   if (isLoading) return <Spinner />;
 
   const user = profileData;
+  const profileAvatarSrc = getValidImageSrc(user.profile.avatar);
+  const previewImageSrc = getValidImageSrc(imagePreview);
 
   return (
     <div className="min-h-screen bg-gray-50/30">
@@ -243,9 +251,9 @@ export default function Profile() {
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8">
               <div className="flex flex-col items-center text-center">
                 <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 ring-4 ring-white shadow flex items-center justify-center mb-6 overflow-hidden">
-                  {user.profile.avatar ? (
+                  {profileAvatarSrc ? (
                     <Image
-                      src={user?.profile?.avatar}
+                      src={profileAvatarSrc}
                       alt="Profile"
                       width={128}
                       height={128}
@@ -493,10 +501,10 @@ export default function Profile() {
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
                 >
-                  {imagePreview ? (
+                  {previewImageSrc ? (
                     <div className="space-y-3">
                       <Image
-                        src={imagePreview}
+                        src={previewImageSrc}
                         alt="Preview"
                         width={80}
                         height={80}
