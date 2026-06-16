@@ -1,6 +1,8 @@
-import { businessHeroData, onSiteRequirementsData } from "@/app/data/BusinessData";
+import { businessHeroData, onSiteRequirementsData, consentCertificatesData, whyOnSiteData } from "@/app/data/BusinessData";
 import BusinessHeroSection from "@/components/pages/landing/business/BusinessHeroSection";
 import OnSiteRequirementsSection from "@/components/pages/landing/business/OnSiteRequirementsSection";
+import ConsentCertificatesSection from "@/components/pages/landing/business/ConsentCertificatesSection";
+import WhyOnSiteSection from "@/components/pages/landing/business/WhyOnSiteSection";
 import BookingCTASection from "@/components/pages/home/BookingCTASection/BookingCTASection";
 import type { Metadata } from "next";
 
@@ -18,10 +20,17 @@ export default function BusinessPage() {
 
       {/* On-Site Medical Requirements Section */}
       <OnSiteRequirementsSection data={onSiteRequirementsData} />
+
+      {/* Consent & Certificates Section */}
+      <ConsentCertificatesSection data={consentCertificatesData} />
       
+      {/* Why On-Site Section */}
+      <WhyOnSiteSection data={whyOnSiteData} />
+
       {/* Booking CTA Section at the bottom */}
       <BookingCTASection />
     </main>
   );
 }
+
 

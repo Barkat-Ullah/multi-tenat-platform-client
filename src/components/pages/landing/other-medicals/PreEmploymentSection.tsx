@@ -64,7 +64,7 @@ export default function PreEmploymentSection({ data }: PreEmploymentSectionProps
                           d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                         />
                       </svg>
-                      <span className="text-[13px] sm:text-[14px] text-slate-500 font-semibold leading-relaxed font-medium">
+                      <span className="text-[13px] sm:text-[14px] text-slate-500 leading-relaxed font-medium">
                         {item}
                       </span>
                     </li>

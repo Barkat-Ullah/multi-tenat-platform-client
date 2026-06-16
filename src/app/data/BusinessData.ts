@@ -3,6 +3,10 @@ import hgvBusHeroImage from "@/assets/home/hgv-buses.png";
 import hgvBusImage from "@/assets/home/hgv-bus-2.png";
 import hgvMedicalBusImage from "@/assets/home/hgv-buses-2.png";
 import medicalRecordsDoctor from "@/assets/home/medical.png";
+import hvgBusinessImage from "@/assets/home/certificate.png";
+import preEmploymentImage from "@/assets/home/pre-employment.png";
+import medicalBusIllustration from "@/assets/home/medical-bus-illustration.png";
+
 
 export interface BreadcrumbItem {
   label: string;
@@ -98,4 +102,62 @@ export const onSiteRequirementsData: OnSiteRequirementsData = {
     },
   ],
 };
+
+export interface ConsentCertificatesData {
+  title: string;
+  paragraphOne: string;
+  paragraphTwo: string;
+  image: StaticImageData;
+  imageAlt: string;
+  backgroundIllustrationAlt: string;
+}
+
+export const consentCertificatesData: ConsentCertificatesData = {
+  title: "Consent & Certificates",
+  paragraphOne:
+    "We can provide a fitness certificate for your company to keep on file for specific kinds of appointments. Documented consent from the candidate is required if you need a certificate or detailed information regarding assessment results, such as the reasons why a candidate might not achieve the essential criteria.",
+  paragraphTwo:
+    "Prior to the on-site visit, the company is responsible for obtaining this consent and informing the attending physician of any candidates who have not given their consent. We will give you a link to an online consent form to help in this procedure, which you can distribute to each candidate.",
+  image: hvgBusinessImage,
+  imageAlt: "Certificate of Medical Fitness sample sheet from Compliance Medicals",
+  backgroundIllustrationAlt: "Decorative sketch frame",
+};
+
+export interface WhyOnSiteItem {
+  label: string;
+  text: string;
+}
+
+export interface WhyOnSiteData {
+  title: string;
+  items: WhyOnSiteItem[];
+  image: StaticImageData;
+  imageAlt: string;
+  backgroundIllustration: StaticImageData;
+  backgroundIllustrationAlt: string;
+}
+
+export const whyOnSiteData: WhyOnSiteData = {
+  title: "Why reserve a clinic on-site?",
+  items: [
+    {
+      label: "Cost-effective",
+      text: "Because you can schedule several drivers at once rather than one at a time, our on-site clinics are more affordable.",
+    },
+    {
+      label: "Convenient",
+      text: "We offer start hours from 5 a.m. to 11 p.m., so your drivers may be evaluated with minimum disturbance to work schedules.",
+    },
+    {
+      label: "Effective",
+      text: "Depending on the medical examination you have scheduled, 16 drivers can be assessed in a half-day clinic and 32 on a full day.",
+    },
+  ],
+  image: preEmploymentImage,
+  imageAlt: "Two construction managers in safety vests and hard hats holding a chart report",
+  backgroundIllustration: medicalBusIllustration,
+  backgroundIllustrationAlt: "Decorative sketch frame",
+};
+
+
 
