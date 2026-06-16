@@ -93,7 +93,7 @@ export const occupationalServicesData: OccupationalServicesData = {
     bookNowLabel: "Book Now",
     bookNowHref: "/booking?type=occupational",
     clinicFinderLabel: "Clinic Location Finder",
-    clinicFinderHref: "/#location",
+    clinicFinderHref: "/locations",
   },
 };
 

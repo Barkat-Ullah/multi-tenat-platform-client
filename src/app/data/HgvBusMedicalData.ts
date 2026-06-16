@@ -61,7 +61,7 @@ export const hgvBusMedicalIntroData: HgvBusMedicalIntroData = {
   ],
   actions: [
     { label: "Book Online", href: "/booking?type=hgv-bus", variant: "solid" },
-    { label: "Clinic Location", href: "/#location", variant: "outline" },
+    { label: "Clinic Location", href: "/locations", variant: "outline" },
   ],
   image: hgvMedicalBusImage,
   imageAlt: "HGV vehicle for local medical facility",
@@ -112,7 +112,7 @@ export const hgvBusServicesData: HgvBusServicesData = {
     bookTodayLabel: "Book in Today",
     bookTodayHref: "/booking?type=hgv-bus",
     visitClinicsLabel: "Visit one of our 40+ clinics",
-    visitClinicsHref: "/#location",
+    visitClinicsHref: "/locations",
   },
 };
 

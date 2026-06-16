@@ -61,7 +61,7 @@ export default function Navbar() {
     { href: "/business", label: "Business" },
 
     { href: "/occupational-health", label: "Occupational Health" },
-    { href: "/#location", label: "Location" },
+    { href: "/locations", label: "Locations" },
     { href: "/#faq", label: "FAQ's" },
   ];
 
