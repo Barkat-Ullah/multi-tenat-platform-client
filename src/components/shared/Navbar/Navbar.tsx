@@ -62,7 +62,7 @@ export default function Navbar() {
 
     { href: "/occupational-health", label: "Occupational Health" },
     { href: "/locations", label: "Locations" },
-    { href: "/#faq", label: "FAQ's" },
+    { href: "/faq", label: "FAQ's" },
   ];
 
   const isActive = (href: string) => pathname === href;

@@ -13,7 +13,7 @@ const quickLinksOne = [
 const quickLinksTwo = [
   { name: "Occupational Health", href: "/occupational-health" },
   { name: "Locations", href: "/locations" },
-  { name: "FAQ's", href: "/#faq" },
+  { name: "FAQ's", href: "/faq" },
 ];
 
 const FooterLink = ({ href, name }: { href: string; name: string }) => (
