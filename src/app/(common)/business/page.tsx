@@ -1,5 +1,6 @@
-import { businessHeroData } from "@/app/data/BusinessData";
+import { businessHeroData, onSiteRequirementsData } from "@/app/data/BusinessData";
 import BusinessHeroSection from "@/components/pages/landing/business/BusinessHeroSection";
+import OnSiteRequirementsSection from "@/components/pages/landing/business/OnSiteRequirementsSection";
 import BookingCTASection from "@/components/pages/home/BookingCTASection/BookingCTASection";
 import type { Metadata } from "next";
 
@@ -14,9 +15,13 @@ export default function BusinessPage() {
     <main className="bg-white">
       {/* Hero Section */}
       <BusinessHeroSection hero={businessHeroData} />
+
+      {/* On-Site Medical Requirements Section */}
+      <OnSiteRequirementsSection data={onSiteRequirementsData} />
       
       {/* Booking CTA Section at the bottom */}
       <BookingCTASection />
     </main>
   );
 }
+
