@@ -38,9 +38,11 @@ export default function WhyOnSiteSection({ data }: WhyOnSiteSectionProps) {
                   src={data.image}
                   alt={data.imageAlt}
                   fill
+                  quality={100}
                   className="object-cover object-center animate-fade-in"
                   sizes="(max-width: 1024px) 100vw, 500px"
                   priority
+                  unoptimized
                 />
               </div>
 
