@@ -60,7 +60,7 @@ export default function Navbar() {
     { href: "/other-medicals", label: "Other Medicals" },
     { href: "/business", label: "Business" },
 
-    { href: "/#occupational", label: "Occupational Health" },
+    { href: "/occupational-health", label: "Occupational Health" },
     { href: "/#location", label: "Location" },
     { href: "/#faq", label: "FAQ's" },
   ];

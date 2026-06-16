@@ -11,7 +11,7 @@ const quickLinksOne = [
 
 
 const quickLinksTwo = [
-  { name: "Occupational Health", href: "/#occupational" },
+  { name: "Occupational Health", href: "/occupational-health" },
   { name: "Location", href: "/#location" },
   { name: "FAQ's", href: "/#faq" },
 ];
