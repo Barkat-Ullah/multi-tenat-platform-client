@@ -3,13 +3,15 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import faqHeroImage from "@/assets/home/faq-hero-img.png"
+
 export default function FaqHeroSection() {
   return (
     <section className="relative overflow-hidden bg-white poppins">
       {/* Background Image Container */}
       <div className="absolute inset-0 z-0">
         <Image
-          src="https://images.unsplash.com/photo-1584697964400-2af6a2f6204c?auto=format&fit=crop&w=1600&h=800&q=80"
+          src={faqHeroImage}
           alt="FAQ Wooden Blocks Background"
           fill
           priority
@@ -18,8 +20,6 @@ export default function FaqHeroSection() {
           className="object-cover object-right md:object-center"
           sizes="100vw"
         />
-        {/* Soft overlay gradient to ensure text readability on the left */}
-        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/80 to-transparent z-10" />
       </div>
 
       {/* Hero Content Container */}
