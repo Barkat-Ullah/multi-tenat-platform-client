@@ -9,7 +9,7 @@ import type { MenuProps } from "antd";
 import { Drawer, Dropdown, Typography } from "antd";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, type MouseEvent } from "react";
 import { IoClose, IoMenu } from "react-icons/io5";
 import { useSelector, useDispatch } from "react-redux";
 import type { RootState } from "@/redux/store";
@@ -21,6 +21,8 @@ import { Logo } from "@/components/ui/Logo";
 import { TopBar } from "@/components/layout/TopBar";
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
+import { toast } from "sonner";
+import { isPreviewMode } from "@/utils/previewMode";
 
 const { Text } = Typography;
 
@@ -42,7 +44,7 @@ export default function Navbar() {
     Cookies.remove("refreshToken");
   };
   
-  const isAuthenticated = !!accessToken && !!user;
+  const isAuthenticated = !isPreviewMode && !!accessToken && !!user;
   
   // 👤 Get full profile data for avatar and name
   const { data: profileResponse } = useGetProfileDataQuery(undefined, { skip: !isAuthenticated });
@@ -64,8 +66,19 @@ export default function Navbar() {
     { href: "/locations", label: "Locations" },
     { href: "/faq", label: "FAQ's" },
   ];
+  const visibleNavLinks = isPreviewMode
+    ? navLinks.slice(0, 3)
+    : navLinks;
 
   const isActive = (href: string) => pathname === href;
+
+  const handlePreviewAuthClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (!isPreviewMode) return;
+
+    event.preventDefault();
+    setOpen(false);
+    toast.info("Login is disabled in preview mode.");
+  };
 
   // ===== Profile Dropdown Menu =====
   const avatarMenuItems: MenuProps["items"] = [
@@ -167,7 +180,7 @@ export default function Navbar() {
         {/* Main Nav */}
         <nav className="px-4 py-6">
           <div className="flex flex-col gap-1">
-            {navLinks.map((link) => (
+            {visibleNavLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -228,7 +241,10 @@ export default function Navbar() {
                 <Link
                   href="/login"
                   className="w-full inline-flex items-center justify-between rounded-full bg-[#00B2D6] pl-6 pr-1.5 py-1.5 font-sans font-bold text-white hover:bg-[#0092B3]"
-                  onClick={() => setOpen(false)}
+                  onClick={(event) => {
+                    handlePreviewAuthClick(event);
+                    if (!isPreviewMode) setOpen(false);
+                  }}
                 >
                   <span className="text-sm font-semibold tracking-wide">Log In</span>
                   <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[#00B2D6]">
@@ -272,7 +288,7 @@ export default function Navbar() {
 
           {/* Nav Links */}
           <div className="flex items-center gap-6 xl:gap-8">
-            {navLinks.map((link) => (
+            {visibleNavLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -320,6 +336,7 @@ export default function Navbar() {
               <Link
                 href="/login"
                 className="inline-flex items-center justify-between rounded-full bg-[#00B2D6] pl-6 pr-1.5 py-1.5 font-sans font-bold text-white transition-all duration-300 hover:bg-[#0092B3] group"
+                onClick={handlePreviewAuthClick}
               >
                 <span className="text-sm font-semibold tracking-wide mr-4">Log In</span>
                 <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[#00B2D6] group-hover:translate-x-0.5 transition-transform">

@@ -4,6 +4,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { jwtDecode } from "jwt-decode";
 import { normalizeRole } from "@/utils/roles";
+import { isPreviewMode } from "@/utils/previewMode";
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get("accessToken")?.value;
@@ -11,6 +12,14 @@ export function middleware(request: NextRequest) {
 
   const authPages = ["/login", "/register", "/forget-password", "/otp", "/reset-password"];
   const isAuthPage = authPages.some((page) => path.startsWith(page));
+  const isPublicAsset = /\.[^/]+$/.test(path);
+  const isNextInternalPath = path.startsWith("/_next/");
+  const previewAllowedPages = ["/", "/hgv-bus-medicals", "/taxi-medicals"];
+  const isPreviewAllowedPage = previewAllowedPages.some((page) => path === page);
+
+  if (isPreviewMode && !isPreviewAllowedPage && !isPublicAsset && !isNextInternalPath) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
 
   const protectedRoutes = ["/dashboard"];
   const isProtectedRoute = protectedRoutes.some((route) => path.startsWith(route));

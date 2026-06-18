@@ -2,8 +2,9 @@
 "use client";
 import Image from "next/image";
 import React, { useState } from "react";
-import bg from "@/assets/auth/Secure login-amico 1.png";
+import logoImg from "@/assets/logo/logo.png";
 import Link from "next/link";
+import { Mail, Lock, Eye, EyeOff, ChevronDown } from "lucide-react";
 import { useLoginUserMutation } from "@/redux/service/auth/authApi";
 import { useDispatch } from "react-redux";
 import { useRouter } from "next/navigation";
@@ -137,208 +138,199 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="container min-h-[90vh] flex items-center justify-center py-10">
-        <div className="flex flex-col md:flex-row items-center gap-12 max-w-7xl w-full p-8">
-          {/* Left Side - Illustration */}
-          <div className="md:w-1/2 flex items-center justify-center">
-            <Link href="/" className="w-full max-w-md">
+    <div className="min-h-screen bg-[#F4F5F6] flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 font-sans select-none">
+      <div className="w-full max-w-[480px]">
+        {/* Main Login Card */}
+        <div className="bg-white rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-slate-100 p-8 sm:p-10 md:p-12">
+          
+          {/* Logo Center */}
+          <div className="flex justify-center mb-6">
+            <Link href="/" className="transition-opacity hover:opacity-95">
               <Image
-                width={600}
-                height={400}
-                src={bg}
-                alt="Login illustration"
-                className=""
+                src={logoImg}
+                alt="Compliance Medicals Logo"
+                width={280}
+                height={60}
+                priority
+                className="h-12 w-auto object-contain"
               />
             </Link>
           </div>
 
-          {/* Right Side - Login Form */}
-          <div className="md:w-1/2">
-            <div className="text-center mb-8">
-              <h1 className="text-2xl font-bold text-gray-800">Login Now</h1>
-            </div>
+          {/* Horizontal separator line */}
+          <div className="border-t border-slate-100 my-6" />
 
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold mb-6">Sign in to your account</h2>
+          {/* Title */}
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0F2E4A] tracking-tight mb-8 text-center">
+            Welcome Back
+          </h1>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <label
-                    htmlFor="email"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="jane.doe@gmail.com"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="password"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      id="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="••••••••••••"
-                      required
-                    />
-                    <button
-                      type="button"
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      aria-label={showPassword ? "Hide password" : "Show password"}
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? (
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-5 w-5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.956 9.956 0 012.307-3.503M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M3 3l18 18"
-                          />
-                        </svg>
-                      ) : (
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-5 w-5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                          />
-                        </svg>
-                      )}
-                    </button>
-                  </div>
-
-                  <div className="mt-1 text-right">
-                    <Link href="/forget-password" className="text-sm text-blue-600 hover:text-blue-800">
-                      Forgot your password?
-                    </Link>
-                  </div>
-                </div>
-
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="remember"
-                    className="h-4 w-4 text-blue-600 focus:ring-2 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <label htmlFor="remember" className="ml-2 block text-sm text-gray-700">
-                    Remember me
-                  </label>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full bg-[#004E60] hover:bg-[#003d4d] text-white font-medium py-2 px-4 rounded-md transition-colors duration-200"
-                >
-                  {isLoading ? "Logging in..." : "Log In"}
-                </button>
-
-
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { role: "Admin", email: "admin@example.com" },
-                    { role: "User", email: "agent@gmail.com" },
-                    { role: "Clinic", email: "clinic@example.com" },
-                    { role: "Organizer", email: "organizer@example.com" },
-                  ].map((guest) => (
-                    <button
-                      key={guest.role}
-                      type="button"
-                      onClick={async () => {
-                        const guestEmail = guest.email;
-                        const guestPassword = "123456";
-                        setEmail(guestEmail);
-                        setPassword(guestPassword);
-
-                        if (guest.role === "Clinic" || guest.role === "Organizer") {
-                          const mappedRole = guest.role === "Clinic" ? "CLINIC" : "ORGINIZER";
-                          handleBackendlessLogin(mappedRole, guestEmail);
-                          return;
-                        }
-
-                        try {
-                          const payload = { email: guestEmail, password: guestPassword };
-                          const res = await login(payload).unwrap();
-                          if (res?.success) {
-                            const { accessToken, refreshToken } = res.data;
-                            let decodedUser: UserType | null = null;
-                            decodedUser = jwtDecode<UserType>(accessToken);
-                            decodedUser = {
-                              ...decodedUser,
-                              role: normalizeRole(decodedUser.role),
-                            };
-                            dispatch(setUser({ user: decodedUser, accessToken, refreshToken }));
-                            const accessTokenExpiry = new Date(decodedUser.exp * 1000);
-                            const refreshTokenExpiry = new Date();
-                            refreshTokenExpiry.setDate(refreshTokenExpiry.getDate() + 30);
-                            Cookies.set("accessToken", accessToken, { expires: accessTokenExpiry, path: "/" });
-                            Cookies.set("refreshToken", refreshToken, { expires: refreshTokenExpiry, path: "/" });
-                            router.push(getDashboardPathByRole(decodedUser.role));
-                            toast.success(`Logged in as ${guest.role}`);
-                          }
-                        } catch {
-                          toast.error(`${guest.role} login failed.`);
-                        }
-                      }}
-                      className="flex flex-col items-center justify-center p-2 border border-gray-200 rounded-md hover:border-[#004E60] hover:bg-gray-50 transition-all duration-200 group"
-                    >
-                      <span className="text-xs font-semibold text-gray-500 group-hover:text-[#004E60]">Login as</span>
-                      <span className="text-sm font-bold text-[#004E60]">{guest.role}</span>
-                    </button>
-                  ))}
-                </div>
-              </form>
-
-              <div className="mt-6 text-center text-sm text-gray-600">
-                Don&apos;t have an account?{" "}
-                <Link href="/register" className="text-green-600 hover:text-green-800 font-medium">
-                  Register Now
-                </Link>
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Email Field */}
+            <div>
+              <label
+                htmlFor="email"
+                className="block text-xs font-bold text-[#55697A] uppercase tracking-wider mb-2"
+              >
+                Enter your email
+              </label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                  <Mail className="h-5 w-5" />
+                </span>
+                <input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3.5 border border-slate-200 rounded-2xl focus:outline-none focus:border-[#00B2D6] focus:ring-1 focus:ring-[#00B2D6] transition-all text-sm font-semibold text-[#0F2E4A] placeholder-slate-400"
+                  placeholder="Enter your email"
+                  required
+                />
               </div>
             </div>
+
+            {/* Password Field */}
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-xs font-bold text-[#55697A] uppercase tracking-wider mb-2"
+              >
+                Password
+              </label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                  <Lock className="h-5 w-5" />
+                </span>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-12 pr-12 py-3.5 border border-slate-200 rounded-2xl focus:outline-none focus:border-[#00B2D6] focus:ring-1 focus:ring-[#00B2D6] transition-all text-sm font-semibold text-[#0F2E4A] placeholder-slate-400"
+                  placeholder="Enter Password"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Remember Me & Forgot Password Row */}
+            <div className="flex items-center justify-between text-xs sm:text-sm">
+              <label className="flex items-center gap-2 cursor-pointer select-none text-xs sm:text-sm font-bold text-[#55697A]">
+                <input
+                  type="checkbox"
+                  id="remember"
+                  className="w-4 h-4 rounded-full border border-slate-300 text-[#00B2D6] focus:ring-[#00B2D6] focus:ring-offset-0 transition-all cursor-pointer accent-[#00B2D6]"
+                />
+                <span>Remember Me</span>
+              </label>
+              <Link
+                href="/forget-password"
+                className="text-[#00B2D6] hover:underline font-bold transition-all text-xs sm:text-sm"
+              >
+                Forgot Password?
+              </Link>
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-[#00B2D6] hover:bg-[#0092B0] text-white font-bold py-3.5 px-6 rounded-full transition-all text-base shadow-sm hover:shadow-md active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
+            >
+              {isLoading ? "Logging in..." : "Login"}
+            </button>
+          </form>
+
+          {/* Bottom Register Prompt */}
+          <div className="mt-8 text-center text-xs sm:text-sm font-bold text-[#55697A]">
+            Don&apos;t have an account?{" "}
+            <Link
+              href="/register"
+              className="text-[#00B2D6] hover:underline font-bold transition-all ml-1"
+            >
+              Sign Up
+            </Link>
           </div>
+        </div>
+
+        {/* Collapsible Guest Account Helper (Dev Mode only) */}
+        <div className="mt-6 w-full">
+          <details className="group bg-white/60 backdrop-blur-sm border border-slate-200/60 rounded-2xl overflow-hidden transition-all duration-300 shadow-sm">
+            <summary className="flex items-center justify-between px-5 py-3 text-xs font-bold text-slate-500 cursor-pointer hover:bg-slate-50/50 list-none select-none">
+              <span className="flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#00B2D6] animate-pulse" />
+                Quick Logins (Development / QA)
+              </span>
+              <ChevronDown className="h-4 w-4 text-slate-400 transform transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="p-4 border-t border-slate-100 bg-white grid grid-cols-2 gap-2.5">
+              {[
+                { role: "Admin", email: "admin@example.com" },
+                { role: "User", email: "agent@gmail.com" },
+                { role: "Clinic", email: "clinic@example.com" },
+                { role: "Organizer", email: "organizer@example.com" },
+              ].map((guest) => (
+                <button
+                  key={guest.role}
+                  type="button"
+                  onClick={async () => {
+                    const guestEmail = guest.email;
+                    const guestPassword = "123456";
+                    setEmail(guestEmail);
+                    setPassword(guestPassword);
+
+                    if (guest.role === "Clinic" || guest.role === "Organizer") {
+                      const mappedRole = guest.role === "Clinic" ? "CLINIC" : "ORGINIZER";
+                      handleBackendlessLogin(mappedRole, guestEmail);
+                      return;
+                    }
+
+                    try {
+                      const payload = { email: guestEmail, password: guestPassword };
+                      const res = await login(payload).unwrap();
+                      if (res?.success) {
+                        const { accessToken, refreshToken } = res.data;
+                        let decodedUser: UserType | null = null;
+                        decodedUser = jwtDecode<UserType>(accessToken);
+                        decodedUser = {
+                          ...decodedUser,
+                          role: normalizeRole(decodedUser.role),
+                        };
+                        dispatch(setUser({ user: decodedUser, accessToken, refreshToken }));
+                        const accessTokenExpiry = new Date(decodedUser.exp * 1000);
+                        const refreshTokenExpiry = new Date();
+                        refreshTokenExpiry.setDate(refreshTokenExpiry.getDate() + 30);
+                        Cookies.set("accessToken", accessToken, { expires: accessTokenExpiry, path: "/" });
+                        Cookies.set("refreshToken", refreshToken, { expires: refreshTokenExpiry, path: "/" });
+                        router.push(getDashboardPathByRole(decodedUser.role));
+                        toast.success(`Logged in as ${guest.role}`);
+                      }
+                    } catch {
+                      toast.error(`${guest.role} login failed.`);
+                    }
+                  }}
+                  className="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-xl hover:border-[#00B2D6] hover:bg-slate-50 transition-all duration-200 group text-center"
+                >
+                  <span className="text-[10px] font-bold text-slate-400 group-hover:text-[#00B2D6] uppercase tracking-wider">Login as</span>
+                  <span className="text-xs font-bold text-[#0F2E4A] group-hover:text-[#00B2D6]">{guest.role}</span>
+                </button>
+              ))}
+            </div>
+          </details>
         </div>
       </div>
     </div>

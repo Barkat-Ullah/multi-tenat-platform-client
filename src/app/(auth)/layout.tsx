@@ -4,8 +4,8 @@ import { ReactNode } from "react";
 
 const layout = ({ children }: { children: ReactNode }) => {
   return (
-    <div className="h-screen overflow-hidden">
-      <div className="h-[90vh] overflow-y-auto">{children}</div>
+    <div className="min-h-screen bg-[#F4F5F6] flex flex-col justify-center">
+      {children}
     </div>
   );
 };
