@@ -12,12 +12,8 @@ export function middleware(request: NextRequest) {
 
   const authPages = ["/login", "/register", "/forget-password", "/otp", "/reset-password"];
   const isAuthPage = authPages.some((page) => path.startsWith(page));
-  const isPublicAsset = /\.[^/]+$/.test(path);
-  const isNextInternalPath = path.startsWith("/_next/");
-  const previewAllowedPages = ["/", "/hgv-bus-medicals", "/taxi-medicals"];
-  const isPreviewAllowedPage = previewAllowedPages.some((page) => path === page);
 
-  if (isPreviewMode && !isPreviewAllowedPage && !isPublicAsset && !isNextInternalPath) {
+  if (isPreviewMode && isAuthPage) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 

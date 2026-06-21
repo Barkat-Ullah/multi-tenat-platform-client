@@ -66,10 +66,6 @@ export default function Navbar() {
     { href: "/locations", label: "Locations" },
     { href: "/faq", label: "FAQ's" },
   ];
-  const visibleNavLinks = isPreviewMode
-    ? navLinks.slice(0, 3)
-    : navLinks;
-
   const isActive = (href: string) => pathname === href;
 
   const handlePreviewAuthClick = (event: MouseEvent<HTMLAnchorElement>) => {
@@ -122,12 +118,12 @@ export default function Navbar() {
       const currentScroll = window.scrollY;
       const isDesktop = window.innerWidth >= 1280;
       
-      const stickyThreshold = isDesktop ? 38 : 5;
+      const stickyThreshold = isDesktop ? 60 : 5;
       setIsSticky(currentScroll > stickyThreshold);
       
       if (navbarRef.current) {
         if (isDesktop) {
-          const translateY = Math.min(currentScroll, 38);
+          const translateY = Math.min(currentScroll, 60);
           navbarRef.current.style.transform = `translateY(-${translateY}px)`;
         } else {
           navbarRef.current.style.transform = "translateY(0px)";
@@ -180,7 +176,7 @@ export default function Navbar() {
         {/* Main Nav */}
         <nav className="px-4 py-6">
           <div className="flex flex-col gap-1">
-            {visibleNavLinks.map((link) => (
+            {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -240,14 +236,24 @@ export default function Navbar() {
               <div className="flex flex-col gap-2">
                 <Link
                   href="/login"
-                  className="w-full inline-flex items-center justify-between rounded-full bg-[#00B2D6] pl-6 pr-1.5 py-1.5 font-sans font-bold text-white hover:bg-[#0092B3]"
+                  className="w-full inline-flex items-center justify-between rounded-full border border-[#00B2D6] bg-white pl-5 pr-1.5 py-1.5 font-sans font-bold text-[#00B2D6] transition-all duration-300 hover:bg-[#E6FAFF] group"
                   onClick={(event) => {
                     handlePreviewAuthClick(event);
                     if (!isPreviewMode) setOpen(false);
                   }}
                 >
-                  <span className="text-sm font-semibold tracking-wide">Log In</span>
-                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[#00B2D6]">
+                  <span className="text-sm font-semibold tracking-wide">Login</span>
+                  <div className="w-8 h-8 rounded-full bg-[#00B2D6] flex items-center justify-center text-white group-hover:translate-x-0.5 transition-transform">
+                    <ArrowRight size={16} strokeWidth={2.5} />
+                  </div>
+                </Link>
+                <Link
+                  href="/locations"
+                  className="w-full inline-flex items-center justify-between rounded-full bg-[#00B2D6] pl-5 pr-1.5 py-1.5 font-sans font-bold text-white transition-all duration-300 hover:bg-[#0092B3] group"
+                  onClick={() => setOpen(false)}
+                >
+                  <span className="text-sm font-semibold tracking-wide">Book Online</span>
+                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[#00B2D6] group-hover:translate-x-0.5 transition-transform">
                     <ArrowRight size={16} strokeWidth={2.5} />
                   </div>
                 </Link>
@@ -262,7 +268,7 @@ export default function Navbar() {
   return (
     <div className="w-full">
       {/* Placeholder to reserve space in document flow and prevent layout shift */}
-      <div className="h-[73px] xl:h-[111px]" />
+      <div className="h-[73px] xl:h-[133px]" />
 
       {/* Fixed Container wrapping both TopBar and Main Navbar */}
       <div
@@ -288,7 +294,7 @@ export default function Navbar() {
 
           {/* Nav Links */}
           <div className="flex items-center gap-6 xl:gap-8">
-            {visibleNavLinks.map((link) => (
+            {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -332,17 +338,28 @@ export default function Navbar() {
                 </Dropdown>
               </>
             ) : (
-              // Guest: Log In Pill Button
-              <Link
-                href="/login"
-                className="inline-flex items-center justify-between rounded-full bg-[#00B2D6] pl-6 pr-1.5 py-1.5 font-sans font-bold text-white transition-all duration-300 hover:bg-[#0092B3] group"
-                onClick={handlePreviewAuthClick}
-              >
-                <span className="text-sm font-semibold tracking-wide mr-4">Log In</span>
-                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[#00B2D6] group-hover:translate-x-0.5 transition-transform">
-                  <ArrowRight size={16} strokeWidth={2.5} />
-                </div>
-              </Link>
+              // Guest: Auth and booking buttons
+              <>
+                <Link
+                  href="/login"
+                  className="inline-flex h-11 items-center justify-between rounded-full border border-[#00B2D6] bg-white pl-5 pr-1.5 font-sans font-bold text-[#00B2D6] transition-all duration-300 hover:bg-[#E6FAFF] group"
+                  onClick={handlePreviewAuthClick}
+                >
+                  <span className="mr-4 text-sm font-semibold tracking-wide">Login</span>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#00B2D6] text-white transition-transform group-hover:translate-x-0.5">
+                    <ArrowRight size={16} strokeWidth={2.5} />
+                  </div>
+                </Link>
+                <Link
+                  href="/locations"
+                  className="inline-flex h-11 items-center justify-between rounded-full bg-[#00B2D6] pl-5 pr-1.5 font-sans font-bold text-white transition-all duration-300 hover:bg-[#0092B3] group"
+                >
+                  <span className="mr-4 text-sm font-semibold tracking-wide">Book Online</span>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#00B2D6] transition-transform group-hover:translate-x-0.5">
+                    <ArrowRight size={16} strokeWidth={2.5} />
+                  </div>
+                </Link>
+              </>
             )}
           </div>
         </div>
