@@ -5,23 +5,19 @@ import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Button, Form, Input, Typography } from "antd";
-import type { InputRef } from "antd";
 import { appAlert } from "@/utils/appAlert";
-import bg from "@/assets/auth/Enter OTP-rafiki 1.png";
+import logoImg from "@/assets/logo/logo.png";
 import { useResendOtpMutation, useVerifyUserMutation } from "@/redux/service/auth/authApi";
 import { toast } from "sonner";
-
-const { Title, Text } = Typography;
 
 const OTPage = () => {
   const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
   const [email, setEmail] = useState<string | null>(null);
 
-  const inputRefs = useRef<(InputRef | null)[]>([]);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const [verifyUser, { isLoading }] = useVerifyUserMutation();
-  const [resendOtp, { isLoading: isResendingOtp }] = useResendOtpMutation()
+  const [resendOtp, { isLoading: isResendingOtp }] = useResendOtpMutation();
   const router = useRouter();
 
   useEffect(() => {
@@ -59,7 +55,8 @@ const OTPage = () => {
     inputRefs.current[nextIndex]?.focus();
   };
 
-  const onFinish = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     const otpValue = otp.join("");
 
     if (otpValue.length !== 6) {
@@ -88,8 +85,6 @@ const OTPage = () => {
           icon: "success",
           title: "Verification successful 🎉",
           text: res?.message || "Your email has been verified.",
-          timer: 2000,
-          showConfirmButton: false,
         });
 
         localStorage.removeItem("email");
@@ -109,11 +104,15 @@ const OTPage = () => {
       });
     }
   };
+
   const handleResendOtp = async () => {
     try {
-      localStorage.getItem("email")
-      await resendOtp(email).unwrap()
-      toast.success("Opt resend success!")
+      if (!email) {
+        toast.error("Email not found. Please register again.");
+        return;
+      }
+      await resendOtp(email).unwrap();
+      toast.success("OTP resend success!");
     } catch (error: any) {
       const msg =
         error?.data?.message ||
@@ -122,80 +121,95 @@ const OTPage = () => {
         "Something went wrong. Please try again.";
       toast.error(msg);
     }
-  }
+  };
+
   return (
-    <div className=" flex items-center justify-center p-4">
-      <div className="container min-h-[85vh] flex items-center justify-center py-10">
-        <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12 max-w-7xl w-full p-4 md:p-8">
-          {/* Illustration */}
-          <div className="w-full md:w-1/2 flex items-center justify-center">
-            <Link href="/" className="w-full max-w-md">
+    <div className="min-h-screen bg-[#F4F5F6] flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 font-sans select-none">
+      <div className="w-full max-w-[480px]">
+        {/* Main Verify Code Card */}
+        <div className="bg-white rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-slate-100 p-6 sm:p-8">
+          
+          {/* Logo Center */}
+          <div className="flex justify-center mb-4">
+            <Link href="/" className="transition-opacity hover:opacity-95">
               <Image
-                width={600}
-                height={400}
-                src={bg}
-                alt="OTP verification illustration"
+                src={logoImg}
+                alt="Compliance Medicals Logo"
+                width={280}
+                height={60}
                 priority
-                className="w-full h-auto"
+                className="h-10 w-auto object-contain"
               />
             </Link>
           </div>
 
-          {/* OTP Form */}
-          <div className="w-full md:w-1/2">
-            <div className="text-center mb-6 md:mb-8">
-              <Title level={3} className="!mb-1">
-                Email Verification
-              </Title>
-              <Text type="secondary">Enter the 6-digit code sent to your email</Text>
-            </div>
+          {/* Horizontal separator line */}
+          <div className="border-t border-slate-100 my-4" />
 
-            <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
-              <Form onFinish={onFinish}>
-                {/* ✅ Responsive OTP Container */}
-                <div
-                  className="mx-auto mb-6 flex flex-wrap justify-center gap-2 sm:gap-3 max-w-[280px] sm:max-w-[360px]"
-                  onPaste={handlePaste}
-                >
-                  {otp.map((digit, index) => (
-                    <Input
-                      key={index}
-                      size="large"
-                      maxLength={1}
-                      value={digit}
-                      ref={(el) => {
-                        inputRefs.current[index] = el;
-                      }}
-                      onChange={(e) => handleChange(e.target.value, index)}
-                      onKeyDown={(e) => handleKeyDown(e, index)}
-                      inputMode="numeric"
-                      //  responsive box sizes
-                      className="!w-10 !h-10 sm:!w-12 sm:!h-12 text-center text-base sm:text-lg font-semibold"
-                    />
-                  ))}
-                </div>
+          {/* Title */}
+          <h1 className="text-xl sm:text-2xl font-extrabold text-[#0F2E4A] tracking-tight mb-4 text-center">
+            Verify Code
+          </h1>
 
-                <Button
-                  htmlType="submit"
-                  size="large"
-                  loading={isLoading}
-                  className="w-full bg-[#004E60] hover:!bg-[#003b49] !text-white border-none"
-                >
-                  Continue
-                </Button>
-              </Form>
-              <div className="text-center underline mt-2">
-                <button onClick={handleResendOtp} className="underline"> {
-                  isResendingOtp ? "Resending" : "Resend again"
-                }</button>
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-xs font-bold text-[#0F2E4A] uppercase tracking-wider mb-3 text-center">
+                Enter Code
+              </label>
+              
+              {/* OTP Inputs Grid */}
+              <div 
+                className="flex justify-center gap-2 sm:gap-3"
+                onPaste={handlePaste}
+              >
+                {otp.map((digit, index) => (
+                  <input
+                    key={index}
+                    type="text"
+                    maxLength={1}
+                    value={digit}
+                    ref={(el) => {
+                      inputRefs.current[index] = el;
+                    }}
+                    onChange={(e) => handleChange(e.target.value, index)}
+                    onKeyDown={(e) => handleKeyDown(e, index)}
+                    inputMode="numeric"
+                    className="w-10 h-10 sm:w-12 sm:h-12 border border-slate-200 rounded-xl focus:outline-none focus:border-[#00B2D6] focus:ring-1 focus:ring-[#00B2D6] text-center text-sm sm:text-base font-bold text-[#0F2E4A] transition-all bg-white"
+                    required
+                  />
+                ))}
               </div>
-              {!email && (
-                <div className="mt-4 text-center text-sm text-red-500">
-                  Email not found. Please register again.
-                </div>
-              )}
             </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-[#00B2D6] hover:bg-[#0092B0] text-white font-bold py-3 px-6 rounded-full transition-all text-base shadow-sm hover:shadow-md active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
+            >
+              {isLoading ? "Verifying..." : "Continue"}
+            </button>
+          </form>
+
+          {/* Bottom Actions */}
+          <div className="mt-6 text-center text-xs sm:text-sm font-bold text-[#55697A]">
+            Didn&apos;t receive the code?{" "}
+            <button
+              type="button"
+              onClick={handleResendOtp}
+              disabled={isResendingOtp}
+              className="text-[#00B2D6] hover:underline font-bold transition-all disabled:opacity-50 ml-1"
+            >
+              {isResendingOtp ? "Resending..." : "Resend again"}
+            </button>
           </div>
+
+          {!email && (
+            <div className="mt-4 text-center text-xs font-semibold text-red-500 bg-red-50 p-2.5 rounded-xl border border-red-100">
+              Email not found in storage. Please go back and register again.
+            </div>
+          )}
         </div>
       </div>
     </div>

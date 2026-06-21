@@ -4,24 +4,24 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Button, Form, Input, Typography } from "antd";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-
-import bg from "@/assets/auth/Forgot password-amico 1.png";
+import { Mail, ChevronLeft } from "lucide-react";
+import logoImg from "@/assets/logo/logo.png";
 import { useForgatPasswordMutation } from "@/redux/service/auth/authApi";
-
-const { Title, Text } = Typography;
 
 const ForgotPasswordPage = () => {
   const [forgatPassword, { isLoading }] = useForgatPasswordMutation();
   const [email, setEmail] = useState("");
+  const router = useRouter();
 
-  const onFinish = async (values: { email: string }) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      await forgatPassword({ email: values.email }).unwrap();
-      toast.success("Please check your email!")
-      // localStorage.setItem("email", email)
-      // router.push("/otp");
+      await forgatPassword({ email }).unwrap();
+      toast.success("Please check your email!");
+      localStorage.setItem("email", email);
+      router.push("/otp");
     } catch (error: any) {
       const msg =
         error?.data?.message ||
@@ -33,84 +33,84 @@ const ForgotPasswordPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="container min-h-[90vh] flex items-center justify-center py-10">
-        <div className="flex flex-col md:flex-row items-center gap-12 max-w-7xl w-full p-8">
-          {/* Left Side - Illustration */}
-          <div className="md:w-1/2 flex items-center justify-center">
-            <div className="w-full max-w-md">
-              <Link href={'/login'}>
-                <Image
-                  width={600}
-                  height={400}
-                  src={bg}
-                  alt="Forgot password illustration"
-                  priority
-                />
-              </Link>
-            </div>
+    <div className="min-h-screen bg-[#F4F5F6] flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 font-sans select-none">
+      <div className="w-full max-w-[480px]">
+        {/* Main Forget Password Card */}
+        <div className="bg-white rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-slate-100 p-6 sm:p-8">
+          
+          {/* Logo Center */}
+          <div className="flex justify-center mb-4">
+            <Link href="/" className="transition-opacity hover:opacity-95">
+              <Image
+                src={logoImg}
+                alt="Compliance Medicals Logo"
+                width={280}
+                height={60}
+                priority
+                className="h-10 w-auto object-contain"
+              />
+            </Link>
           </div>
 
-          {/* Right Side - Forgot Password Form */}
-          <div className="md:w-1/2 w-full">
-            <div className="text-center mb-8">
-              <Title level={3} className="!mb-0">
-                Forgot Password
-              </Title>
-              <Text type="secondary">
-                Enter your email and we’ll send you an OTP / reset step.
-              </Text>
-            </div>
+          {/* Horizontal separator line */}
+          <div className="border-t border-slate-100 my-4" />
 
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <Form
-                layout="vertical"
-                onFinish={onFinish}
-                initialValues={{ email }}
-                requiredMark={false}
+          {/* Back to login */}
+          <div className="mb-4">
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#55697A] hover:text-[#0F2E4A] transition-colors"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Back to login
+            </Link>
+          </div>
+
+          {/* Title */}
+          <h1 className="text-xl sm:text-2xl font-extrabold text-[#0F2E4A] tracking-tight mb-4">
+            Forget Password
+          </h1>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Email Field */}
+            <div>
+              <label
+                htmlFor="email"
+                className="block text-xs font-bold text-[#55697A] uppercase tracking-wider mb-2"
               >
-                <Form.Item
-                  label="Email"
-                  name="email"
-                  rules={[
-                    { required: true, message: "Please enter your email" },
-                    { type: "email", message: "Please enter a valid email" },
-                  ]}
-                >
-                  <Input
-                    size="large"
-                    placeholder="jane.doe@gmail.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </Form.Item>
-
-                <Button
-                  loading={isLoading}
-                  htmlType="submit"
-                  size="large"
-                  className="w-full bg-[#004E60] hover:!bg-[#003b49] hover:!text-white text-white font-medium border-none"
-                >
-                  Reset your password
-                </Button>
-              </Form>
-
-              <div className="mt-6 text-center text-sm text-gray-600">
-                Remember your password?{" "}
-                <Link
-                  href="/login"
-                  className="text-green-600 hover:text-green-800 font-medium"
-                >
-                  Login
-                </Link>
+                Email
+              </label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                  <Mail className="h-5 w-5" />
+                </span>
+                <input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-12 pr-4 py-2.5 border border-slate-200 rounded-2xl focus:outline-none focus:border-[#00B2D6] focus:ring-1 focus:ring-[#00B2D6] transition-all text-sm font-semibold text-[#0F2E4A] placeholder-slate-400"
+                  placeholder="Enter your email"
+                  required
+                />
               </div>
             </div>
 
-            {/* Optional: small note */}
-            <div className="mt-3 text-center text-xs text-gray-400">
-              If you don’t see the email, check your spam folder.
-            </div>
-          </div>
+            {/* Description Text */}
+            <p className="text-xs font-semibold text-[#55697A] leading-relaxed">
+              Don&apos;t worry, happens to all of us. Enter your email below to recover your password
+            </p>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-[#00B2D6] hover:bg-[#0092B0] text-white font-bold py-3 px-6 rounded-full transition-all text-base shadow-sm hover:shadow-md active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
+            >
+              {isLoading ? "Sending Code..." : "Send Code"}
+            </button>
+          </form>
         </div>
       </div>
     </div>

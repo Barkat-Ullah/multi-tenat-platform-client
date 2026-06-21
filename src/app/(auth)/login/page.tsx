@@ -141,10 +141,10 @@ const LoginPage = () => {
     <div className="min-h-screen bg-[#F4F5F6] flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 font-sans select-none">
       <div className="w-full max-w-[480px]">
         {/* Main Login Card */}
-        <div className="bg-white rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-slate-100 p-8 sm:p-10 md:p-12">
+        <div className="bg-white rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-slate-100 p-6 sm:p-8">
           
           {/* Logo Center */}
-          <div className="flex justify-center mb-6">
+          <div className="flex justify-center mb-4">
             <Link href="/" className="transition-opacity hover:opacity-95">
               <Image
                 src={logoImg}
@@ -152,21 +152,21 @@ const LoginPage = () => {
                 width={280}
                 height={60}
                 priority
-                className="h-12 w-auto object-contain"
+                className="h-10 w-auto object-contain"
               />
             </Link>
           </div>
 
           {/* Horizontal separator line */}
-          <div className="border-t border-slate-100 my-6" />
+          <div className="border-t border-slate-100 my-4" />
 
           {/* Title */}
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0F2E4A] tracking-tight mb-8 text-center">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-[#0F2E4A] tracking-tight mb-4 text-center">
             Welcome Back
           </h1>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email Field */}
             <div>
               <label
@@ -184,7 +184,7 @@ const LoginPage = () => {
                   id="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3.5 border border-slate-200 rounded-2xl focus:outline-none focus:border-[#00B2D6] focus:ring-1 focus:ring-[#00B2D6] transition-all text-sm font-semibold text-[#0F2E4A] placeholder-slate-400"
+                  className="w-full pl-12 pr-4 py-2.5 border border-slate-200 rounded-2xl focus:outline-none focus:border-[#00B2D6] focus:ring-1 focus:ring-[#00B2D6] transition-all text-sm font-semibold text-[#0F2E4A] placeholder-slate-400"
                   placeholder="Enter your email"
                   required
                 />
@@ -208,7 +208,7 @@ const LoginPage = () => {
                   id="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-12 pr-12 py-3.5 border border-slate-200 rounded-2xl focus:outline-none focus:border-[#00B2D6] focus:ring-1 focus:ring-[#00B2D6] transition-all text-sm font-semibold text-[#0F2E4A] placeholder-slate-400"
+                  className="w-full pl-12 pr-12 py-2.5 border border-slate-200 rounded-2xl focus:outline-none focus:border-[#00B2D6] focus:ring-1 focus:ring-[#00B2D6] transition-all text-sm font-semibold text-[#0F2E4A] placeholder-slate-400"
                   placeholder="Enter Password"
                   required
                 />
@@ -249,14 +249,14 @@ const LoginPage = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-[#00B2D6] hover:bg-[#0092B0] text-white font-bold py-3.5 px-6 rounded-full transition-all text-base shadow-sm hover:shadow-md active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
+              className="w-full bg-[#00B2D6] hover:bg-[#0092B0] text-white font-bold py-3 px-6 rounded-full transition-all text-base shadow-sm hover:shadow-md active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
             >
               {isLoading ? "Logging in..." : "Login"}
             </button>
           </form>
 
           {/* Bottom Register Prompt */}
-          <div className="mt-8 text-center text-xs sm:text-sm font-bold text-[#55697A]">
+          <div className="mt-6 text-center text-xs sm:text-sm font-bold text-[#55697A]">
             Don&apos;t have an account?{" "}
             <Link
               href="/register"

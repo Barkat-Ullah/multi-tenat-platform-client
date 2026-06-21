@@ -79,6 +79,14 @@ export default function Navbar() {
     toast.info("Login is disabled in preview mode.");
   };
 
+  const handleGuestLoginClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    handlePreviewAuthClick(event);
+    if (isPreviewMode) return;
+
+    Cookies.remove("accessToken");
+    Cookies.remove("refreshToken");
+  };
+
   // ===== Profile Dropdown Menu =====
   const avatarMenuItems: MenuProps["items"] = [
     {
@@ -256,7 +264,7 @@ export default function Navbar() {
                   href="/login"
                   className="w-full inline-flex items-center justify-between rounded-full border border-[#00B2D6] bg-white pl-5 pr-1.5 py-1.5 font-sans font-bold text-[#00B2D6] transition-all duration-300 hover:bg-[#E6FAFF] group"
                   onClick={(event) => {
-                    handlePreviewAuthClick(event);
+                    handleGuestLoginClick(event);
                     if (!isPreviewMode) setOpen(false);
                   }}
                 >
@@ -364,7 +372,7 @@ export default function Navbar() {
                 <Link
                   href="/login"
                   className="inline-flex h-11 items-center justify-between rounded-full border border-[#00B2D6] bg-white pl-5 pr-1.5 font-sans font-bold text-[#00B2D6] transition-all duration-300 hover:bg-[#E6FAFF] group"
-                  onClick={handlePreviewAuthClick}
+                  onClick={handleGuestLoginClick}
                 >
                   <span className="mr-4 text-sm font-semibold tracking-wide">Login</span>
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#00B2D6] text-white transition-transform group-hover:translate-x-0.5">
