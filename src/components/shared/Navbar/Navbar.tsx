@@ -30,6 +30,8 @@ export default function Navbar() {
   const [isSticky, setIsSticky] = useState(false);
   const [open, setOpen] = useState(false);
   const navbarRef = useRef<HTMLDivElement>(null);
+  const topBarRef = useRef<HTMLDivElement>(null);
+  const [placeholderH, setPlaceholderH] = useState({ mobile: 73, desktop: 133 });
   const pathname = usePathname();
 
   // Get auth state from Redux
@@ -66,6 +68,7 @@ export default function Navbar() {
     { href: "/locations", label: "Locations" },
     { href: "/faq", label: "FAQ's" },
   ];
+
   const isActive = (href: string) => pathname === href;
 
   const handlePreviewAuthClick = (event: MouseEvent<HTMLAnchorElement>) => {
@@ -117,24 +120,39 @@ export default function Navbar() {
     const handleScrollAndResize = () => {
       const currentScroll = window.scrollY;
       const isDesktop = window.innerWidth >= 1280;
-      
-      const stickyThreshold = isDesktop ? 60 : 5;
+
+      // Dynamically read the TopBar height so scrolling always hides it fully
+      const topBarH = topBarRef.current?.offsetHeight ?? 0;
+      const hideAmount = isDesktop ? topBarH : 0;
+
+      const stickyThreshold = isDesktop ? hideAmount : 5;
       setIsSticky(currentScroll > stickyThreshold);
-      
+
       if (navbarRef.current) {
-        if (isDesktop) {
-          const translateY = Math.min(currentScroll, 60);
+        if (isDesktop && hideAmount > 0) {
+          const translateY = Math.min(currentScroll, hideAmount);
           navbarRef.current.style.transform = `translateY(-${translateY}px)`;
         } else {
           navbarRef.current.style.transform = "translateY(0px)";
         }
       }
+
+      // Keep the placeholder height in sync with the real navbar height
+      if (navbarRef.current) {
+        const totalH = navbarRef.current.offsetHeight;
+        setPlaceholderH((prev) => {
+          const mobileH = totalH - (isDesktop ? 0 : 0);
+          if (isDesktop && prev.desktop !== totalH) return { ...prev, desktop: totalH };
+          if (!isDesktop && prev.mobile !== mobileH) return { ...prev, mobile: mobileH };
+          return prev;
+        });
+      }
     };
-    
+
     handleScrollAndResize();
     window.addEventListener("scroll", handleScrollAndResize, { passive: true });
     window.addEventListener("resize", handleScrollAndResize, { passive: true });
-    
+
     return () => {
       window.removeEventListener("scroll", handleScrollAndResize);
       window.removeEventListener("resize", handleScrollAndResize);
@@ -268,7 +286,8 @@ export default function Navbar() {
   return (
     <div className="w-full">
       {/* Placeholder to reserve space in document flow and prevent layout shift */}
-      <div className="h-[73px] xl:h-[133px]" />
+      <div style={{ height: `${placeholderH.mobile}px` }} className="xl:hidden" />
+      <div style={{ height: `${placeholderH.desktop}px` }} className="hidden xl:block" />
 
       {/* Fixed Container wrapping both TopBar and Main Navbar */}
       <div
@@ -276,7 +295,9 @@ export default function Navbar() {
         className="fixed top-0 left-0 right-0 z-50 w-full"
       >
         {/* Top Bar */}
-        <TopBar />
+        <div ref={topBarRef}>
+          <TopBar />
+        </div>
 
         {/* Main Navbar */}
         <div

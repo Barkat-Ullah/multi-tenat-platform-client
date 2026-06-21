@@ -4,7 +4,7 @@ import { FaFacebook, FaInstagram, FaXTwitter } from "react-icons/fa6";
 
 export const TopBar = () => {
   return (
-    <div className="w-full bg-[#E5F9FD] border-b border-[#D8F3F7] hidden xl:block">
+    <div className="w-full h-[60px] overflow-hidden bg-[#E5F9FD] border-b border-[#D8F3F7] hidden xl:block">
       <div className="container mx-auto grid h-[60px] grid-cols-3 items-center px-8">
         {/* Left: Phone */}
         <a
