@@ -4,7 +4,7 @@
 import ChangePasswordForm from "@/components/pages/Profile/ChangesPassword";
 import Spinner from "@/components/ui/Spinner";
 import {
-  useGetAgencyProfileDataQuery,
+  useGetProfileDataQuery,
   useUpdateProfileDataMutation,
   type ProfileData,
   type UpdateProfilePayload,
@@ -16,7 +16,7 @@ import { appAlert } from "@/utils/appAlert";
 import { getImageUrl } from "@/utils/getImageUrl";
 
 export default function Page() {
-  const { data: profileResponse, isLoading } = useGetAgencyProfileDataQuery();
+  const { data: profileResponse, isLoading } = useGetProfileDataQuery();
   const [updateProfile, { isLoading: isUpdating }] =
     useUpdateProfileDataMutation();
 
@@ -24,20 +24,6 @@ export default function Page() {
   const [isDragging, setIsDragging] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-
-  // const user = profileResponse?.data || null;
-
-  const [statData, setStatData] = useState<{
-    totalProperty: number;
-    totalShare: number;
-    totalView: number;
-    totalSaved: number;
-  }>({
-    totalProperty: 0,
-    totalShare: 0,
-    totalView: 0,
-    totalSaved: 0,
-  });
 
   // State to hold user object
   const [profileData, setProfileData] = useState<ProfileData>({
@@ -75,22 +61,11 @@ export default function Page() {
     description: "",
   });
 
-  // console.log("profile response", profileResponse)
-  
-
   // Sync with API data
   useEffect(() => {
     if (profileResponse?.data) {
       const u = profileResponse.data;
       setProfileData(u);
-
-      // Set stats from API
-      setStatData({
-        totalProperty: u.stats?.totalProperty ?? 0,
-        totalShare: u.stats?.totalShare ?? 0,
-        totalView: u.stats?.totalView ?? 0,
-        totalSaved: u.stats?.totalSaved ?? 0,
-      });
 
       setEditFormData({
         name: u.profile.name || "",
@@ -167,9 +142,6 @@ export default function Page() {
     if (file) handleImageUpload(file);
   };
 
-  // ✅ IMPORTANT: send as form-data like Postman:
-  // avatar = File
-  // data = JSON string
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -187,18 +159,10 @@ export default function Page() {
         description: editFormData.description || "",
       };
 
-      // ✅ Postman style: "data" text field contains JSON string
       formData.append("data", JSON.stringify(payload));
 
-      // ✅ Postman style: avatar file field
       if (avatarFile) {
         formData.append("avatar", avatarFile);
-      }
-
-      // debug (optional)
-      console.log("=== Update Profile FormData ===");
-      for (const [k, v] of formData.entries()) {
-        console.log(k, v instanceof File ? `FILE: ${v.name}` : v);
       }
 
       const res = await updateProfile(formData).unwrap();
@@ -210,7 +174,6 @@ export default function Page() {
         confirmButtonText: "OK",
       });
 
-      // If backend returns updated user
       if (res?.data) {
         setProfileData(res.data);
         setImagePreview(res.data?.profile?.avatar);
@@ -263,15 +226,10 @@ export default function Page() {
   const profileAvatarSrc = getValidImageSrc(user.profile.avatar);
   const previewImageSrc = getValidImageSrc(imagePreview);
 
-  // console.log("Profile Data:", statData);
-
   if (isLoading) return <Spinner />;
-
-
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="border-b border-gray-200 px-4 md:px-8 py-4 bg-white">
         <p className="text-sm text-gray-400">Setting</p>
       </div>
@@ -280,7 +238,6 @@ export default function Page() {
         <h1 className="text-3xl md:text-4xl font-bold mb-6 md:mb-12 text-gray-900">Profile</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-          {/* Left - Profile Card */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-8">
               <div className="flex flex-col items-center text-center">
@@ -317,10 +274,8 @@ export default function Page() {
             </div>
           </div>
 
-          {/* Right column content */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-8">
-              {/* ===== MY Details ===== */}
               <div className="flex items-start justify-between gap-x-6 gap-y-3">
                 <h2 className="text-2xl md:text-3xl font-bold text-gray-900">MY Details</h2>
 
@@ -362,72 +317,10 @@ export default function Page() {
               <p className="text-gray-600 leading-relaxed text-sm">
                 {user.profile.description || "No description yet."}
               </p>
-
-              {/* ===== Divider spacing ===== */}
-              <div className="mt-8" />
-
-              {/* ===== Property Status ===== */}
-              <h3 className="text-2xl md:text-3xl font-bold text-gray-900">
-                Property Status
-              </h3>
-
-              <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
-                {/* <StatusCard
-                  value={totalProperty ?? 0}
-                  label="Total Property"
-                  icon={<PropertyIcon />}
-                /> */}
-
-                <StatusCard
-                  value={statData?.totalProperty ?? 0}
-                  label="Total Property"
-                  icon={<PropertyIcon />}
-                />
-
-                <StatusCard
-                  value={statData?.totalShare ?? 0}
-                  label="Total Share"
-                  icon={<ShareIcon />}
-                />
-
-                <StatusCard
-                  value={statData?.totalView ?? 0}
-                  label="Total View"
-                  icon={<ViewIcon />}
-                />
-
-                <StatusCard
-                  value={statData?.totalSaved ?? 0}
-                  label="Total Saved"
-                  icon={<SavedIcon />}
-                />
-              </div>
             </div>
           </div>
-
-
-
-
-          {/*  */}
-
         </div>
 
-        {/* All Active Properties */}
-
-        {/* <div className="mb-10">
-          <h1>fgsdfgsrgsregseg</h1>
-        </div> */}
-
-        {/* <ActivePropertiesSection /> */}
-
-        {/*  */}
-
-        {/* <div className="h-fit mb-10">
-          <ValuationCalculator />
-        </div> */}
-
-
-        {/* Change Password Section */}
         <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-8">
           <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-6 md:mb-8">
             Change Password
@@ -436,11 +329,9 @@ export default function Page() {
         </div>
       </div>
 
-      {/* Edit Profile Modal */}
       {isEditModalOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-        // onClick={() => setIsEditModalOpen(false)}
         >
           <div
             className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto"
@@ -470,7 +361,6 @@ export default function Page() {
             </div>
 
             <form onSubmit={handleSaveProfile} className="p-6 space-y-6">
-              {/* Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Full Name
@@ -484,7 +374,6 @@ export default function Page() {
                 />
               </div>
 
-              {/* Phone */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Phone
@@ -498,7 +387,6 @@ export default function Page() {
                 />
               </div>
 
-              {/* Street */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Street Address
@@ -512,7 +400,6 @@ export default function Page() {
                 />
               </div>
 
-              {/* City, Region, Country, ZipCode */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -567,7 +454,6 @@ export default function Page() {
                 </div>
               </div>
 
-              {/* Description */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Description
@@ -581,7 +467,6 @@ export default function Page() {
                 />
               </div>
 
-              {/* Image Upload */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Profile Image
@@ -637,7 +522,6 @@ export default function Page() {
                 </div>
               </div>
 
-              {/* Actions */}
               <div className="flex gap-3 pt-4 border-t border-gray-200">
                 <button
                   type="button"
@@ -660,121 +544,5 @@ export default function Page() {
         </div>
       )}
     </div>
-  );
-}
-
-
-
-
-// -------------------------------------------------------------------------------------------------------------------------------
-
-
-
-
-function StatusCard({
-  value,
-  label,
-  icon,
-}: {
-  value: number | string;
-  label: string;
-  icon: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-xl border border-gray-100 bg-white p-5 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow">
-      <div>
-        <div className="text-sm font-medium text-gray-500 mb-1">
-          {label}
-        </div>
-        <div className="text-3xl font-bold text-gray-900 leading-none">
-          {String(value).padStart(2, "0")}
-        </div>
-      </div>
-
-      <div className="text-[#A88D63] bg-[#A88D63]/10 p-3 rounded-lg">
-        <div className="w-6 h-6 flex items-center justify-center">
-          {icon}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-
-
-
-// -------------------------------------------------------------------------------------------------------------------------------
-
-
-
-function PropertyIcon() {
-  return (
-    <svg
-      className="w-6 h-6"
-      viewBox="0 0 64 64"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="3.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M10 52V24L32 10v42H10z" />
-      <path d="M32 20l22-10v42H32" />
-      <path d="M18 52V40h8v12" />
-    </svg>
-  );
-}
-
-function ShareIcon() {
-  return (
-    <svg
-      className="w-6 h-6"
-      viewBox="0 0 64 64"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="3.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="32" cy="18" r="8" />
-      <circle cx="18" cy="44" r="8" />
-      <circle cx="46" cy="44" r="8" />
-      <path d="M25 22L21 36" />
-      <path d="M39 22l4 14" />
-      <path d="M26 44h12" />
-    </svg>
-  );
-}
-
-function ViewIcon() {
-  return (
-    <svg
-      className="w-6 h-6"
-      viewBox="0 0 64 64"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="3.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M6 32s10-16 26-16 26 16 26 16-10 16-26 16S6 32 6 32z" />
-      <circle cx="32" cy="32" r="7" />
-    </svg>
-  );
-}
-
-function SavedIcon() {
-  return (
-    <svg
-      className="w-6 h-6"
-      viewBox="0 0 64 64"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="3.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M18 10h28a4 4 0 014 4v40l-18-10-18 10V14a4 4 0 014-4z" />
-    </svg>
   );
 }

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { ReactNode } from "react";
 import {
   LayoutDashboard,
-  Home,
   Settings,
 } from "lucide-react";
 
@@ -15,12 +14,6 @@ const navItems = [
     label: <Link href="/dashboard/user">Dashboards</Link>,
     icon: <LayoutDashboard size={18} />,
     className: "hover:bg-gray-100 text-white hover:bg-[#0F4C75]",
-  },
-  {
-    key: "/dashboard/user/property-list",
-    label: <Link href="/dashboard/user/property-list">Property list</Link>,
-    icon: <Home size={18} />,
-    className: "hover:bg-gray-100",
   },
   {
     key: "/dashboard/user/setting",
