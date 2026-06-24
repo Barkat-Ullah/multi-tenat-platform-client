@@ -188,7 +188,7 @@ export default function SuperAdminProfile() {
   const previewImageSrc = getValidImageSrc(imagePreview);
 
   return (
-    <div className="min-h-screen bg-gray-50/30">
+    <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10">
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold mb-8 md:mb-12 text-gray-900 font-poppins text-center md:text-left">Super Admin Profile</h1>
 

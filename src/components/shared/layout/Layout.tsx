@@ -85,45 +85,60 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, menu }) => {
   return (
     <Layout style={{ height: "100vh" }}>
       <Sider
-        width={220}
+        width={240}
         collapsedWidth={0}
         breakpoint="lg"
         collapsed={false}
         theme="light"
-        className={`!bg-white !border-r !border-gray-200 fixed lg:relative h-full z-50 transition-transform duration-300 ${mobileOpen ? "translate-x-0" : "-translate-x-full"
+        className={`!bg-[#F0F9FF] !border-r !border-sky-100/50 fixed lg:relative h-full z-50 transition-transform duration-300 ${mobileOpen ? "translate-x-0" : "-translate-x-full"
           } lg:translate-x-0`}
       >
-        <div className="flex items-center justify-start px-6 py-4 border-b border-gray-200">
-          <Link href="/" className="font-bold text-xl text-[#8b5573]">
-            <Image
-              src={logo}
-              width={100}
-              height={100}
-              alt="logo"
-              className="h-8 w-auto"
-            />
-          </Link>
-        </div>
+        <div className="flex flex-col h-full justify-between">
+          <div className="flex-1 overflow-y-auto">
+            <div className="flex items-center justify-center py-6 border-b border-sky-100/50 bg-[#F0F9FF]">
+              <Link href="/" className="transition-opacity hover:opacity-90">
+                <Image
+                  src={logo}
+                  width={180}
+                  height={50}
+                  alt="logo"
+                  className="h-10 w-auto object-contain"
+                />
+              </Link>
+            </div>
 
-        <Menu
-          mode="inline"
-          selectedKeys={[selectedKey]}
-          style={{ backgroundColor: "white", fontWeight: 500, fontSize: "14px" }}
-          inlineIndent={16}
-          className="mt-4"
-          items={menuToRender.map((item) => ({
-            key: item.key,
-            icon: item.icon,
-            label: item.label,
-            className: item.className || "hover:bg-gray-100",
-          }))}
-        />
+            <Menu
+              mode="inline"
+              selectedKeys={[selectedKey]}
+              style={{ backgroundColor: "transparent", border: "none" }}
+              inlineIndent={16}
+              className="mt-6 px-3 space-y-1"
+              items={menuToRender.map((item) => ({
+                key: item.key,
+                icon: item.icon,
+                label: item.label,
+                className: item.className || "",
+              }))}
+            />
+          </div>
+
+          {/* Logout Button at bottom */}
+          <div className="p-4 bg-[#F0F9FF] border-t border-sky-100/30">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 border border-[#C2410C] rounded-xl bg-orange-50/20 hover:bg-orange-50/70 text-[#C2410C] hover:text-[#9A3412] transition-all duration-200 font-bold text-sm tracking-wide active:scale-[0.99]"
+            >
+              <LogOut size={16} className="text-[#C2410C]" />
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
       </Sider>
 
       <Layout className="min-h-screen">
         <Header
           style={{ padding: "0px 20px", height: "64px", lineHeight: "56px" }}
-          className="bg-white shadow-sm flex items-center justify-between"
+          className="bg-white shadow-md flex items-center justify-between z-10"
         >
           <h2 className="text-lg md:text-xl font-semibold text-gray-800 truncate max-w-[150px] sm:max-w-none">
             <span className="hidden xs:inline">Welcome Back, </span>
@@ -172,19 +187,59 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, menu }) => {
         </Header>
 
         <Content
-          className="!overflow-y-auto !overflow-x-hidden p-4 md:p-6"
-          style={{ background: "#F8F8F6", minHeight: "calc(100vh - 140px)" }}
+          className="!overflow-y-auto !overflow-x-hidden p-4 md:p-6 !bg-white"
+          style={{ minHeight: "calc(100vh - 140px)" }}
           onClick={() => setMobileOpen(false)}
         >
           {children}
         </Content>
 
         <style jsx global>{`
+          .ant-menu-light .ant-menu-item {
+            color: #0F2E4A !important;
+            font-weight: 600 !important;
+            font-family: 'Poppins', sans-serif !important;
+            border-radius: 12px !important;
+            transition: all 0.2s ease-in-out !important;
+            margin: 4px 0 !important;
+          }
+          .ant-menu-light .ant-menu-item .ant-menu-item-icon {
+            color: #00B2D6 !important;
+            font-size: 16px !important;
+          }
+          /* Hover state for normal (unselected) items */
+          .ant-menu-light .ant-menu-item:not(.ant-menu-item-selected):hover {
+            background-color: #E6FAFF !important;
+            color: #00B2D6 !important;
+          }
+          .ant-menu-light .ant-menu-item:not(.ant-menu-item-selected):hover .ant-menu-item-icon {
+            color: #00B2D6 !important;
+          }
+          .ant-menu-light .ant-menu-item:not(.ant-menu-item-selected):hover a {
+            color: #00B2D6 !important;
+          }
+          /* Selected item states */
           .ant-menu-light .ant-menu-item-selected {
-            background-color: #004e60 !important;
+            background-color: #00B2D6 !important;
             color: white !important;
+            border-radius: 12px !important;
+            box-shadow: 0 4px 12px rgba(0, 178, 214, 0.15) !important;
           }
           .ant-menu-light .ant-menu-item-selected a {
+            color: white !important;
+          }
+          .ant-menu-light .ant-menu-item-selected .ant-menu-item-icon {
+            color: white !important;
+          }
+          /* Selected item hover states (remains solid cyan/teal) */
+          .ant-menu-light .ant-menu-item-selected:hover {
+            background-color: #0092B0 !important; /* Slightly darker shade on hover for premium depth effect */
+            color: white !important;
+          }
+          .ant-menu-light .ant-menu-item-selected:hover a {
+            color: white !important;
+          }
+          .ant-menu-light .ant-menu-item-selected:hover .ant-menu-item-icon {
             color: white !important;
           }
           .ant-dropdown-menu-item-danger {
