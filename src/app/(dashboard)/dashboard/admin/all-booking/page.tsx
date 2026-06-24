@@ -1,13 +1,17 @@
 "use client";
 
 import React, { useState } from "react";
-import { allBookingsData } from "@/app/data/AdminDashboardData";
+import { allBookingsData, AllBookingItemData } from "@/app/data/AdminDashboardData";
 import BookingStatsCards from "@/components/AdminDashboard/BookingStatsCards";
 import BookingsTable from "@/components/AdminDashboard/BookingsTable";
 import Pagination from "@/components/AdminDashboard/Pagination";
+import BookingDetailsModal from "@/components/AdminDashboard/BookingDetailsModal";
 
 export default function AllBookingPage() {
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedBooking, setSelectedBooking] = useState<AllBookingItemData | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const itemsPerPage = 7;
   const totalPages = Math.ceil(allBookingsData.length / itemsPerPage);
 
@@ -15,6 +19,11 @@ export default function AllBookingPage() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  const handleViewDetails = (booking: AllBookingItemData) => {
+    setSelectedBooking(booking);
+    setIsModalOpen(true);
+  };
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-8">
@@ -33,7 +42,7 @@ export default function AllBookingPage() {
         </h2>
         
         {/* Bookings Table list */}
-        <BookingsTable bookings={paginatedBookings} />
+        <BookingsTable bookings={paginatedBookings} onViewDetails={handleViewDetails} />
       </div>
 
       {/* Pagination Footer */}
@@ -41,6 +50,13 @@ export default function AllBookingPage() {
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={(page) => setCurrentPage(page)}
+      />
+
+      {/* Details Modal Popup */}
+      <BookingDetailsModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        booking={selectedBooking}
       />
     </div>
   );

@@ -203,7 +203,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, menu }) => {
 
           {/* Right Action Bar containing Bell Notification & Profile Dropdown */}
           <div className="hidden lg:flex items-center gap-4">
-            <Dropdown dropdownRender={() => notificationDropdown} placement="bottomRight" arrow trigger={["click"]}>
+            <Dropdown popupRender={() => notificationDropdown} placement="bottomRight" arrow trigger={["click"]}>
               <button
                 className="w-10 h-10 rounded-2xl flex items-center justify-center bg-[#E6FAFF] text-[#00B2D6] hover:bg-[#D0F3FC] hover:scale-105 active:scale-95 transition-all relative cursor-pointer border-none outline-none"
                 aria-label="Notifications"
