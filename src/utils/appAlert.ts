@@ -10,6 +10,10 @@ type AlertOptions = {
   text?: string;
   showCancelButton?: boolean;
   confirmButtonText?: string;
+  timer?: number;
+  position?: string;
+  confirmButtonColor?: string;
+  showConfirmButton?: boolean;
 };
 
 type AlertResult = {

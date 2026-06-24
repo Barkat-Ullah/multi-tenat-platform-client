@@ -6,6 +6,7 @@ export const normalizeRole = (role?: string | null) => {
 export const getDashboardPathByRole = (role?: string | null) => {
   const normalizedRole = normalizeRole(role);
 
+  if (normalizedRole === "SUPER_ADMIN") return "/dashboard/super-admin";
   if (normalizedRole === "ADMIN") return "/dashboard/admin";
   if (normalizedRole === "CLINIC") return "/dashboard/clinic";
   if (normalizedRole === "ORGINIZER") return "/dashboard/orginizer";

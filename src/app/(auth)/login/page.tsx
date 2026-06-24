@@ -78,8 +78,12 @@ const LoginPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (email === "clinic@example.com" || email === "organizer@example.com") {
-      const mappedRole = email === "clinic@example.com" ? "CLINIC" : "ORGINIZER";
+    if (email === "clinic@example.com" || email === "organizer@example.com" || email === "superadmin@example.com") {
+      const mappedRole = email === "clinic@example.com" 
+        ? "CLINIC" 
+        : email === "organizer@example.com" 
+        ? "ORGINIZER" 
+        : "SUPER_ADMIN";
       handleBackendlessLogin(mappedRole, email);
       return;
     }
@@ -279,6 +283,7 @@ const LoginPage = () => {
             </summary>
             <div className="p-4 border-t border-slate-100 bg-white grid grid-cols-2 gap-2.5">
               {[
+                { role: "Super Admin", email: "superadmin@example.com" },
                 { role: "Admin", email: "admin@example.com" },
                 { role: "User", email: "agent@gmail.com" },
                 { role: "Clinic", email: "clinic@example.com" },
@@ -293,8 +298,12 @@ const LoginPage = () => {
                     setEmail(guestEmail);
                     setPassword(guestPassword);
 
-                    if (guest.role === "Clinic" || guest.role === "Organizer") {
-                      const mappedRole = guest.role === "Clinic" ? "CLINIC" : "ORGINIZER";
+                    if (guest.role === "Clinic" || guest.role === "Organizer" || guest.role === "Super Admin") {
+                      const mappedRole = guest.role === "Clinic" 
+                        ? "CLINIC" 
+                        : guest.role === "Organizer" 
+                        ? "ORGINIZER" 
+                        : "SUPER_ADMIN";
                       handleBackendlessLogin(mappedRole, guestEmail);
                       return;
                     }
