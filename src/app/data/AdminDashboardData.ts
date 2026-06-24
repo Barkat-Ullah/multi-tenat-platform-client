@@ -119,3 +119,80 @@ export const recentReportsData: RecentReportItem[] = [
   { id: "4", title: "Monthly Booking Report", date: "May 01, 2025" },
   { id: "5", title: "Monthly Booking Report", date: "May 01, 2025" },
 ];
+
+export interface NotificationItemData {
+  id: string;
+  title: string;
+  location: string;
+  time: string;
+}
+
+export const notificationsData: NotificationItemData[] = [
+  // Page 1
+  { id: "1", title: "New medical booking received.", location: "St Thomas' Hospital", time: "10:20 am" },
+  { id: "2", title: "Booking confirmed successfully.", location: "St Thomas' Hospital", time: "10:20 am" },
+  { id: "3", title: "Booking cancelled by patient.", location: "St Thomas' Hospital", time: "10:20 am" },
+  { id: "4", title: "New medical booking received.", location: "St Thomas' Hospital", time: "10:20 am" },
+  { id: "5", title: "Booking confirmed successfully.", location: "St Thomas' Hospital", time: "10:20 am" },
+  { id: "6", title: "Booking cancelled by patient.", location: "St Thomas' Hospital", time: "10:20 am" },
+  { id: "7", title: "New medical booking received.", location: "St Thomas' Hospital", time: "10:20 am" },
+  
+  // Page 2
+  { id: "8", title: "Booking confirmed successfully.", location: "Guy's Hospital", time: "11:30 am" },
+  { id: "9", title: "New medical booking received.", location: "King's College Hospital", time: "11:45 am" },
+  { id: "10", title: "Booking cancelled by patient.", location: "St George's Hospital", time: "12:00 pm" },
+  { id: "11", title: "New medical booking received.", location: "Royal London Hospital", time: "12:15 pm" },
+  { id: "12", title: "Booking confirmed successfully.", location: "St Thomas' Hospital", time: "12:30 pm" },
+  { id: "13", title: "Booking cancelled by patient.", location: "King's College Hospital", time: "01:00 pm" },
+  { id: "14", title: "New medical booking received.", location: "Guy's Hospital", time: "01:15 pm" },
+
+  // Page 3
+  { id: "15", title: "Booking confirmed successfully.", location: "Royal London Hospital", time: "02:30 pm" },
+  { id: "16", title: "Booking cancelled by patient.", location: "St Thomas' Hospital", time: "03:00 pm" },
+  { id: "17", title: "New medical booking received.", location: "St George's Hospital", time: "03:15 pm" },
+  { id: "18", title: "Booking confirmed successfully.", location: "Guy's Hospital", time: "03:30 pm" },
+  { id: "19", title: "New medical booking received.", location: "King's College Hospital", time: "04:00 pm" },
+  { id: "20", title: "Booking cancelled by patient.", location: "Royal London Hospital", time: "04:30 pm" },
+  { id: "21", title: "New medical booking received.", location: "St Thomas' Hospital", time: "05:00 pm" },
+];
+
+export interface AllBookingItemData {
+  id: string;
+  name: string;
+  email: string;
+  service: string;
+  council: string;
+  clinician: string;
+  dateTime: string;
+}
+
+export const allBookingsData: AllBookingItemData[] = [
+  // Page 1
+  { id: "1", name: "Sarah Gomez", email: "exaple@gmail.com", service: "Taxi Medicals", council: "Leeds City Council", clinician: "St Thomas' Hospital", dateTime: "02/06 9:00 AM" },
+  { id: "2", name: "Sarah Gomez", email: "exaple@gmail.com", service: "Taxi Medicals", council: "Leeds City Council", clinician: "St Thomas' Hospital", dateTime: "02/06 9:00 AM" },
+  { id: "3", name: "Sarah Gomez", email: "exaple@gmail.com", service: "Taxi Medicals", council: "Leeds City Council", clinician: "St Thomas' Hospital", dateTime: "02/06 9:00 AM" },
+  { id: "4", name: "Sarah Gomez", email: "exaple@gmail.com", service: "Taxi Medicals", council: "Leeds City Council", clinician: "St Thomas' Hospital", dateTime: "02/06 9:00 AM" },
+  { id: "5", name: "Sarah Gomez", email: "exaple@gmail.com", service: "Taxi Medicals", council: "Leeds City Council", clinician: "St Thomas' Hospital", dateTime: "02/06 9:00 AM" },
+  { id: "6", name: "Sarah Gomez", email: "exaple@gmail.com", service: "Taxi Medicals", council: "Leeds City Council", clinician: "St Thomas' Hospital", dateTime: "02/06 9:00 AM" },
+  { id: "7", name: "Sarah Gomez", email: "exaple@gmail.com", service: "Taxi Medicals", council: "Leeds City Council", clinician: "St Thomas' Hospital", dateTime: "02/06 9:00 AM" },
+
+  // Page 2
+  { id: "8", name: "James Wilson", email: "james.w@gmail.com", service: "HGV Medical", council: "London City Council", clinician: "Guy's Hospital", dateTime: "03/06 10:00 AM" },
+  { id: "9", name: "Emily Watson", email: "emily.watson@gmail.com", service: "Forklift Medicals", council: "Manchester Council", clinician: "Royal London Hospital", dateTime: "03/06 11:30 AM" },
+  { id: "10", name: "Robert Taylor", email: "robert.t@gmail.com", service: "Taxi Medicals", council: "Leeds City Council", clinician: "St Thomas' Hospital", dateTime: "04/06 09:00 AM" },
+  { id: "11", name: "Michael Brown", email: "m.brown@gmail.com", service: "HGV Medical", council: "London City Council", clinician: "Guy's Hospital", dateTime: "04/06 01:30 PM" },
+  { id: "12", name: "Emma Davis", email: "emma.d@gmail.com", service: "Taxi Medicals", council: "Leeds City Council", clinician: "St Thomas' Hospital", dateTime: "05/06 10:00 AM" },
+  { id: "13", name: "David Jones", email: "david.j@gmail.com", service: "Motorsport Medicals", council: "Leeds City Council", clinician: "St George's Hospital", dateTime: "05/06 02:00 PM" },
+  { id: "14", name: "Sophia Miller", email: "sophia.m@gmail.com", service: "Taxi Medicals", council: "Leeds City Council", clinician: "St Thomas' Hospital", dateTime: "06/06 09:00 AM" },
+
+  // Page 3
+  { id: "15", name: "Oliver Wilson", email: "oliver.w@gmail.com", service: "HGV Medical", council: "London City Council", clinician: "Guy's Hospital", dateTime: "08/06 09:00 AM" },
+  { id: "16", name: "Amelia Thomas", email: "amelia.t@gmail.com", service: "Taxi Medicals", council: "Leeds City Council", clinician: "St Thomas' Hospital", dateTime: "08/06 11:00 AM" },
+  { id: "17", name: "Lucas Johnson", email: "lucas.j@gmail.com", service: "Forklift Medicals", council: "Manchester Council", clinician: "Royal London Hospital", dateTime: "09/06 09:30 AM" },
+  { id: "18", name: "Mia Roberts", email: "mia.r@gmail.com", service: "Taxi Medicals", council: "Leeds City Council", clinician: "St Thomas' Hospital", dateTime: "09/06 02:00 PM" },
+  { id: "19", name: "William Carter", email: "william.c@gmail.com", service: "HGV Medical", council: "London City Council", clinician: "Guy's Hospital", dateTime: "10/06 10:00 AM" },
+  { id: "20", name: "Ava Mitchell", email: "ava.m@gmail.com", service: "Taxi Medicals", council: "Leeds City Council", clinician: "St Thomas' Hospital", dateTime: "10/06 04:00 PM" },
+  { id: "21", name: "Ethan Harris", email: "ethan.h@gmail.com", service: "Motorsport Medicals", council: "Leeds City Council", clinician: "St George's Hospital", dateTime: "11/06 09:00 AM" },
+];
+
+
