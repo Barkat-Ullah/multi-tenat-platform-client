@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Logo } from "@/components/ui/Logo";
-import { ArrowRight, ChevronLeft, Check, Loader2 } from "lucide-react";
+import { ArrowRight, ChevronLeft, Check, Loader2, Calendar } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function OnSiteRequestSection() {
@@ -20,11 +20,17 @@ export default function OnSiteRequestSection() {
     medicalRequired: "",
     candidatesCount: "",
     additionalServices: "",
-    preferredDate: "",
-    preferredTime: "Morning (09:00 - 12:00)",
-    address: "",
-    postcode: "",
-    notes: "",
+    // Step 2 fields
+    siteContact: "",
+    siteContactPhone: "",
+    siteAddressLine1: "",
+    siteAddressLine2: "",
+    siteCityTown: "",
+    dateRequired: "",
+    startTimeRequired: "",
+    roomSizeMet: "no" as "yes" | "no",
+    parkingAvailable: "yes" as "yes" | "no",
+    specialRequirements: "",
   });
 
   // Validation errors
@@ -71,9 +77,12 @@ export default function OnSiteRequestSection() {
 
   const validateStep2 = () => {
     const newErrors: Record<string, string> = {};
-    if (!formData.preferredDate) newErrors.preferredDate = "Preferred date is required";
-    if (!formData.address.trim()) newErrors.address = "Address is required";
-    if (!formData.postcode.trim()) newErrors.postcode = "Postcode is required";
+    if (!formData.siteContact.trim()) newErrors.siteContact = "Site contact name is required";
+    if (!formData.siteContactPhone.trim()) newErrors.siteContactPhone = "Site contact telephone is required";
+    if (!formData.siteAddressLine1.trim()) newErrors.siteAddressLine1 = "Site address line 1 is required";
+    if (!formData.siteCityTown.trim()) newErrors.siteCityTown = "City/town is required";
+    if (!formData.dateRequired) newErrors.dateRequired = "Date is required";
+    if (!formData.startTimeRequired.trim()) newErrors.startTimeRequired = "Start time is required";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -114,11 +123,16 @@ export default function OnSiteRequestSection() {
       medicalRequired: "",
       candidatesCount: "",
       additionalServices: "",
-      preferredDate: "",
-      preferredTime: "Morning (09:00 - 12:00)",
-      address: "",
-      postcode: "",
-      notes: "",
+      siteContact: "",
+      siteContactPhone: "",
+      siteAddressLine1: "",
+      siteAddressLine2: "",
+      siteCityTown: "",
+      dateRequired: "",
+      startTimeRequired: "",
+      roomSizeMet: "no",
+      parkingAvailable: "yes",
+      specialRequirements: "",
     });
     setErrors({});
     setStep(1);
@@ -400,7 +414,7 @@ export default function OnSiteRequestSection() {
                 </div>
               </motion.form>
             ) : (
-              // Step 2: Preferred Booking Date, Location & Notes
+              // Step 2: Site details, requirements & submission
               <motion.form
                 key="step2"
                 initial={{ opacity: 0, x: 20 }}
@@ -411,114 +425,263 @@ export default function OnSiteRequestSection() {
                 className="space-y-6"
                 noValidate
               >
-                {/* Preferred Date picker */}
+                {/* Site Contact */}
                 <div>
-                  <label htmlFor="preferredDate" className="block text-[#0F2E4A] font-extrabold text-sm sm:text-[15px] mb-2">
-                    Preferred Clinic Date
-                  </label>
-                  <input
-                    type="date"
-                    id="preferredDate"
-                    name="preferredDate"
-                    value={formData.preferredDate}
-                    onChange={handleInputChange}
-                    min={new Date().toISOString().split("T")[0]}
-                    className={`w-full bg-white border ${
-                      errors.preferredDate ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
-                    } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all`}
-                  />
-                  {errors.preferredDate && <p className="text-red-500 text-xs mt-1.5 font-semibold">{errors.preferredDate}</p>}
-                </div>
-
-                {/* Preferred Time block selection */}
-                <div>
-                  <label htmlFor="preferredTime" className="block text-[#0F2E4A] font-extrabold text-sm sm:text-[15px] mb-2">
-                    Preferred Time Block
-                  </label>
-                  <select
-                    id="preferredTime"
-                    name="preferredTime"
-                    value={formData.preferredTime}
-                    onChange={handleInputChange}
-                    className="w-full bg-white border border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10 rounded-xl px-4 py-3 text-[#0F2E4A] font-medium text-sm sm:text-base outline-none transition-all appearance-none cursor-pointer"
-                  >
-                    <option value="Early Morning (05:00 - 09:00)">Early Morning (05:00 - 09:00)</option>
-                    <option value="Morning (09:00 - 12:00)">Morning (09:00 - 12:00)</option>
-                    <option value="Afternoon (12:00 - 17:00)">Afternoon (12:00 - 17:00)</option>
-                    <option value="Evening (17:00 - 23:00)">Evening (17:00 - 23:00)</option>
-                  </select>
-                </div>
-
-                {/* Clinic Street Address */}
-                <div>
-                  <label htmlFor="address" className="block text-[#0F2E4A] font-extrabold text-sm sm:text-[15px] mb-2">
-                    Clinic Site Address
+                  <label htmlFor="siteContact" className="block text-[#0F2E4A] font-extrabold text-sm sm:text-[15px] mb-2">
+                    Site Contact
                   </label>
                   <input
                     type="text"
-                    id="address"
-                    name="address"
-                    value={formData.address}
+                    id="siteContact"
+                    name="siteContact"
+                    value={formData.siteContact}
                     onChange={handleInputChange}
-                    placeholder="Enter Clinic Site Street Address"
+                    placeholder="Enter Your Site Contact"
                     className={`w-full bg-white border ${
-                      errors.address ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
+                      errors.siteContact ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
                     } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all`}
                   />
-                  {errors.address && <p className="text-red-500 text-xs mt-1.5 font-semibold">{errors.address}</p>}
+                  {errors.siteContact && <p className="text-red-500 text-xs mt-1.5 font-semibold">{errors.siteContact}</p>}
                 </div>
 
-                {/* Postcode */}
+                {/* Site Contact Telephone */}
                 <div>
-                  <label htmlFor="postcode" className="block text-[#0F2E4A] font-extrabold text-sm sm:text-[15px] mb-2">
-                    Site Postcode
+                  <label htmlFor="siteContactPhone" className="block text-[#0F2E4A] font-extrabold text-sm sm:text-[15px] mb-2">
+                    Site Contact Telephone
+                  </label>
+                  <input
+                    type="tel"
+                    id="siteContactPhone"
+                    name="siteContactPhone"
+                    value={formData.siteContactPhone}
+                    onChange={handleInputChange}
+                    placeholder="Enter Your Site Contact Telephone"
+                    className={`w-full bg-white border ${
+                      errors.siteContactPhone ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
+                    } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all`}
+                  />
+                  {errors.siteContactPhone && <p className="text-red-500 text-xs mt-1.5 font-semibold">{errors.siteContactPhone}</p>}
+                </div>
+
+                {/* Site Address Line 1 */}
+                <div>
+                  <label htmlFor="siteAddressLine1" className="block text-[#0F2E4A] font-extrabold text-sm sm:text-[15px] mb-2">
+                    Site Address Line 1
                   </label>
                   <input
                     type="text"
-                    id="postcode"
-                    name="postcode"
-                    value={formData.postcode}
+                    id="siteAddressLine1"
+                    name="siteAddressLine1"
+                    value={formData.siteAddressLine1}
                     onChange={handleInputChange}
-                    placeholder="Enter Site Postcode (e.g. LS1 1UR)"
+                    placeholder="Enter Your Site Address Line 1"
                     className={`w-full bg-white border ${
-                      errors.postcode ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
+                      errors.siteAddressLine1 ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
                     } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all`}
                   />
-                  {errors.postcode && <p className="text-red-500 text-xs mt-1.5 font-semibold">{errors.postcode}</p>}
+                  {errors.siteAddressLine1 && <p className="text-red-500 text-xs mt-1.5 font-semibold">{errors.siteAddressLine1}</p>}
                 </div>
 
-                {/* Additional requirements/notes */}
+                {/* Site Address Line 2 */}
                 <div>
-                  <label htmlFor="notes" className="block text-[#0F2E4A] font-extrabold text-sm sm:text-[15px] mb-2">
-                    Any specific details or notes?
+                  <label htmlFor="siteAddressLine2" className="block text-[#0F2E4A] font-extrabold text-sm sm:text-[15px] mb-2">
+                    Site Address Line 2
+                  </label>
+                  <input
+                    type="text"
+                    id="siteAddressLine2"
+                    name="siteAddressLine2"
+                    value={formData.siteAddressLine2}
+                    onChange={handleInputChange}
+                    placeholder="Enter Your Site Address Line 2"
+                    className="w-full bg-white border border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10 rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all"
+                  />
+                </div>
+
+                {/* Site City/Town */}
+                <div>
+                  <label htmlFor="siteCityTown" className="block text-[#0F2E4A] font-extrabold text-sm sm:text-[15px] mb-2">
+                    Site City/Town
+                  </label>
+                  <input
+                    type="text"
+                    id="siteCityTown"
+                    name="siteCityTown"
+                    value={formData.siteCityTown}
+                    onChange={handleInputChange}
+                    placeholder="Enter Your City/Town"
+                    className={`w-full bg-white border ${
+                      errors.siteCityTown ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
+                    } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all`}
+                  />
+                  {errors.siteCityTown && <p className="text-red-500 text-xs mt-1.5 font-semibold">{errors.siteCityTown}</p>}
+                </div>
+
+                {/* Date Required */}
+                <div>
+                  <label htmlFor="dateRequired" className="block text-[#0F2E4A] font-extrabold text-sm sm:text-[15px] mb-2">
+                    Date Required
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      id="dateRequired"
+                      name="dateRequired"
+                      value={formData.dateRequired}
+                      onChange={handleInputChange}
+                      className={`w-full bg-white border ${
+                        errors.dateRequired ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
+                      } rounded-xl px-4 py-3 pr-12 text-[#0F2E4A] font-medium outline-none transition-all`}
+                    />
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#00B2D6]">
+                      <Calendar size={20} />
+                    </div>
+                  </div>
+                  {errors.dateRequired && <p className="text-red-500 text-xs mt-1.5 font-semibold">{errors.dateRequired}</p>}
+                </div>
+
+                {/* Start Time Required */}
+                <div>
+                  <label htmlFor="startTimeRequired" className="block text-[#0F2E4A] font-extrabold text-sm sm:text-[15px] mb-2">
+                    Start Time Required
+                  </label>
+                  <input
+                    type="text"
+                    id="startTimeRequired"
+                    name="startTimeRequired"
+                    value={formData.startTimeRequired}
+                    onChange={handleInputChange}
+                    placeholder="AM / PM"
+                    className={`w-full bg-white border ${
+                      errors.startTimeRequired ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
+                    } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all`}
+                  />
+                  {errors.startTimeRequired && <p className="text-red-500 text-xs mt-1.5 font-semibold">{errors.startTimeRequired}</p>}
+                </div>
+
+                {/* Does the room meet size requirements? */}
+                <div>
+                  <label className="block text-[#0F2E4A] font-extrabold text-sm sm:text-[15px] mb-3">
+                    Does the room meet the size requirements stipulated?
+                  </label>
+                  <div className="flex items-center gap-6">
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, roomSizeMet: "yes" }))}
+                      className="flex items-center gap-2.5 group outline-none"
+                    >
+                      <div className={`w-5 h-5 rounded-full border ${
+                        formData.roomSizeMet === "yes" 
+                          ? "border-[#00B2D6] bg-white flex items-center justify-center" 
+                          : "border-slate-300 bg-white"
+                      } transition-all duration-200`}>
+                        {formData.roomSizeMet === "yes" && (
+                          <div className="w-2.5 h-2.5 rounded-full bg-[#00B2D6]" />
+                        )}
+                      </div>
+                      <span className="text-slate-600 font-bold text-sm sm:text-base group-hover:text-[#0F2E4A] transition-colors">
+                        Yes
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, roomSizeMet: "no" }))}
+                      className="flex items-center gap-2.5 group outline-none"
+                    >
+                      <div className={`w-5 h-5 rounded-full border ${
+                        formData.roomSizeMet === "no" 
+                          ? "border-[#00B2D6] bg-white flex items-center justify-center" 
+                          : "border-slate-300 bg-white"
+                      } transition-all duration-200`}>
+                        {formData.roomSizeMet === "no" && (
+                          <div className="w-2.5 h-2.5 rounded-full bg-[#00B2D6]" />
+                        )}
+                      </div>
+                      <span className="text-slate-600 font-bold text-sm sm:text-base group-hover:text-[#0F2E4A] transition-colors">
+                        No
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Is on-site parking available? */}
+                <div>
+                  <label className="block text-[#0F2E4A] font-extrabold text-sm sm:text-[15px] mb-3">
+                    Is On-site Parking Available?
+                  </label>
+                  <div className="flex items-center gap-6">
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, parkingAvailable: "yes" }))}
+                      className="flex items-center gap-2.5 group outline-none"
+                    >
+                      <div className={`w-5 h-5 rounded-full border ${
+                        formData.parkingAvailable === "yes" 
+                          ? "border-[#00B2D6] bg-white flex items-center justify-center" 
+                          : "border-slate-300 bg-white"
+                      } transition-all duration-200`}>
+                        {formData.parkingAvailable === "yes" && (
+                          <div className="w-2.5 h-2.5 rounded-full bg-[#00B2D6]" />
+                        )}
+                      </div>
+                      <span className="text-slate-600 font-bold text-sm sm:text-base group-hover:text-[#0F2E4A] transition-colors">
+                        Yes
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, parkingAvailable: "no" }))}
+                      className="flex items-center gap-2.5 group outline-none"
+                    >
+                      <div className={`w-5 h-5 rounded-full border ${
+                        formData.parkingAvailable === "no" 
+                          ? "border-[#00B2D6] bg-white flex items-center justify-center" 
+                          : "border-slate-300 bg-white"
+                      } transition-all duration-200`}>
+                        {formData.parkingAvailable === "no" && (
+                          <div className="w-2.5 h-2.5 rounded-full bg-[#00B2D6]" />
+                        )}
+                      </div>
+                      <span className="text-slate-600 font-bold text-sm sm:text-base group-hover:text-[#0F2E4A] transition-colors">
+                        No
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Any further or special requirements? */}
+                <div>
+                  <label htmlFor="specialRequirements" className="block text-[#0F2E4A] font-extrabold text-sm sm:text-[15px] mb-2">
+                    Any further or special requirements?
                   </label>
                   <textarea
-                    id="notes"
-                    name="notes"
+                    id="specialRequirements"
+                    name="specialRequirements"
                     rows={4}
-                    value={formData.notes}
+                    value={formData.specialRequirements}
                     onChange={handleInputChange}
-                    placeholder="Provide any additional clinic requirement details..."
+                    placeholder="e.g. call site contact 10 minutes prior to arrival, security key to gain access to site..."
                     className="w-full bg-white border border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10 rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all resize-none"
                   />
                 </div>
 
-                {/* Action buttons */}
-                <div className="flex gap-4 pt-2">
+                {/* Action buttons stacked vertically */}
+                <div className="flex flex-col gap-4 pt-4">
                   <button
                     type="button"
                     onClick={handleBack}
-                    className="w-1/3 inline-flex items-center justify-center rounded-full border border-slate-200 hover:border-slate-300 bg-white font-bold text-slate-500 hover:text-slate-700 transition-all text-sm sm:text-base"
+                    className="w-full inline-flex items-center justify-center rounded-full border border-[#00B2D6] py-3.5 font-bold text-[#00B2D6] hover:bg-[#00B2D6]/5 transition-all text-sm sm:text-base"
                     disabled={isSubmitting}
                   >
-                    <ChevronLeft size={18} className="mr-1" />
                     Back
                   </button>
 
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-2/3 inline-flex items-center justify-center rounded-full bg-[#00B2D6] py-3.5 font-bold text-white transition-all duration-300 hover:bg-[#0092B3] shadow-[0_4px_14px_rgba(0,178,214,0.15)] text-sm sm:text-base disabled:opacity-85"
+                    className="w-full inline-flex items-center justify-center rounded-full bg-[#00B2D6] py-3.5 font-bold text-white transition-all duration-300 hover:bg-[#0092B3] shadow-[0_4px_14px_rgba(0,178,214,0.15)] text-sm sm:text-base disabled:opacity-85"
                   >
                     {isSubmitting ? (
                       <>
@@ -526,7 +689,7 @@ export default function OnSiteRequestSection() {
                         Submitting...
                       </>
                     ) : (
-                      "Submit Request"
+                      "Submit"
                     )}
                   </button>
                 </div>

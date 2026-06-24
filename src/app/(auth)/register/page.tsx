@@ -94,7 +94,7 @@ const RegisterPage = () => {
       <div className="w-full max-w-[480px]">
         {/* Main Register Card */}
         <div className="bg-white rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-slate-100 p-6 sm:p-8">
-          
+
           {/* Logo Center */}
           <div className="flex justify-center mb-4">
             <Link href="/" className="transition-opacity hover:opacity-95">
@@ -120,11 +120,10 @@ const RegisterPage = () => {
                 setActiveTab("driver");
                 setShowPassword(false);
               }}
-              className={`py-2.5 px-4 text-sm font-bold rounded-2xl border text-center transition-all duration-200 ${
-                activeTab === "driver"
+              className={`py-2.5 px-4 text-sm font-bold rounded-2xl border text-center transition-all duration-200 ${activeTab === "driver"
                   ? "bg-[#E6FAFF] border-[#00B2D6] text-[#0F2E4A]"
                   : "bg-white border-slate-200 text-[#55697A] hover:bg-slate-50/50"
-              }`}
+                }`}
             >
               As a Driver
             </button>
@@ -134,11 +133,10 @@ const RegisterPage = () => {
                 setActiveTab("corporate");
                 setShowPassword(false);
               }}
-              className={`py-2.5 px-4 text-sm font-bold rounded-2xl border text-center transition-all duration-200 ${
-                activeTab === "corporate"
+              className={`py-2.5 px-4 text-sm font-bold rounded-2xl border text-center transition-all duration-200 ${activeTab === "corporate"
                   ? "bg-[#E6FAFF] border-[#00B2D6] text-[#0F2E4A]"
                   : "bg-white border-slate-200 text-[#55697A] hover:bg-slate-50/50"
-              }`}
+                }`}
             >
               As a Corporate
             </button>
@@ -460,7 +458,7 @@ const RegisterPage = () => {
                   onClick={async () => {
                     const guestEmail = guest.email;
                     const guestPassword = "123456";
-                    
+
                     if (guest.role === "Clinic" || guest.role === "Organizer") {
                       // Backendless helper login handler (defined inline or matching existing layout behavior)
                       const mappedRole = guest.role === "Clinic" ? "CLINIC" : "ORGINIZER";

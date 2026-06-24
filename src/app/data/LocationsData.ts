@@ -12,6 +12,39 @@ export interface ClinicLocation {
 
 export const clinicLocations: ClinicLocation[] = [
   {
+    id: "derby-mckeever",
+    name: "Delta McKeever Hotel, Derby McKeever Court Hotel, Elvaston Road, Weston, DE3 0KR",
+    city: "Derby",
+    address: "Derby McKeever Court Hotel, Elvaston Road, Weston, DE3 0KR",
+    phone: "03003030668",
+    image: "https://images.unsplash.com/photo-1579625460838-8c14bb6571be?auto=format&fit=crop&w=400&h=300&q=80",
+    lat: 52.8802,
+    lng: -1.3934,
+    googleMapsLink: "https://www.google.com/maps/search/?api=1&query=Derby+McKeever+Court+Hotel,+Elvaston+Road,+Weston,+DE3+0KR"
+  },
+  {
+    id: "royal-london",
+    name: "Royal London Hospital",
+    city: "London",
+    address: "Whitechapel Rd, London E1 1FR, UK",
+    phone: "03003030668",
+    image: "https://images.unsplash.com/photo-1549692520-acc6669e2f0c?auto=format&fit=crop&w=400&h=300&q=80",
+    lat: 51.5186,
+    lng: -0.0594,
+    googleMapsLink: "https://www.google.com/maps/search/?api=1&query=Royal+London+Hospital"
+  },
+  {
+    id: "hca-healthcare",
+    name: "HCA Healthcare UK",
+    city: "London",
+    address: "London Bridge Hospital, 27 Tooley St, London SE1 2PR, UK",
+    phone: "03003030668",
+    image: "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=400&h=300&q=80",
+    lat: 51.5032,
+    lng: -0.0845,
+    googleMapsLink: "https://www.google.com/maps/search/?api=1&query=HCA+Healthcare+UK"
+  },
+  {
     id: "aberdeen",
     name: "Aberdeen",
     city: "Aberdeen",

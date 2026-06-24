@@ -274,7 +274,7 @@ export default function Navbar() {
                   </div>
                 </Link>
                 <Link
-                  href="/locations"
+                  href="/booking"
                   className="w-full inline-flex items-center justify-between rounded-full bg-[#00B2D6] pl-5 pr-1.5 py-1.5 font-sans font-bold text-white transition-all duration-300 hover:bg-[#0092B3] group"
                   onClick={() => setOpen(false)}
                 >
@@ -380,7 +380,7 @@ export default function Navbar() {
                   </div>
                 </Link>
                 <Link
-                  href="/locations"
+                  href="/booking"
                   className="inline-flex h-11 items-center justify-between rounded-full bg-[#00B2D6] pl-5 pr-1.5 font-sans font-bold text-white transition-all duration-300 hover:bg-[#0092B3] group"
                 >
                   <span className="mr-4 text-sm font-semibold tracking-wide">Book Online</span>

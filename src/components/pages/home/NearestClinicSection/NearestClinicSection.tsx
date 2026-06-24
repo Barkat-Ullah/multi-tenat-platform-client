@@ -112,10 +112,9 @@ export default function NearestClinicSection() {
             </motion.div>
           )}
 
-          {/* Footer View All Action Button */}
           <div className="text-center mt-16">
             <Link
-              href="/booking"
+              href="/locations"
               className="inline-flex items-center justify-between rounded-full bg-[#00B2D6] pl-6 pr-1.5 py-1.5 font-sans font-bold text-white transition-all duration-300 hover:bg-[#0092B3] group shadow-sm hover:shadow-md"
             >
               <span className="text-sm font-semibold tracking-wide mr-4">View All Clinics</span>
