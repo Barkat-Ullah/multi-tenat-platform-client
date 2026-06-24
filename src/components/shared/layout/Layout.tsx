@@ -7,9 +7,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { LogOut, Bell } from "lucide-react";
 import logo from "@/assets/logo/logo.png";
-import { useGetProfileDataQuery } from "@/redux/service/profile/profileApi";
 import { logout } from "@/redux/features/auth";
 import { useDispatch } from "react-redux";
+import { useAppSelector } from "@/redux/store";
 import { normalizeRole } from "@/utils/roles";
 
 const { Sider, Header, Content } = Layout;
@@ -29,8 +29,22 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, menu }) => {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const { data: profileResponse, isLoading } = useGetProfileDataQuery();
-  const user = profileResponse?.data || null;
+  // Get user profile details from Redux state to fully bypass any /me API calls on dashboard
+  const authUser = useAppSelector((state) => state.auth.user);
+
+  const user = useMemo(() => {
+    if (!authUser) return null;
+    return {
+      role: authUser.role,
+      email: authUser.email,
+      profile: {
+        name: authUser.name || "Osama",
+        avatar: "", // Offline mode bypasses avatar fetch
+      }
+    };
+  }, [authUser]);
+
+  const isLoading = false;
 
 
   const menuToRender = menu || [];
