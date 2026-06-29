@@ -3,20 +3,45 @@
 import AdminLayout from "@/components/shared/layout/Layout";
 import Link from "next/link";
 import { ReactNode } from "react";
-import { LayoutDashboard, Settings } from "lucide-react";
+import {
+  LayoutDashboard,
+  Users,
+  Calendar,
+  ClipboardPlus,
+  FileText,
+  Settings,
+} from "lucide-react";
 
 const navItems = [
   {
     key: "/dashboard/orginizer",
-    label: <Link href="/dashboard/orginizer">Organizer Dashboard</Link>,
+    label: <Link href="/dashboard/orginizer">Dashboard</Link>,
     icon: <LayoutDashboard size={18} />,
-    className: "hover:bg-gray-100 text-white hover:bg-[#0F4C75]",
+  },
+  {
+    key: "/dashboard/orginizer/drivers",
+    label: <Link href="/dashboard/orginizer/drivers">My Drivers</Link>,
+    icon: <Users size={18} />,
+  },
+  {
+    key: "/dashboard/orginizer/bookings",
+    label: <Link href="/dashboard/orginizer/bookings">All Bookings</Link>,
+    icon: <Calendar size={18} />,
+  },
+  {
+    key: "/dashboard/orginizer/services-request",
+    label: <Link href="/dashboard/orginizer/services-request">Services Request</Link>,
+    icon: <ClipboardPlus size={18} />,
+  },
+  {
+    key: "/dashboard/orginizer/reports",
+    label: <Link href="/dashboard/orginizer/reports">Reports</Link>,
+    icon: <FileText size={18} />,
   },
   {
     key: "/dashboard/orginizer/settings",
     label: <Link href="/dashboard/orginizer/settings">Settings</Link>,
     icon: <Settings size={18} />,
-    className: "hover:bg-gray-100",
   },
 ];
 
