@@ -89,14 +89,6 @@ export default function Navbar() {
 
   // ===== Profile Dropdown Menu =====
   const avatarMenuItems: MenuProps["items"] = [
-    {
-      key: "profile",
-      label: (
-        <Link href="/profile" className="block w-full">
-          <Text strong>View Profile</Text>
-        </Link>
-      ),
-    },
     ...(role
       ? [
           {

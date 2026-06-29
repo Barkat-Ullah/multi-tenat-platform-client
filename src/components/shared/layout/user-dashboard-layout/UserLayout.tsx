@@ -4,22 +4,32 @@ import AdminLayout from "@/components/shared/layout/Layout";
 import Link from "next/link";
 import { ReactNode } from "react";
 import {
-  LayoutDashboard,
+  LayoutGrid,
+  Calendar,
+  FileText,
   Settings,
 } from "lucide-react";
 
 const navItems = [
   {
     key: "/dashboard/user",
-    label: <Link href="/dashboard/user">Dashboards</Link>,
-    icon: <LayoutDashboard size={18} />,
-    className: "hover:bg-gray-100 text-white hover:bg-[#0F4C75]",
+    label: <Link href="/dashboard/user">Dashboard</Link>,
+    icon: <LayoutGrid size={18} />,
+  },
+  {
+    key: "/dashboard/user/bookings",
+    label: <Link href="/dashboard/user/bookings">Bookings</Link>,
+    icon: <Calendar size={18} />,
+  },
+  {
+    key: "/dashboard/user/reports",
+    label: <Link href="/dashboard/user/reports">Reports</Link>,
+    icon: <FileText size={18} />,
   },
   {
     key: "/dashboard/user/setting",
-    label: <Link href="/dashboard/user/setting">Setting</Link>,
+    label: <Link href="/dashboard/user/setting">Settings</Link>,
     icon: <Settings size={18} />,
-    className: "hover:bg-gray-100",
   },
 ];
 

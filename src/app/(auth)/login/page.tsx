@@ -78,12 +78,23 @@ const LoginPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (email === "clinic@example.com" || email === "organizer@example.com" || email === "superadmin@example.com") {
+    if (
+      email === "clinic@example.com" ||
+      email === "organizer@example.com" ||
+      email === "superadmin@example.com" ||
+      email === "admin@example.com" ||
+      email === "agent@gmail.com" ||
+      email === "user@example.com"
+    ) {
       const mappedRole = email === "clinic@example.com" 
         ? "CLINIC" 
         : email === "organizer@example.com" 
         ? "ORGINIZER" 
-        : "SUPER_ADMIN";
+        : email === "admin@example.com"
+        ? "ADMIN"
+        : email === "superadmin@example.com"
+        ? "SUPER_ADMIN"
+        : "USER";
       handleBackendlessLogin(mappedRole, email);
       return;
     }
@@ -298,12 +309,22 @@ const LoginPage = () => {
                     setEmail(guestEmail);
                     setPassword(guestPassword);
 
-                    if (guest.role === "Clinic" || guest.role === "Organizer" || guest.role === "Super Admin") {
+                    if (
+                      guest.role === "Clinic" ||
+                      guest.role === "Organizer" ||
+                      guest.role === "Super Admin" ||
+                      guest.role === "Admin" ||
+                      guest.role === "User"
+                    ) {
                       const mappedRole = guest.role === "Clinic" 
                         ? "CLINIC" 
                         : guest.role === "Organizer" 
                         ? "ORGINIZER" 
-                        : "SUPER_ADMIN";
+                        : guest.role === "Super Admin"
+                        ? "SUPER_ADMIN"
+                        : guest.role === "Admin"
+                        ? "ADMIN"
+                        : "USER";
                       handleBackendlessLogin(mappedRole, guestEmail);
                       return;
                     }
