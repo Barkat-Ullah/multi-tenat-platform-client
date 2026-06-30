@@ -34,6 +34,18 @@ export interface RecentReport {
   date: string;
 }
 
+export interface SuperAdminBooking {
+  id: string;
+  clientName: string;
+  email: string;
+  clientId: string;
+  service: string;
+  location: string;
+  council: string;
+  clinician: string;
+  dateTime: string;
+}
+
 export const superAdminStatsData: SuperAdminStats = {
   todaysBookings: 850,
   pendingBookings: 365,
@@ -76,4 +88,35 @@ export const superAdminRecentReports: RecentReport[] = [
   { id: "sr-3", title: "Monthly Booking Report", date: "May 01, 2025" },
   { id: "sr-4", title: "Monthly Booking Report", date: "May 01, 2025" },
   { id: "sr-5", title: "Monthly Booking Report", date: "May 01, 2025" },
+];
+
+export const superAdminBookingsData: SuperAdminBooking[] = [
+  { id: "b-1", clientName: "Sarah Gomez", email: "example@gmail.com", clientId: "C121212", service: "HGV D4 Medical", location: "Manchester Clinic, 12 Oxford", council: "Leeds City Council", clinician: "St Thomas' Hospital", dateTime: "Monday, 2 June 2025" },
+  { id: "b-2", clientName: "Sarah Gomez", email: "example@gmail.com", clientId: "C121212", service: "HGV D4 Medical", location: "Manchester Clinic, 12 Oxford", council: "Leeds City Council", clinician: "St Thomas' Hospital", dateTime: "Monday, 2 June 2025" },
+  { id: "b-3", clientName: "Sarah Gomez", email: "example@gmail.com", clientId: "C121212", service: "HGV D4 Medical", location: "Manchester Clinic, 12 Oxford", council: "Leeds City Council", clinician: "St Thomas' Hospital", dateTime: "Monday, 2 June 2025" },
+  { id: "b-4", clientName: "Sarah Gomez", email: "example@gmail.com", clientId: "C121212", service: "HGV D4 Medical", location: "Manchester Clinic, 12 Oxford", council: "Leeds City Council", clinician: "St Thomas' Hospital", dateTime: "Monday, 2 June 2025" },
+  { id: "b-5", clientName: "Sarah Gomez", email: "example@gmail.com", clientId: "C121212", service: "HGV D4 Medical", location: "Manchester Clinic, 12 Oxford", council: "Leeds City Council", clinician: "St Thomas' Hospital", dateTime: "Monday, 2 June 2025" },
+  { id: "b-6", clientName: "Sarah Gomez", email: "example@gmail.com", clientId: "C121212", service: "HGV D4 Medical", location: "Manchester Clinic, 12 Oxford", council: "Leeds City Council", clinician: "St Thomas' Hospital", dateTime: "Monday, 2 June 2025" },
+  { id: "b-7", clientName: "Sarah Gomez", email: "example@gmail.com", clientId: "C121212", service: "HGV D4 Medical", location: "Manchester Clinic, 12 Oxford", council: "Leeds City Council", clinician: "St Thomas' Hospital", dateTime: "Monday, 2 June 2025" },
+];
+
+export interface SuperAdminUserItem {
+  id: string;
+  userName: string;
+  email: string;
+  phoneNumber: string;
+  joinDate: string;
+  status: "Active" | "Inactive";
+}
+
+export const superAdminUsersData: SuperAdminUserItem[] = [
+  { id: "u-1", userName: "Sarah Gomez", email: "exaple@gmail.com", phoneNumber: "0043034837", joinDate: "02/06/2025", status: "Active" },
+  { id: "u-2", userName: "Sarah Gomez", email: "exaple@gmail.com", phoneNumber: "0043034837", joinDate: "02/06/2025", status: "Inactive" },
+  { id: "u-3", userName: "Sarah Gomez", email: "exaple@gmail.com", phoneNumber: "0043034837", joinDate: "02/06/2025", status: "Active" },
+  { id: "u-4", userName: "Sarah Gomez", email: "exaple@gmail.com", phoneNumber: "0043034837", joinDate: "02/06/2025", status: "Inactive" },
+  { id: "u-5", userName: "Sarah Gomez", email: "exaple@gmail.com", phoneNumber: "0043034837", joinDate: "02/06/2025", status: "Active" },
+  { id: "u-6", userName: "Sarah Gomez", email: "exaple@gmail.com", phoneNumber: "0043034837", joinDate: "02/06/2025", status: "Active" },
+  { id: "u-7", userName: "Sarah Gomez", email: "exaple@gmail.com", phoneNumber: "0043034837", joinDate: "02/06/2025", status: "Inactive" },
+  { id: "u-8", userName: "Sarah Gomez", email: "exaple@gmail.com", phoneNumber: "0043034837", joinDate: "02/06/2025", status: "Active" },
+  { id: "u-9", userName: "Sarah Gomez", email: "exaple@gmail.com", phoneNumber: "0043034837", joinDate: "02/06/2025", status: "Inactive" },
 ];

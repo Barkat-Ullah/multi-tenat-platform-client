@@ -1,516 +1,399 @@
 "use client";
 
-import ChangePasswordForm from "@/components/pages/Profile/ChangesPassword";
+import React, { useEffect, useState, useRef } from "react";
+import Image from "next/image";
+import { ChevronRight, Eye, EyeOff } from "lucide-react";
 import Spinner from "@/components/ui/Spinner";
 import {
-  type ProfileData,
-  type UpdateProfilePayload,
+  useGetProfileDataQuery,
+  useUpdateProfileDataMutation,
 } from "@/redux/service/profile/profileApi";
-import Image from "next/image";
-import type React from "react";
-import { useEffect, useState } from "react";
-import { appAlert } from "@/utils/appAlert";
+import { useChangePasswordMutation } from "@/redux/service/auth/authApi";
 import { getImageUrl } from "@/utils/getImageUrl";
+import { toast } from "sonner";
 
-export default function SuperAdminProfile() {
-  const isLoading = false;
-  const isUpdating = false;
+export default function SuperAdminSettingsPage() {
+  const { data: profileResponse, isLoading: isProfileLoading } =
+    useGetProfileDataQuery();
+  const [updateProfile, { isLoading: isUpdatingProfile }] =
+    useUpdateProfileDataMutation();
+  const [changePassword, { isLoading: isChangingPassword }] =
+    useChangePasswordMutation();
 
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
+  // Tab State: "profile" | "password"
+  const [activeTab, setActiveTab] = useState<"profile" | "password">("profile");
+
+  // Profile Form States
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
-  // State to hold user object with mock data by default
-  const [profileData, setProfileData] = useState<ProfileData>({
-    id: "mock-super-admin-id",
-    email: "superadmin@example.com",
-    role: "SUPER_ADMIN",
-    profile: {
-      name: "Super Admin",
-      phone: "+1 (555) 019-2834",
-      street: "123 Admin Way",
-      city: "London",
-      zipCode: "EC1A 1BB",
-      region: "Greater London",
-      country: "United Kingdom",
-      description: "Root system administrator with full platform override privileges.",
-      avatar: "",
-    },
-    stats: {
-      totalProperty: 0,
-      totalShare: 0,
-      totalView: 0,
-      totalSaved: 0,
-    },
-  });
+  // Password Form States
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Edit form state
-  const [editFormData, setEditFormData] = useState<UpdateProfilePayload>({
-    name: "Super Admin",
-    phone: "+1 (555) 019-2834",
-    street: "123 Admin Way",
-    city: "London",
-    zipCode: "EC1A 1BB",
-    region: "Greater London",
-    country: "United Kingdom",
-    description: "Root system administrator with full platform override privileges.",
-  });
+  // Hidden File Input Ref
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleEditChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setEditFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  // Handle image upload
-  const handleImageUpload = (file: File) => {
-    if (file.size > 2 * 1024 * 1024) {
-      appAlert.fire({
-        icon: "error",
-        title: "File Too Large",
-        text: "The file size exceeds the 2MB limit. Please choose a smaller file.",
-      });
-      return;
+  // Sync API data to local states
+  useEffect(() => {
+    if (profileResponse?.data) {
+      const u = profileResponse.data;
+      setName(u.profile.name || "");
+      setEmail(u.email || "");
+      setPhone(u.profile.phone || "");
+      setImagePreview(u.profile.avatar || null);
+      setAvatarFile(null);
     }
-    if (!file.type.match(/image\/(jpeg|jpg|png)/)) {
-      appAlert.fire({
-        icon: "error",
-        title: "Invalid File Type",
-        text: "Only JPEG and PNG image files are allowed.",
-      });
-      return;
-    }
+  }, [profileResponse]);
 
-    // preview
-    const reader = new FileReader();
-    reader.onloadend = () => setImagePreview(reader.result as string);
-    reader.readAsDataURL(file);
-
-    setAvatarFile(file);
-  };
-
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle Photo selection
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) handleImageUpload(file);
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("File is too large. Max size is 5MB.");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      setAvatarFile(file);
+    }
   };
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
+  // Remove Photo handler
+  const handleRemovePhoto = () => {
+    setImagePreview(null);
+    setAvatarFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    toast.info("Photo removed. Remember to save changes.");
   };
 
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) handleImageUpload(file);
-  };
-
-  // local save profile update
+  // Save profile changes
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-
     try {
-      setProfileData((prev) => ({
-        ...prev,
-        profile: {
-          ...prev.profile,
-          name: editFormData.name || "",
-          phone: editFormData.phone || "",
-          street: editFormData.street || "",
-          city: editFormData.city || "",
-          zipCode: editFormData.zipCode || "",
-          region: editFormData.region || "",
-          country: editFormData.country || "",
-          description: editFormData.description || "",
-          avatar: imagePreview || prev.profile.avatar,
-        },
-      }));
+      const formData = new FormData();
+      const payload = {
+        name,
+        phone,
+      };
 
-      appAlert.fire({
-        icon: "success",
-        title: "Success!",
-        text: "Profile Updated (Local Mock)!",
-        confirmButtonText: "OK",
-      });
+      formData.append("data", JSON.stringify(payload));
+      if (avatarFile) {
+        formData.append("avatar", avatarFile);
+      } else if (!imagePreview) {
+        formData.append("avatar", "");
+      }
 
-      setIsEditModalOpen(false);
-      setAvatarFile(null);
-    } catch (err: unknown) {
-      console.log("Update profile error:", err);
-      appAlert.fire({
-        icon: "error",
-        title: "Error!",
-        text: "Failed to save changes.",
-        confirmButtonText: "OK",
-      });
+      const res = await updateProfile(formData).unwrap();
+      toast.success(res?.message || "Profile updated successfully!");
+    } catch (err: any) {
+      console.error("Save profile error:", err);
+      toast.error(err?.data?.message || "Failed to save profile changes.");
     }
   };
 
-  const hasValue = (value: string | null | undefined) =>
-    !!value && value.trim() !== "";
+  // Save password changes
+  const handleSavePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!oldPassword.trim()) {
+      toast.error("Old password is required.");
+      return;
+    }
+    if (!newPassword.trim()) {
+      toast.error("New password is required.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("New passwords do not match.");
+      return;
+    }
 
-  const getValidImageSrc = (value: string | null | undefined) => {
-    const trimmedValue = value?.trim();
-    return trimmedValue ? getImageUrl(trimmedValue) : null;
+    try {
+      const payload = {
+        oldPassword,
+        newPassword,
+      };
+      const res = await changePassword(payload).unwrap();
+      if (res?.success) {
+        toast.success(res?.message || "Password changed successfully!");
+        setOldPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      } else {
+        toast.error(res?.message || "Password change failed.");
+      }
+    } catch (err: any) {
+      console.error("Password change error:", err);
+      toast.error(err?.data?.message || "Failed to change password.");
+    }
   };
 
-  const ProfileField = ({
-    label,
-    value,
-  }: {
-    label: string;
-    value: string | null | undefined;
-  }) => {
-    if (!hasValue(value)) return null;
+  if (isProfileLoading) {
     return (
-      <div className="flex justify-between text-sm">
-        <span className="text-gray-600 font-medium">{label}</span>
-        <span className="text-gray-900">{value}</span>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Spinner />
       </div>
     );
-  };
+  }
 
-  if (isLoading) return <Spinner />;
-
-  const user = profileData;
-  const profileAvatarSrc = getValidImageSrc(user.profile.avatar);
-  const previewImageSrc = getValidImageSrc(imagePreview);
+  // Resolve avatar preview URL
+  const resolvedAvatar = imagePreview
+    ? imagePreview.startsWith("data:")
+      ? imagePreview
+      : getImageUrl(imagePreview)
+    : null;
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10">
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold mb-8 md:mb-12 text-gray-900 font-poppins text-center md:text-left">Super Admin Profile</h1>
+    <div className="p-4 md:p-6 lg:p-8 space-y-6 w-full max-w-[1440px] mx-auto">
+      {/* Page Title */}
+      <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0F2E4A] font-poppins tracking-tight">
+        Settings
+      </h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-          {/* Left - Profile Card */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8">
-              <div className="flex flex-col items-center text-center">
-                <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 ring-4 ring-white shadow flex items-center justify-center mb-6 overflow-hidden">
-                  {profileAvatarSrc ? (
-                    <Image
-                      src={profileAvatarSrc}
-                      alt="Profile"
-                      width={128}
-                      height={128}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="text-5xl font-bold text-gray-600">👤</div>
-                  )}
-                </div>
-
-                {hasValue(user.profile.name) && (
-                  <h3 className="text-lg font-bold text-gray-900">
-                    {user.profile.name}
-                  </h3>
-                )}
-              </div>
-
-              <div className="mt-6 space-y-4 border-t border-gray-200 pt-6">
-                <ProfileField label="Email" value={user.email} />
-                <ProfileField label="Phone" value={user.profile.phone} />
-                <ProfileField label="Street" value={user.profile.street} />
-                <ProfileField label="City" value={user.profile.city} />
-                <ProfileField label="Region" value={user.profile.region} />
-                <ProfileField label="Country" value={user.profile.country} />
-                <ProfileField label="Post Code" value={user.profile.zipCode} />
-              </div>
-            </div>
-          </div>
-
-          {/* Right - My Details Card */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8">
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-xl md:text-2xl font-bold text-gray-900 font-poppins">My Details</h2>
-
-                <button
-                  onClick={() => {
-                    setEditFormData({
-                      name: profileData.profile.name || "",
-                      phone: profileData.profile.phone || "",
-                      street: profileData.profile.street || "",
-                      city: profileData.profile.city || "",
-                      zipCode: profileData.profile.zipCode || "",
-                      region: profileData.profile.region || "",
-                      country: profileData.profile.country || "",
-                      description: profileData.profile.description || "",
-                    });
-                    setImagePreview(profileData?.profile?.avatar);
-                    setAvatarFile(null);
-                    setIsEditModalOpen(true);
-                  }}
-                  className="text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition-colors"
-                  aria-label="Edit profile"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                    />
-                  </svg>
-                </button>
-              </div>
-
-              <p className="text-gray-600 leading-relaxed text-sm">
-                {user.profile.description || "No description yet."}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Change Password Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8">
-          <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-8 font-poppins">
-            Change Password
+      <div className="flex flex-col lg:flex-row gap-8 items-start">
+        {/* Left Sidebar Menu */}
+        <aside className="w-full lg:w-[280px] shrink-0 bg-white border border-slate-100/90 rounded-3xl p-5 shadow-[0_4px_25px_rgba(0,0,0,0.01)]">
+          <h2 className="text-[#0F2E4A] text-sm sm:text-base font-extrabold font-poppins mb-4 px-2">
+            Settings
           </h2>
-          <ChangePasswordForm />
-        </div>
-      </div>
+          <nav className="flex flex-col gap-2">
+            <button
+              onClick={() => setActiveTab("profile")}
+              className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl font-bold text-xs sm:text-sm transition-all border-none outline-none cursor-pointer ${
+                activeTab === "profile"
+                  ? "bg-[#00B2D6] text-white shadow-md shadow-cyan-100"
+                  : "text-slate-500 hover:bg-slate-50 hover:text-[#0F2E4A] bg-transparent"
+              }`}
+            >
+              <span>Profile</span>
+              <ChevronRight size={16} />
+            </button>
+            <button
+              onClick={() => setActiveTab("password")}
+              className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl font-bold text-xs sm:text-sm transition-all border-none outline-none cursor-pointer ${
+                activeTab === "password"
+                  ? "bg-[#00B2D6] text-white shadow-md shadow-cyan-100"
+                  : "text-slate-500 hover:bg-slate-50 hover:text-[#0F2E4A] bg-transparent"
+              }`}
+            >
+              <span>Change Password</span>
+              <ChevronRight size={16} />
+            </button>
+          </nav>
+        </aside>
 
-      {/* Edit Profile Modal */}
-      {isEditModalOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-          onClick={() => setIsEditModalOpen(false)}
-        >
-          <div
-            className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="sticky top-0 flex items-center justify-between border-b border-gray-200 p-6 bg-white">
-              <h2 className="text-xl font-bold text-gray-900">Edit Profile</h2>
-              <button
-                onClick={() => setIsEditModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600"
-                aria-label="Close"
-              >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
+        {/* Right Content Form Block */}
+        <main className="flex-1 bg-white border border-slate-100/90 p-6 sm:p-8 md:p-10 rounded-3xl shadow-[0_4px_25px_rgba(0,0,0,0.01)]">
+          {activeTab === "profile" ? (
+            /* PROFILE TAB PANEL */
+            <form onSubmit={handleSaveProfile} className="space-y-6">
+              <h2 className="text-[#0F2E4A] text-lg sm:text-xl font-extrabold font-poppins pb-2">
+                Profile
+              </h2>
 
-            <form onSubmit={handleSaveProfile} className="p-6 space-y-6">
-              {/* Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={editFormData.name || ""}
-                  onChange={handleEditChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004E60]"
-                />
+              {/* Photo Upload Area */}
+              <div className="space-y-3">
+                <span className="block text-xs font-bold text-[#0F2E4A] font-sans">
+                  Photo
+                </span>
+                <div className="flex items-center gap-4 flex-wrap">
+                  {/* Circular Avatar */}
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-slate-50 border border-slate-100 overflow-hidden flex items-center justify-center shrink-0">
+                    {resolvedAvatar ? (
+                      <Image
+                        src={resolvedAvatar}
+                        alt="Profile avatar"
+                        width={96}
+                        height={96}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="text-3xl">👤</div>
+                    )}
+                  </div>
+
+                  {/* Upload Action Buttons */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="bg-[#00B2D6] hover:bg-[#009cb9] text-white px-4 py-2 rounded-full font-bold text-xs transition-all cursor-pointer border-none outline-none"
+                    >
+                      Change Photo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRemovePhoto}
+                      className="border border-[#00B2D6] hover:bg-slate-50 text-[#00B2D6] bg-white px-4 py-2 rounded-full font-bold text-xs transition-all cursor-pointer outline-none"
+                    >
+                      Remove
+                    </button>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                  </div>
+                </div>
               </div>
 
-              {/* Phone */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              {/* Input Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-xs font-bold text-[#0F2E4A] mb-1.5 font-sans">
+                    First Name
+                  </label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="e.g., Dr. Raj"
+                    className="w-full px-4 py-3.5 border border-slate-200 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.01)] focus:outline-none focus:border-[#00B2D6] focus:ring-1 focus:ring-[#00B2D6] text-xs sm:text-sm text-[#0F2E4A] placeholder-slate-400 font-semibold transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#0F2E4A] mb-1.5 font-sans">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    disabled
+                    placeholder="example2345@gmail.com"
+                    className="w-full px-4 py-3.5 border border-slate-100 rounded-2xl bg-slate-50 text-xs sm:text-sm text-slate-400 font-semibold cursor-not-allowed outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="w-full">
+                <label className="block text-xs font-bold text-[#0F2E4A] mb-1.5 font-sans">
                   Phone
                 </label>
                 <input
-                  type="tel"
-                  name="phone"
-                  value={editFormData.phone || ""}
-                  onChange={handleEditChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004E60]"
-                />
-              </div>
-
-              {/* Street */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Street Address
-                </label>
-                <input
                   type="text"
-                  name="street"
-                  value={editFormData.street || ""}
-                  onChange={handleEditChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004E60]"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="e.g., 07700 900456"
+                  className="w-full px-4 py-3.5 border border-slate-200 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.01)] focus:outline-none focus:border-[#00B2D6] focus:ring-1 focus:ring-[#00B2D6] text-xs sm:text-sm text-[#0F2E4A] placeholder-slate-400 font-semibold transition-all"
                 />
               </div>
 
-              {/* City, Region, Country, ZipCode */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    City
-                  </label>
-                  <input
-                    type="text"
-                    name="city"
-                    value={editFormData.city || ""}
-                    onChange={handleEditChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004E60]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Region
-                  </label>
-                  <input
-                    type="text"
-                    name="region"
-                    value={editFormData.region || ""}
-                    onChange={handleEditChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004E60]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Country
-                  </label>
-                  <input
-                    type="text"
-                    name="country"
-                    value={editFormData.country || ""}
-                    onChange={handleEditChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004E60]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Post Code
-                  </label>
-                  <input
-                    type="text"
-                    name="zipCode"
-                    value={editFormData.zipCode || ""}
-                    onChange={handleEditChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004E60]"
-                  />
-                </div>
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description
-                </label>
-                <textarea
-                  name="description"
-                  value={editFormData.description || ""}
-                  onChange={handleEditChange}
-                  rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004E60]"
-                />
-              </div>
-
-              {/* Image Upload */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Profile Image
-                </label>
-
-                <div
-                  className={`border-2 border-dashed rounded-lg p-6 text-center ${
-                    isDragging
-                      ? "border-[#004E60] bg-blue-50"
-                      : "border-gray-300"
-                  }`}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                >
-                  {previewImageSrc ? (
-                    <div className="space-y-3">
-                      <Image
-                        src={previewImageSrc}
-                        alt="Preview"
-                        width={80}
-                        height={80}
-                        className="w-20 h-20 rounded-full mx-auto object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setImagePreview(null);
-                          setAvatarFile(null);
-                        }}
-                        className="text-sm text-red-600"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ) : (
-                    <div>
-                      <p className="text-gray-500">Drag & drop or browse</p>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileInputChange}
-                        className="hidden"
-                        id="file-input"
-                      />
-                      <label
-                        htmlFor="file-input"
-                        className="mt-2 inline-block px-4 py-2 bg-[#004E60] text-white rounded cursor-pointer"
-                      >
-                        Choose File
-                      </label>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-3 pt-4 border-t border-gray-200">
-                <button
-                  type="button"
-                  onClick={() => setIsEditModalOpen(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg"
-                >
-                  Cancel
-                </button>
-
+              {/* Submit Button */}
+              <div className="pt-2">
                 <button
                   type="submit"
-                  disabled={isUpdating}
-                  className="flex-1 px-4 py-2 bg-[#004E60] text-white rounded-lg disabled:opacity-50"
+                  disabled={isUpdatingProfile}
+                  className="bg-[#00B2D6] hover:bg-[#009cb9] text-white px-7 py-3 rounded-full font-bold text-xs sm:text-sm tracking-wide transition-all shadow-md shadow-cyan-100/50 cursor-pointer border-none outline-none active:scale-[0.98] disabled:opacity-60"
                 >
-                  {isUpdating ? "Saving..." : "Save Changes"}
+                  {isUpdatingProfile ? "Saving..." : "Save Changes"}
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+          ) : (
+            /* CHANGE PASSWORD TAB PANEL */
+            <form onSubmit={handleSavePassword} className="space-y-6">
+              <h2 className="text-[#0F2E4A] text-lg sm:text-xl font-extrabold font-poppins pb-2">
+                Change Password
+              </h2>
+
+              {/* Password Inputs */}
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-xs font-bold text-[#0F2E4A] mb-1.5 font-sans">
+                    Old Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showOldPassword ? "text" : "password"}
+                      value={oldPassword}
+                      onChange={(e) => setOldPassword(e.target.value)}
+                      placeholder="********"
+                      className="w-full px-4 py-3.5 border border-slate-200 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.01)] focus:outline-none focus:border-[#00B2D6] focus:ring-1 focus:ring-[#00B2D6] text-xs sm:text-sm text-[#0F2E4A] placeholder-slate-400 font-semibold transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowOldPassword(!showOldPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 bg-transparent border-none outline-none cursor-pointer"
+                    >
+                      {showOldPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#0F2E4A] mb-1.5 font-sans">
+                    New Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showNewPassword ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="********"
+                      className="w-full px-4 py-3.5 border border-slate-200 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.01)] focus:outline-none focus:border-[#00B2D6] focus:ring-1 focus:ring-[#00B2D6] text-xs sm:text-sm text-[#0F2E4A] placeholder-slate-400 font-semibold transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 bg-transparent border-none outline-none cursor-pointer"
+                    >
+                      {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#0F2E4A] mb-1.5 font-sans">
+                    Confirm Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="********"
+                      className="w-full px-4 py-3.5 border border-slate-200 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.01)] focus:outline-none focus:border-[#00B2D6] focus:ring-1 focus:ring-[#00B2D6] text-xs sm:text-sm text-[#0F2E4A] placeholder-slate-400 font-semibold transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 bg-transparent border-none outline-none cursor-pointer"
+                    >
+                      {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={isChangingPassword}
+                  className="bg-[#00B2D6] hover:bg-[#009cb9] text-white px-7 py-3 rounded-full font-bold text-xs sm:text-sm tracking-wide transition-all shadow-md shadow-cyan-100/50 cursor-pointer border-none outline-none active:scale-[0.98] disabled:opacity-60"
+                >
+                  {isChangingPassword ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          )}
+        </main>
+      </div>
     </div>
   );
 }
