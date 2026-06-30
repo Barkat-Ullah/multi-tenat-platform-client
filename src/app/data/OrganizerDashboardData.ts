@@ -32,6 +32,14 @@ export interface OrganizerBooking {
   assignedDriverName?: string;
 }
 
+export interface OrganizerReport {
+  id: string;
+  title: string;
+  driverName: string;
+  dateGenerated: string;
+  hospitalName: string;
+}
+
 export const organizerStatsData: OrganizerStats = {
   totalDrivers: 48,
   upcomingBookings: 12,
@@ -72,4 +80,12 @@ export const organizerBookingsData: OrganizerBooking[] = [
   { id: "b4", srvName: "Taxi Medicals", numDrivers: 30, clinicianName: "St Thomas' Hospital", lastMedical: "02 Jun 2025", expiryDate: "02 Jun 2026", status: "Confirm" },
   { id: "b5", srvName: "Taxi Medicals", numDrivers: 30, clinicianName: "St Thomas' Hospital", lastMedical: "02 Jun 2025", expiryDate: "02 Jun 2026", status: "Confirm" },
   { id: "b6", srvName: "Taxi Medicals", numDrivers: 30, clinicianName: "St Thomas' Hospital", lastMedical: "02 Jun 2025", expiryDate: "02 Jun 2026", status: "Confirm" },
+];
+
+export const organizerReportsData: OrganizerReport[] = [
+  { id: "rep1", title: "HGV/Bus Medical Certificates", driverName: "SarahGomez", dateGenerated: "28 May 2025", hospitalName: "Guy's Hospital" },
+  { id: "rep2", title: "HGV/Bus Medical Certificates", driverName: "SarahGomez", dateGenerated: "28 May 2025", hospitalName: "Guy's Hospital" },
+  { id: "rep3", title: "HGV/Bus Medical Certificates", driverName: "SarahGomez", dateGenerated: "28 May 2025", hospitalName: "Guy's Hospital" },
+  { id: "rep4", title: "HGV/Bus Medical Certificates", driverName: "SarahGomez", dateGenerated: "28 May 2025", hospitalName: "Guy's Hospital" },
+  { id: "rep5", title: "HGV/Bus Medical Certificates", driverName: "SarahGomez", dateGenerated: "28 May 2025", hospitalName: "Guy's Hospital" },
 ];

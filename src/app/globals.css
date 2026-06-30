@@ -125,3 +125,42 @@ input[type="number"] {
 .ant-pagination-item-active a {
   color: white !important;
 }
+
+/* Ant Design Menu custom styling overrides to match modern glassmorphism / mockup */
+.ant-menu-item {
+  border-radius: 16px !important;
+  font-weight: 700 !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 13px !important;
+  color: #0F2E4A !important;
+  transition: all 0.2s ease-in-out !important;
+  display: flex !important;
+  align-items: center !important;
+  margin-bottom: 8px !important;
+  height: 48px !important;
+}
+
+.ant-menu-item .ant-menu-item-icon {
+  color: #00B2D6 !important;
+  font-size: 18px !important;
+}
+
+.ant-menu-item:hover {
+  background-color: #E6FAFF !important;
+  color: #00B2D6 !important;
+}
+
+.ant-menu-item-selected {
+  background-color: #00B2D6 !important;
+  color: white !important;
+  box-shadow: 0 4px 15px rgba(0, 178, 214, 0.25) !important;
+}
+
+.ant-menu-item-selected .ant-menu-item-icon {
+  color: white !important;
+}
+
+.ant-menu-item-selected a {
+  color: white !important;
+}
+

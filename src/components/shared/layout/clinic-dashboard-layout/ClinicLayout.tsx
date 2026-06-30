@@ -3,20 +3,57 @@
 import AdminLayout from "@/components/shared/layout/Layout";
 import Link from "next/link";
 import { ReactNode } from "react";
-import { LayoutDashboard, Settings } from "lucide-react";
+import {
+  LayoutGrid,
+  Calendar,
+  CalendarPlus,
+  Users,
+  Building2,
+  FileText,
+  Folder,
+  Settings,
+} from "lucide-react";
 
 const navItems = [
   {
     key: "/dashboard/clinic",
-    label: <Link href="/dashboard/clinic">Clinic Dashboard</Link>,
-    icon: <LayoutDashboard size={18} />,
-    className: "hover:bg-gray-100 text-white hover:bg-[#0F4C75]",
+    label: <Link href="/dashboard/clinic">Dashboard</Link>,
+    icon: <LayoutGrid size={18} />,
+  },
+  {
+    key: "/dashboard/clinic/my-schedule",
+    label: <Link href="/dashboard/clinic/my-schedule">My Schedule</Link>,
+    icon: <Calendar size={18} />,
+  },
+  {
+    key: "/dashboard/clinic/create-schedule",
+    label: <Link href="/dashboard/clinic/create-schedule">Create Schedule</Link>,
+    icon: <CalendarPlus size={18} />,
+  },
+  {
+    key: "/dashboard/clinic/my-patients",
+    label: <Link href="/dashboard/clinic/my-patients">My Patients</Link>,
+    icon: <Users size={18} />,
+  },
+  {
+    key: "/dashboard/clinic/corporate-list",
+    label: <Link href="/dashboard/clinic/corporate-list">Corporate List</Link>,
+    icon: <Building2 size={18} />,
+  },
+  {
+    key: "/dashboard/clinic/medical-forms",
+    label: <Link href="/dashboard/clinic/medical-forms">Medical Forms</Link>,
+    icon: <FileText size={18} />,
+  },
+  {
+    key: "/dashboard/clinic/documents",
+    label: <Link href="/dashboard/clinic/documents">Docoments</Link>,
+    icon: <Folder size={18} />,
   },
   {
     key: "/dashboard/clinic/settings",
     label: <Link href="/dashboard/clinic/settings">Settings</Link>,
     icon: <Settings size={18} />,
-    className: "hover:bg-gray-100",
   },
 ];
 
