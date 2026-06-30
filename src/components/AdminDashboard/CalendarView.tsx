@@ -125,7 +125,11 @@ export default function CalendarView() {
               { value: "Guy's Hospital", label: "Guy's Hospital" },
             ]}
             className="w-48 h-10 select-premium-calendar"
-            popupClassName="premium-select-popup"
+            classNames={{
+              popup: {
+                root: "premium-select-popup"
+              }
+            }}
           />
 
           <Select
@@ -138,7 +142,11 @@ export default function CalendarView() {
               { value: "Birmingham", label: "Birmingham" },
             ]}
             className="w-32 h-10 select-premium-calendar"
-            popupClassName="premium-select-popup"
+            classNames={{
+              popup: {
+                root: "premium-select-popup"
+              }
+            }}
           />
 
           <Select
@@ -150,7 +158,11 @@ export default function CalendarView() {
               { value: "Monthly", label: "Monthly" },
             ]}
             className="w-28 h-10 select-premium-calendar"
-            popupClassName="premium-select-popup"
+            classNames={{
+              popup: {
+                root: "premium-select-popup"
+              }
+            }}
           />
         </div>
       </div>
