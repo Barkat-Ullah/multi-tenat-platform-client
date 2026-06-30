@@ -5,20 +5,96 @@ import Link from "next/link";
 import { ReactNode } from "react";
 import {
   LayoutDashboard,
-  Settings,
-  Users
+  CalendarDays,
+  MapPin,
+  Stethoscope,
+  Calendar,
+  Building,
+  Heart,
+  HelpCircle,
+  Users,
+  CreditCard,
+  ShieldCheck,
+  FileText,
+  Settings
 } from "lucide-react";
 
 const navItems = [
   {
     key: "/dashboard/super-admin",
-    label: <Link href="/dashboard/super-admin">Dashboards</Link>,
+    label: <Link href="/dashboard/super-admin">Dashboard</Link>,
     icon: <LayoutDashboard size={18} />,
     className: "hover:bg-gray-100",
   },
   {
+    key: "/dashboard/super-admin/all-booking",
+    label: <Link href="/dashboard/super-admin/all-booking">All Booking</Link>,
+    icon: <CalendarDays size={18} />,
+    className: "hover:bg-gray-100",
+  },
+  {
+    key: "/dashboard/super-admin/location",
+    label: <Link href="/dashboard/super-admin/location">Location</Link>,
+    icon: <MapPin size={18} />,
+    className: "hover:bg-gray-100",
+  },
+  {
+    key: "/dashboard/super-admin/clinicians",
+    label: <Link href="/dashboard/super-admin/clinicians">Clinicians</Link>,
+    icon: <Stethoscope size={18} />,
+    className: "hover:bg-gray-100",
+  },
+  {
+    key: "/dashboard/super-admin/calendar",
+    label: <Link href="/dashboard/super-admin/calendar">Calendar</Link>,
+    icon: <Calendar size={18} />,
+    className: "hover:bg-gray-100",
+  },
+  {
+    key: "/dashboard/super-admin/corporate",
+    label: <Link href="/dashboard/super-admin/corporate">Corporate</Link>,
+    icon: <Building size={18} />,
+    className: "hover:bg-gray-100",
+  },
+  {
+    key: "/dashboard/super-admin/services",
+    label: <Link href="/dashboard/super-admin/services">Services</Link>,
+    icon: <Heart size={18} />,
+    className: "hover:bg-gray-100",
+  },
+  {
+    key: "/dashboard/super-admin/add-faq",
+    label: <Link href="/dashboard/super-admin/add-faq">Add FAQ</Link>,
+    icon: <HelpCircle size={18} />,
+    className: "hover:bg-gray-100",
+  },
+  {
+    key: "/dashboard/super-admin/manage-user",
+    label: <Link href="/dashboard/super-admin/manage-user">Manage User</Link>,
+    icon: <Users size={18} />,
+    className: "hover:bg-gray-100",
+  },
+  {
+    key: "/dashboard/super-admin/payment-settings",
+    label: <Link href="/dashboard/super-admin/payment-settings">Payment Settings</Link>,
+    icon: <CreditCard size={18} />,
+    className: "hover:bg-gray-100",
+  },
+  {
+    key: "/dashboard/super-admin/privacy-policy",
+    label: <Link href="/dashboard/super-admin/privacy-policy">Privacy Policy</Link>,
+    icon: <ShieldCheck size={18} />,
+    className: "hover:bg-gray-100",
+  },
+  {
+    key: "/dashboard/super-admin/terms-of-service",
+    label: <Link href="/dashboard/super-admin/terms-of-service">Terms of Service</Link>,
+    icon: <FileText size={18} />,
+    className: "hover:bg-gray-100",
+  },
+  {
     key: "/dashboard/super-admin/settings",
-    label: <Link href="/dashboard/super-admin/settings">Setting</Link>,
+    label: <Link href="/dashboard/super-admin/settings">Settings</Link>,
     icon: <Settings size={18} />,
     className: "hover:bg-gray-100",
   },
