@@ -8,7 +8,7 @@ export const Logo = () => (
       src={logoImg}
       alt="Compliance Medicals Logo"
       priority
-      className="h-[40px] w-auto object-contain"
+      className="h-[50px] w-auto object-contain"
     />
   </div>
 );
