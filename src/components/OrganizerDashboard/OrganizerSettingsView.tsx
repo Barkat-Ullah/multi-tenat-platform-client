@@ -4,31 +4,24 @@ import React, { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import { ChevronRight, Save, Eye, EyeOff } from "lucide-react";
 import Spinner from "@/components/ui/Spinner";
-import {
-  useGetProfileDataQuery,
-  useUpdateProfileDataMutation,
-} from "@/redux/service/profile/profileApi";
-import { useChangePasswordMutation } from "@/redux/service/auth/authApi";
 import { getImageUrl } from "@/utils/getImageUrl";
 import { toast } from "sonner";
 
 export default function OrganizerSettingsView() {
-  const { data: profileResponse, isLoading: isProfileLoading } =
-    useGetProfileDataQuery();
-  const [updateProfile, { isLoading: isUpdatingProfile }] =
-    useUpdateProfileDataMutation();
-  const [changePassword, { isLoading: isChangingPassword }] =
-    useChangePasswordMutation();
-
   // Tab State: "profile" | "password"
   const [activeTab, setActiveTab] = useState<"profile" | "password">("profile");
 
   // Profile Form States
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [name, setName] = useState("Leeds City Council Organizer");
+  const [email, setEmail] = useState("leeds.organizer@compliancemed.co.uk");
+  const [phone, setPhone] = useState("07700 900123");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+
+  // Simulation loading states
+  const [isProfileLoading, setIsProfileLoading] = useState(false);
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   // Password Form States
   const [oldPassword, setOldPassword] = useState("");
@@ -40,18 +33,6 @@ export default function OrganizerSettingsView() {
 
   // Hidden File Input Ref
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Sync API data to local states
-  useEffect(() => {
-    if (profileResponse?.data) {
-      const u = profileResponse.data;
-      setName(u.profile.name || "");
-      setEmail(u.email || "");
-      setPhone(u.profile.phone || "");
-      setImagePreview(u.profile.avatar || null);
-      setAvatarFile(null);
-    }
-  }, [profileResponse]);
 
   // Handle Photo selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,26 +64,11 @@ export default function OrganizerSettingsView() {
   // Save profile changes
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      const formData = new FormData();
-      const payload = {
-        name,
-        phone,
-      };
-
-      formData.append("data", JSON.stringify(payload));
-      if (avatarFile) {
-        formData.append("avatar", avatarFile);
-      } else if (!imagePreview) {
-        formData.append("avatar", "");
-      }
-
-      const res = await updateProfile(formData).unwrap();
-      toast.success(res?.message || "Profile updated successfully!");
-    } catch (err: any) {
-      console.error("Save profile error:", err);
-      toast.error(err?.data?.message || "Failed to save profile changes.");
-    }
+    setIsUpdatingProfile(true);
+    setTimeout(() => {
+      setIsUpdatingProfile(false);
+      toast.success("Profile updated successfully!");
+    }, 600);
   };
 
   // Save password changes
@@ -121,24 +87,14 @@ export default function OrganizerSettingsView() {
       return;
     }
 
-    try {
-      const payload = {
-        oldPassword,
-        newPassword,
-      };
-      const res = await changePassword(payload).unwrap();
-      if (res?.success) {
-        toast.success(res?.message || "Password changed successfully!");
-        setOldPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-      } else {
-        toast.error(res?.message || "Password change failed.");
-      }
-    } catch (err: any) {
-      console.error("Password change error:", err);
-      toast.error(err?.data?.message || "Failed to change password.");
-    }
+    setIsChangingPassword(true);
+    setTimeout(() => {
+      setIsChangingPassword(false);
+      toast.success("Password changed successfully!");
+      setOldPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    }, 600);
   };
 
   if (isProfileLoading) {
