@@ -1,27 +1,26 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { baseApi } from "@/redux/api/baseApi"; // <-- adjust path if different
+import { baseApi } from "@/redux/api/baseApi";
+import type { BackendRole } from "@/utils/roles";
 
-// ---------------- TYPES ----------------
 export type ProfileData = {
   id: string;
   email: string;
-  role: string;
-  profile: {
-    name: string;
-    phone: string;
-    street: string;
-    city: string;
-    zipCode: string;
-    region: string;
-    country: string;
-    description: string;
-    avatar: string;
-  };
-  stats: {
-    totalProperty: number;
-    totalShare: number;
-    totalView: number;
-    totalSaved: number;
+  fullName?: string;
+  phoneNumber?: string | null;
+  image?: string | null;
+  role: BackendRole | string;
+  status?: string;
+  describe?: string | null;
+  city?: string | null;
+  address?: string | null;
+  licenseNo?: string | null;
+  medicalStatus?: string | null;
+  medicalExpiry?: string | null;
+  companyLocation?: string | null;
+  clinicGmcNumber?: string | null;
+  profile?: {
+    name?: string;
+    phone?: string;
+    avatar?: string | null;
   };
 };
 
@@ -36,50 +35,38 @@ export type UpdateProfileResponse = {
   success: boolean;
   statusCode: number;
   message: string;
-  data?: ProfileData; // some backends return updated user, some only message
+  data?: ProfileData;
 };
 
-// Your backend expects JSON string inside "data"
 export type UpdateProfilePayload = {
-  name?: string;
-  phone?: string;
-  street?: string;
-  city?: string;
-  zipCode?: string;
-  region?: string;
-  country?: string;
-  description?: string;
+  fullName?: string;
+  phoneNumber?: string;
+  image?: null;
 };
 
-// ---------------- API ----------------
 export const profileApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAgencyProfileData: builder.query<GetProfileResponse, void>({
       query: () => ({
-        url: "/users/me/agency", // GET /api/v1/users
+        url: "/user/me",
         method: "GET",
       }),
       providesTags: ["profile"],
     }),
 
-        getProfileData: builder.query<GetProfileResponse, void>({
+    getProfileData: builder.query<GetProfileResponse, void>({
       query: () => ({
-        url: "/users/me", // GET /api/v1/users
+        url: "/user/me",
         method: "GET",
       }),
       providesTags: ["profile"],
     }),
-
-
-    
 
     updateProfileData: builder.mutation<UpdateProfileResponse, FormData>({
       query: (body) => ({
-        url: "/users", // PATCH /api/v1/users
-        method: "PATCH",
+        url: "/user/update-profile",
+        method: "PUT",
         body,
-        // ✅ IMPORTANT: do NOT set "Content-Type"
-        // browser will set multipart/form-data boundary automatically
       }),
       invalidatesTags: ["profile"],
     }),

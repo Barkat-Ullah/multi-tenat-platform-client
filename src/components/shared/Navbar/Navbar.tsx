@@ -50,10 +50,17 @@ export default function Navbar() {
   
   // 👤 Get full profile data for avatar and name
   const { data: profileResponse } = useGetProfileDataQuery(undefined, { skip: !isAuthenticated });
-  const profile = profileResponse?.data?.profile;
-  
-  const avatarUrl = profile?.avatar?.trim() || null;
-  const displayName = profile?.name || user?.name || user?.email?.split("@")[0] || "User";
+  const profileData = profileResponse?.data;
+  const profile = profileData?.profile;
+
+  const avatarUrl =
+    profileData?.image?.trim() || profile?.avatar?.trim() || null;
+  const displayName =
+    profileData?.fullName ||
+    profile?.name ||
+    user?.name ||
+    user?.email?.split("@")[0] ||
+    "User";
   const fallbackInitial = (displayName?.[0] || user?.email?.[0] || "U").toUpperCase();
 
   // ===== Navigation Links =====
