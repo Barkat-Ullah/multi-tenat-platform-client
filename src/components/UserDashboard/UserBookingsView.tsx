@@ -2,22 +2,100 @@
 
 import React, { useState, useMemo } from "react";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
-import { userBookingsData, UserBooking } from "@/app/data/UserDashboardData";
 import { toast } from "sonner";
+import Spinner from "@/components/ui/Spinner";
+import {
+  UserBookingItem,
+  useCancelMyBookingMutation,
+  useGetMyBookingsQuery,
+} from "@/redux/service/user/userDashboardApi";
+
+interface BookingRow {
+  id: string;
+  clinicianName: string;
+  email: string;
+  serviceType: string;
+  appointmentTime: string;
+  location: string;
+  status: string;
+}
+
+const formatBookingDateTime = (scheduledAt?: string) => {
+  if (!scheduledAt) return "Not scheduled";
+
+  const date = new Date(scheduledAt);
+  if (Number.isNaN(date.getTime())) return "Not scheduled";
+
+  return new Intl.DateTimeFormat("en-GB", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).format(date);
+};
+
+const formatStatus = (status: string) =>
+  status
+    .toLowerCase()
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+
+const mapBookingToRow = (booking: UserBookingItem): BookingRow => {
+  const clinic = booking.clinic;
+  const clinicLocation = clinic?.location?.locationName;
+
+  return {
+    id: booking.id,
+    clinicianName: booking.clinicName || clinic?.fullName || "N/A",
+    email: booking.clinicEmail || clinic?.email || booking.driver?.email || "N/A",
+    serviceType: booking.serviceTitle || booking.service?.title || "N/A",
+    appointmentTime: formatBookingDateTime(booking.scheduledAt),
+    location: booking.location || clinicLocation || clinic?.city || clinic?.address || "N/A",
+    status: booking.status,
+  };
+};
+
+const canCancelBooking = (status: string) =>
+  status === "PENDING" || status === "CONFIRMED";
 
 export default function UserBookingsView() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [cancellingBookingId, setCancellingBookingId] = useState<string | null>(
+    null,
+  );
   const itemsPerPage = 9;
 
-  // State initialized with centralized mock data
-  const [bookings, setBookings] = useState<UserBooking[]>(userBookingsData);
+  const { data, isLoading, isError, refetch } = useGetMyBookingsQuery({
+    page: currentPage,
+    limit: itemsPerPage,
+  });
+  const [cancelBooking, { isLoading: isCancelling }] = useCancelMyBookingMutation();
 
-  const handleCancelBooking = (bookingId: string, name: string) => {
-    setBookings((prev) =>
-      prev.map((b) => (b.id === bookingId ? { ...b, status: "Canceled" } : b))
-    );
-    toast.info(`Booking at ${name} cancelled successfully.`);
+  const bookings = useMemo(
+    () => (data?.data || []).map(mapBookingToRow),
+    [data?.data],
+  );
+
+  const handleCancelBooking = async (bookingId: string, name: string) => {
+    try {
+      setCancellingBookingId(bookingId);
+      const res = await cancelBooking(bookingId).unwrap();
+      toast.success(res?.message || `Booking at ${name} cancelled successfully.`);
+    } catch (error: any) {
+      toast.error(
+        error?.data?.message ||
+          error?.error ||
+          error?.message ||
+          "Failed to cancel booking.",
+      );
+    } finally {
+      setCancellingBookingId(null);
+    }
   };
 
   const filteredBookings = useMemo(() => {
@@ -32,11 +110,18 @@ export default function UserBookingsView() {
     });
   }, [bookings, searchTerm]);
 
-  const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
+  const serverTotalPages = data?.meta
+    ? Math.max(1, Math.ceil(data.meta.total / data.meta.limit))
+    : 1;
+  const totalPages = searchTerm
+    ? Math.ceil(filteredBookings.length / itemsPerPage)
+    : serverTotalPages;
   const paginatedBookings = useMemo(() => {
+    if (!searchTerm) return filteredBookings;
+
     const startIdx = (currentPage - 1) * itemsPerPage;
     return filteredBookings.slice(startIdx, startIdx + itemsPerPage);
-  }, [filteredBookings, currentPage]);
+  }, [currentPage, filteredBookings, searchTerm]);
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -101,7 +186,32 @@ export default function UserBookingsView() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100/80">
-                {paginatedBookings.map((b) => (
+                {isLoading && (
+                  <tr>
+                    <td colSpan={6} className="py-10">
+                      <div className="flex justify-center">
+                        <Spinner />
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                {isError && !isLoading && (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center">
+                      <p className="text-sm font-bold text-red-500">
+                        Failed to load bookings.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => refetch()}
+                        className="mt-3 rounded-full bg-[#00B2D6] px-5 py-2 text-xs font-bold text-white transition-colors hover:bg-[#0092B0]"
+                      >
+                        Try Again
+                      </button>
+                    </td>
+                  </tr>
+                )}
+                {!isLoading && !isError && paginatedBookings.map((b) => (
                   <tr key={b.id} className="hover:bg-slate-50/40 transition-colors">
                     <td className="py-3.5 px-8 text-xs sm:text-sm text-slate-500 font-semibold font-sans">
                       {b.clinicianName}
@@ -119,30 +229,29 @@ export default function UserBookingsView() {
                       {b.location}
                     </td>
                     <td className="py-3.5 px-6 text-center">
-                      {b.status === "Pending" ? (
+                      {canCancelBooking(b.status) ? (
                         <button
                           onClick={() => handleCancelBooking(b.id, b.clinicianName)}
+                          disabled={isCancelling}
                           className="inline-flex items-center justify-center px-4 py-1.5 rounded-full text-[10px] sm:text-xs font-bold bg-[#FEF9E7] hover:bg-[#FDF3D0] text-[#D9A700] border border-[#F9E79F]/30 uppercase tracking-wider cursor-pointer outline-none transition-all active:scale-[0.97]"
                         >
-                          Pending
+                          {cancellingBookingId === b.id
+                            ? "Cancelling..."
+                            : formatStatus(b.status)}
                         </button>
-                      ) : b.status === "Cancel" ? (
-                        <span className="inline-flex items-center justify-center px-4 py-1.5 rounded-full text-[10px] sm:text-xs font-bold bg-orange-50 text-orange-600 border border-orange-100 uppercase tracking-wider">
-                          Cancel
-                        </span>
-                      ) : b.status === "Canceled" ? (
+                      ) : b.status === "CANCELLED" ? (
                         <span className="inline-flex items-center justify-center px-4 py-1.5 rounded-full text-[10px] sm:text-xs font-bold bg-red-50 text-red-600 border border-red-100 uppercase tracking-wider">
-                          Canceled
+                          {formatStatus(b.status)}
                         </span>
                       ) : (
                         <span className="inline-flex items-center justify-center px-4 py-1.5 rounded-full text-[10px] sm:text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 uppercase tracking-wider">
-                          Completed
+                          {formatStatus(b.status)}
                         </span>
                       )}
                     </td>
                   </tr>
                 ))}
-                {paginatedBookings.length === 0 && (
+                {!isLoading && !isError && paginatedBookings.length === 0 && (
                   <tr>
                     <td colSpan={6} className="py-8 text-center text-sm font-bold text-slate-400 font-sans">
                       No matching bookings found.

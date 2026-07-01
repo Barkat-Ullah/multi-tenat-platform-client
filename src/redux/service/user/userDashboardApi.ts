@@ -28,6 +28,96 @@ export interface DriverAnalyticsResponse {
   data: DriverAnalyticsData;
 }
 
+export interface UserBookingListParams {
+  page?: number;
+  limit?: number;
+}
+
+export interface BookingUser {
+  id?: string;
+  fullName?: string;
+  email?: string;
+  phoneNumber?: string;
+  licenseNo?: string | null;
+  medicalStatus?: string;
+  clinicGmcNumber?: string;
+  city?: string;
+  address?: string;
+  location?: {
+    id?: string;
+    locationName?: string;
+  } | null;
+}
+
+export interface BookingService {
+  id?: string;
+  title?: string;
+  description?: string | null;
+}
+
+export interface BookingTimeSlot {
+  id?: string;
+  date?: string;
+  startTime?: string;
+  endTime?: string;
+  duration?: number;
+  status?: string;
+}
+
+export interface BookingPaymentMethod {
+  id?: string;
+  type?: string;
+  isActive?: boolean;
+}
+
+export interface BookingPayment {
+  id?: string;
+  status?: string;
+  amount?: number;
+}
+
+export interface BookingMedicalRecord {
+  id?: string;
+  result?: string;
+}
+
+export interface UserBookingItem {
+  id: string;
+  serviceId?: string;
+  driverId?: string;
+  clinicId?: string;
+  timeSlotId?: string;
+  paymethodId?: string;
+  scheduledAt: string;
+  status: "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED" | string;
+  createdAt?: string;
+  location?: string;
+  serviceTitle?: string;
+  clinicName?: string;
+  clinicEmail?: string;
+  service?: BookingService | null;
+  clinic?: BookingUser | null;
+  driver?: BookingUser | null;
+  timeSlot?: BookingTimeSlot | null;
+  method?: BookingPaymentMethod | null;
+  payment?: BookingPayment | null;
+  medicalRecord?: BookingMedicalRecord | null;
+}
+
+export interface UserBookingsMeta {
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface UserBookingsResponse {
+  success: boolean;
+  statusCode: number;
+  message: string;
+  meta?: UserBookingsMeta;
+  data: UserBookingItem[];
+}
+
 const userDashboardApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getDriverAnalytics: builder.query<DriverAnalyticsResponse, void>({
@@ -37,7 +127,26 @@ const userDashboardApi = baseApi.injectEndpoints({
       }),
       providesTags: ["dashboard"],
     }),
+    getMyBookings: builder.query<UserBookingsResponse, UserBookingListParams | void>({
+      query: (params) => ({
+        url: "/bookings/my",
+        method: "GET",
+        params: params || {},
+      }),
+      providesTags: ["bookings"],
+    }),
+    cancelMyBooking: builder.mutation<{ success: boolean; message?: string }, string>({
+      query: (id) => ({
+        url: `/bookings/cancel/${id}`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ["bookings", "dashboard"],
+    }),
   }),
 });
 
-export const { useGetDriverAnalyticsQuery } = userDashboardApi;
+export const {
+  useGetDriverAnalyticsQuery,
+  useGetMyBookingsQuery,
+  useCancelMyBookingMutation,
+} = userDashboardApi;
