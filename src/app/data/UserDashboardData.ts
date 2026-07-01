@@ -1,16 +1,5 @@
 // User Dashboard Mock Data and Interfaces
 
-export interface UserAppointmentItem {
-  id: string;
-  type: string;
-  title: string;
-  date: string;
-  time: string;
-  location: string;
-  doctor: string;
-  status: "Pending" | "Completed" | "Cancelled";
-}
-
 export interface UserBooking {
   id: string;
   clinicianName: string;
@@ -34,31 +23,7 @@ export interface UserReport {
   notes?: string;
 }
 
-// 1. Dashboard summary appointments list
-export const userAppointmentsData: UserAppointmentItem[] = [
-  {
-    id: "apt-1",
-    type: "Upcoming Appointment",
-    title: "HGV D4 Medical",
-    date: "Monday, 2 June 2025",
-    time: "9:00 Am",
-    location: "Manchester",
-    doctor: "Dr. Raj Patel",
-    status: "Pending",
-  },
-  {
-    id: "apt-2",
-    type: "Upcoming Appointment",
-    title: "HGV D4 Medical",
-    date: "Monday, 2 June 2025",
-    time: "9:00 Am",
-    location: "Manchester",
-    doctor: "Dr. Raj Patel",
-    status: "Pending",
-  },
-];
-
-// 2. Bookings data list matching the mockup
+// 1. Bookings data list matching the mockup
 export const userBookingsData: UserBooking[] = [
   {
     id: "1",
@@ -188,7 +153,7 @@ export const userBookingsData: UserBooking[] = [
   },
 ];
 
-// 3. Reports list matching the mockup
+// 2. Reports list matching the mockup
 export const userReportsData: UserReport[] = [
   {
     id: "CM-1041",
