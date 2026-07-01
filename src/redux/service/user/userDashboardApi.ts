@@ -118,6 +118,40 @@ export interface UserBookingsResponse {
   data: UserBookingItem[];
 }
 
+export interface MedicalRecordItem {
+  id: string;
+  bookingId?: string | null;
+  organizerRequestId?: string | null;
+  driverId: string;
+  clinicId: string;
+  result: "Pending" | "Submitted" | string;
+  files?: string | string[] | null;
+  notes?: string | null;
+  expiryDate?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+  booking?: UserBookingItem | null;
+  driver?: BookingUser | null;
+  clinic?: BookingUser | null;
+  organizerRequest?: {
+    id?: string;
+    companyName?: string;
+    email?: string;
+    phone?: string;
+    location?: string;
+    totalDriver?: string | number;
+    service?: BookingService | null;
+  } | null;
+}
+
+export interface MedicalRecordsResponse {
+  success: boolean;
+  statusCode: number;
+  message: string;
+  meta?: UserBookingsMeta;
+  data: MedicalRecordItem[];
+}
+
 const userDashboardApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getDriverAnalytics: builder.query<DriverAnalyticsResponse, void>({
@@ -142,6 +176,13 @@ const userDashboardApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["bookings", "dashboard"],
     }),
+    getMyMedicalRecords: builder.query<MedicalRecordsResponse, void>({
+      query: () => ({
+        url: "/medical-records/my",
+        method: "GET",
+      }),
+      providesTags: ["medicalRecords"],
+    }),
   }),
 });
 
@@ -149,4 +190,5 @@ export const {
   useGetDriverAnalyticsQuery,
   useGetMyBookingsQuery,
   useCancelMyBookingMutation,
+  useGetMyMedicalRecordsQuery,
 } = userDashboardApi;
