@@ -3,7 +3,6 @@ import { configureStore } from "@reduxjs/toolkit";
 import { persistStore, persistReducer } from "redux-persist";
 import createWebStorage from "redux-persist/lib/storage/createWebStorage";
 import { baseApi } from "./api/baseApi";
-import aiChatReducer from "./features/aiChatSlice";
 // Reducers
 import authReducer from "./features/auth";
 import compareReduce from "../redux/features/compareSlice";
@@ -35,24 +34,12 @@ const authPersistConfig = {
   whitelist: ["user", "accessToken", "refreshToken", "isLoading"],
 };
 
-// Persist config for AI chat (optional - to persist chat history)
-const aiChatPersistConfig = {
-  key: "aiChat",
-  storage,
-  whitelist: ["threadId", "messages", "currentSuggestions"],
-};
-
 const persistedAuthReducer = persistReducer(authPersistConfig, authReducer);
-const persistedAiChatReducer = persistReducer(
-  aiChatPersistConfig,
-  aiChatReducer,
-);
 
 export const store = configureStore({
   reducer: {
     // Persisted reducers
     auth: persistedAuthReducer,
-    aiChat: persistedAiChatReducer,
     // propertyEdit: propertyEditReducer,
 
     // API reducers
@@ -70,8 +57,6 @@ export const store = configureStore({
           "persist/PURGE",
           "persist/REGISTER",
         ],
-        // Ignore these paths in the state
-        ignoredPaths: ["aiChat.messages.timestamp"],
       },
     })
       .concat(baseApi.middleware)

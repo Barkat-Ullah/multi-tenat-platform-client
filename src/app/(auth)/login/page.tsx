@@ -50,6 +50,11 @@ const LoginPage = () => {
         }
 
         const { accessToken, refreshToken } = res.data;
+        if (!accessToken) {
+          toast.error("Login response did not include an access token.");
+          return;
+        }
+
         // Decode user from accessToken
         let decodedUser: UserType | null = null;
         decodedUser = jwtDecode<UserType>(accessToken);
@@ -63,7 +68,7 @@ const LoginPage = () => {
           setUser({
             user: decodedUser,
             accessToken,
-            refreshToken,
+            refreshToken: refreshToken || null,
           })
         );
 
@@ -72,7 +77,9 @@ const LoginPage = () => {
         const refreshTokenExpiry = new Date();
         refreshTokenExpiry.setDate(refreshTokenExpiry.getDate() + 30); // 30 days
         Cookies.set("accessToken", accessToken, { expires: accessTokenExpiry, path: "/" });
-        Cookies.set("refreshToken", refreshToken, { expires: refreshTokenExpiry, path: "/" });
+        if (refreshToken) {
+          Cookies.set("refreshToken", refreshToken, { expires: refreshTokenExpiry, path: "/" });
+        }
 
         router.push(getDashboardPathByRole(decodedUser.role));
         // Show success & redirect

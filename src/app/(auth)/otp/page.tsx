@@ -13,6 +13,7 @@ import { toast } from "sonner";
 const OTPage = () => {
   const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
   const [email, setEmail] = useState<string | null>(null);
+  const [authFlow, setAuthFlow] = useState<"registration" | "forgot-password">("registration");
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -22,7 +23,10 @@ const OTPage = () => {
 
   useEffect(() => {
     const stored = localStorage.getItem("email");
+    const storedFlow = localStorage.getItem("authFlow");
+
     setEmail(stored);
+    setAuthFlow(storedFlow === "forgot-password" ? "forgot-password" : "registration");
   }, []);
 
   const handleChange = (value: string, index: number) => {
@@ -83,11 +87,17 @@ const OTPage = () => {
       if (res?.success) {
         appAlert.fire({
           icon: "success",
-          title: "Verification successful 🎉",
-          text: res?.message || "Your email has been verified.",
+          title: "Verification successful",
+          text: res?.message || "Your code has been verified.",
         });
 
+        if (authFlow === "forgot-password") {
+          router.push("/reset-password");
+          return;
+        }
+
         localStorage.removeItem("email");
+        localStorage.removeItem("authFlow");
         router.push("/login");
       } else {
         appAlert.fire({
@@ -111,7 +121,7 @@ const OTPage = () => {
         toast.error("Email not found. Please register again.");
         return;
       }
-      await resendOtp(email).unwrap();
+      await resendOtp({ email }).unwrap();
       toast.success("OTP resend success!");
     } catch (error: any) {
       const msg =

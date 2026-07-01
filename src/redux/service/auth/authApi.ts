@@ -1,14 +1,52 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { baseApi } from "@/redux/api/baseApi";
+import type { BackendRole } from "@/utils/roles";
 
-interface LoginRequest {
+export interface AuthResponse<T = unknown> {
+  success: boolean;
+  statusCode?: number;
+  message?: string;
+  data?: T;
+}
+
+export interface LoginRequest {
   email: string;
   password: string;
 }
 
+export interface LoginResponseData {
+  accessToken: string;
+  refreshToken?: string;
+  role?: BackendRole;
+}
+
+export interface RegisterRequest {
+  fullName: string;
+  email: string;
+  phoneNumber: string;
+  password: string;
+  role: Extract<BackendRole, "USER" | "ORGINIZER">;
+  companyLocation?: string;
+}
+
+export interface VerifyOtpRequest {
+  email: string;
+  otp: string;
+}
+
+export interface ResetPasswordRequest {
+  email: string;
+  password: string;
+}
+
+export interface ChangePasswordRequest {
+  oldPassword: string;
+  newPassword: string;
+}
+
 const authApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    registerUser: builder.mutation({
+    registerUser: builder.mutation<AuthResponse, RegisterRequest>({
       query: (user) => ({
         url: "/auth/register",
         method: "POST",
@@ -16,16 +54,16 @@ const authApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["auth"],
     }),
-    verifyUser: builder.mutation<any, { email: string; otp: string }>({
+    verifyUser: builder.mutation<AuthResponse, VerifyOtpRequest>({
       query: (user) => ({
-        url: "/auth/verify-otp",
+        url: "/auth/verify-email-with-otp",
         method: "POST",
         body: user,
       }),
       invalidatesTags: ["auth"],
     }),
 
-    loginUser: builder.mutation<any, LoginRequest>({
+    loginUser: builder.mutation<AuthResponse<LoginResponseData>, LoginRequest>({
       query: (user) => ({
         url: "/auth/login",
         method: "POST",
@@ -40,15 +78,15 @@ const authApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["auth"],
     }),
-    forgatPassword: builder.mutation<any, { email: string }>({
+    forgotPassword: builder.mutation<AuthResponse, { email: string }>({
       query: (body) => ({
-        url: "/auth/forgot-password",
+        url: "/auth/forget-password",
         method: "POST",
         body,
       }),
       invalidatesTags: ["auth"],
     }),
-    resetPassword: builder.mutation({
+    resetPassword: builder.mutation<AuthResponse, ResetPasswordRequest>({
       query: (data) => ({
         url: "/auth/reset-password",
         method: "POST",
@@ -56,17 +94,17 @@ const authApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["auth"],
     }),
-    changePassword: builder.mutation({
+    changePassword: builder.mutation<AuthResponse, ChangePasswordRequest>({
       query: (user) => ({
         url: "/auth/change-password",
-        method: "PUT",
+        method: "POST",
         body: user,
       }),
       invalidatesTags: ["auth"],
     }),
-    resendOtp: builder.mutation({
+    resendOtp: builder.mutation<AuthResponse, { email: string }>({
       query: (body) => ({
-        url: `/auth/resend-otp`,
+        url: `/auth/resend-verification-with-otp`,
         method: "POST",
         body,
       }),
@@ -81,7 +119,7 @@ export const {
   useLoginUserMutation,
   useLogoutMutation,
   useChangePasswordMutation,
-  useForgatPasswordMutation,
+  useForgotPasswordMutation,
   useResetPasswordMutation,
   useResendOtpMutation,
 } = authApi;

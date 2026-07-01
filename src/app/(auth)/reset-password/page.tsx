@@ -15,14 +15,14 @@ const SetNewPasswordPage = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [token, setToken] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
 
   const params = useSearchParams();
   const router = useRouter();
   const [resetPassword, { isLoading }] = useResetPasswordMutation();
 
   useEffect(() => {
-    setToken(params.get("token"));
+    setEmail(params.get("email") || localStorage.getItem("email"));
   }, [params]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,15 +39,17 @@ const SetNewPasswordPage = () => {
     }
 
     try {
-      if (!token) {
-        toast.error("Reset token not found. Please request a new reset link.");
+      if (!email) {
+        toast.error("Email not found. Please request a new reset code.");
         return;
       }
 
-      const payload = { password, token };
+      const payload = { email, password };
       const res = await resetPassword(payload).unwrap();
 
       toast.success(res?.message || "Password reset successful!");
+      localStorage.removeItem("email");
+      localStorage.removeItem("authFlow");
       router.push("/login");
     } catch (error: any) {
       const msg =
@@ -164,16 +166,16 @@ const SetNewPasswordPage = () => {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={isLoading || !token}
+              disabled={isLoading || !email}
               className="w-full bg-[#00B2D6] hover:bg-[#0092B0] text-white font-bold py-3 px-6 rounded-full transition-all text-base shadow-sm hover:shadow-md active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
             >
               {isLoading ? "Updating..." : "Continue"}
             </button>
           </form>
 
-          {!token && (
+          {!email && (
             <div className="mt-4 text-center text-xs font-semibold text-red-500 bg-red-50 p-2.5 rounded-xl border border-red-100">
-              Reset token not found or expired. Please request a new reset link.
+              Email not found. Please request a new reset code.
             </div>
           )}
         </div>

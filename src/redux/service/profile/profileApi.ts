@@ -83,15 +83,6 @@ export const profileApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["profile"],
     }),
-
-    updateThreadId: builder.mutation<any, { threadId: string }>({
-      query: (body) => ({
-        url: "/users/threadId",
-        method: "PATCH",
-        body,
-      }),
-      invalidatesTags: ["profile"],
-    }),
   }),
 });
 
@@ -99,5 +90,4 @@ export const {
   useGetProfileDataQuery,
   useGetAgencyProfileDataQuery,
   useUpdateProfileDataMutation,
-  useUpdateThreadIdMutation,
 } = profileApi;

@@ -5,7 +5,7 @@ import Image from "next/image";
 import React, { useState } from "react";
 import logoImg from "@/assets/logo/logo.png";
 import Link from "next/link";
-import { useRegisterUserMutation } from "@/redux/service/auth/authApi";
+import { type RegisterRequest, useRegisterUserMutation } from "@/redux/service/auth/authApi";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { User, Mail, Phone, MapPin, Lock, Eye, EyeOff } from "lucide-react";
@@ -37,31 +37,28 @@ const RegisterPage = () => {
     e.preventDefault();
 
     try {
-      let payload: any = {};
-
-      if (activeTab === "driver") {
-        payload = {
-          name: driverName,
-          email: driverEmail,
-          phone: driverPhone,
-          password: driverPassword,
-          role: "USER",
-        };
-      } else {
-        payload = {
-          name: companyName,
-          email: companyEmail,
-          phone: companyPhone,
-          location: companyLocation,
-          password: companyPassword,
-          role: "ORGINIZER",
-        };
-      }
+      const payload: RegisterRequest =
+        activeTab === "driver"
+          ? {
+              fullName: driverName,
+              email: driverEmail,
+              phoneNumber: driverPhone,
+              password: driverPassword,
+              role: "USER",
+            }
+          : {
+              fullName: companyName,
+              email: companyEmail,
+              phoneNumber: companyPhone,
+              companyLocation,
+              password: companyPassword,
+              role: "ORGINIZER",
+            };
 
       const res = await register(payload).unwrap();
       if (res?.success === true) {
-        // SAVE EMAIL FOR OTP VERIFICATION
         localStorage.setItem("email", activeTab === "driver" ? driverEmail : companyEmail);
+        localStorage.setItem("authFlow", "registration");
         toast.success(res?.message || "Please verify OTP to continue.");
         router.push("/otp");
       } else {

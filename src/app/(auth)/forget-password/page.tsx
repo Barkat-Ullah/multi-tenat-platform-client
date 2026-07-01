@@ -8,19 +8,20 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Mail, ChevronLeft } from "lucide-react";
 import logoImg from "@/assets/logo/logo.png";
-import { useForgatPasswordMutation } from "@/redux/service/auth/authApi";
+import { useForgotPasswordMutation } from "@/redux/service/auth/authApi";
 
 const ForgotPasswordPage = () => {
-  const [forgatPassword, { isLoading }] = useForgatPasswordMutation();
+  const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
   const [email, setEmail] = useState("");
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await forgatPassword({ email }).unwrap();
+      await forgotPassword({ email }).unwrap();
       toast.success("Please check your email!");
       localStorage.setItem("email", email);
+      localStorage.setItem("authFlow", "forgot-password");
       router.push("/otp");
     } catch (error: any) {
       const msg =
