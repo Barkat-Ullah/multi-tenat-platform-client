@@ -61,7 +61,7 @@ export default function Step2YourLocation({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
         
         {/* Left Pane - Interactive map */}
-        <div className="lg:col-span-6 h-[400px] lg:h-[520px]">
+        <div className="lg:col-span-4 h-[400px] lg:h-[520px]">
           <BookingMap 
             clinics={clinicLocations}
             selectedClinicId={selectedClinicId}
@@ -70,7 +70,7 @@ export default function Step2YourLocation({
         </div>
 
         {/* Right Pane - Clinic listing */}
-        <div className="lg:col-span-6 h-[400px] lg:h-[520px] flex flex-col">
+        <div className="lg:col-span-8 h-[400px] lg:h-[520px] flex flex-col">
           <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm h-full flex flex-col justify-between overflow-hidden">
             
             <div className="divide-y divide-slate-100 flex-1 overflow-y-auto overflow-x-hidden pr-1">
