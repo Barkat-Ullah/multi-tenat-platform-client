@@ -11,6 +11,8 @@ import { logout } from "@/redux/features/auth";
 import { useDispatch } from "react-redux";
 import { useAppSelector } from "@/redux/store";
 import { normalizeRole } from "@/utils/roles";
+import { useGetProfileDataQuery } from "@/redux/service/profile/profileApi";
+import { getImageUrl } from "@/utils/getImageUrl";
 
 const { Sider, Header, Content } = Layout;
 
@@ -29,8 +31,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, menu }) => {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Get user profile details from Redux state to fully bypass any /me API calls on dashboard
   const authUser = useAppSelector((state) => state.auth.user);
+  const { data: profileResponse } = useGetProfileDataQuery(undefined, {
+    skip: !authUser,
+  });
+  const profileData = profileResponse?.data;
 
   const user = useMemo(() => {
     if (!authUser) return null;
@@ -38,11 +43,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, menu }) => {
       role: authUser.role,
       email: authUser.email,
       profile: {
-        name: authUser.name || "Osama",
-        avatar: "", // Offline mode bypasses avatar fetch
+        name: profileData?.fullName || profileData?.profile?.name || authUser.name,
+        avatar: profileData?.image || profileData?.profile?.avatar || "",
       }
     };
-  }, [authUser]);
+  }, [authUser, profileData]);
 
   const isLoading = false;
 
@@ -77,7 +82,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, menu }) => {
 
   const avatarUrl = useMemo(() => {
     const url = user?.profile?.avatar?.trim();
-    return url && url.length > 0 ? url : null;
+    return url && url.length > 0 ? getImageUrl(url) : null;
   }, [user?.profile?.avatar]);
 
   const fallbackInitial = useMemo(() => {
