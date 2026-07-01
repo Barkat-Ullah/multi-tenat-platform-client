@@ -1,11 +1,11 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { normalizeRole } from "@/utils/roles";
+import { normalizeRole, type BackendRole } from "@/utils/roles";
 
 export type UserType = {
   name?: string;
   id: string;
   email: string;
-  role: string;
+  role: BackendRole;
   iat: number;
   exp: number;
 };

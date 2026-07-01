@@ -1,0 +1,2179 @@
+{
+  "info": {
+    "_postman_id": "e8c1ef9d-89c8-4a2d-8f51-305c664b23e2",
+    "name": "complainced-backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "30540903",
+    "_collection_link": "https://go.postman.co/collection/30540903-e8c1ef9d-89c8-4a2d-8f51-305c664b23e2?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "auth",
+      "item": [
+        {
+          "name": "register user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "// driver\r\n// {\r\n//     \"fullName\": \"Driver Rakib\",\r\n//     \"email\": \"developr.paypal@yopmail.com\",\r\n//     \"phoneNumber\": \"+8801700000008\",\r\n//     \"password\": \"123456\",\r\n//     \"role\": \"USER\"\r\n// }\r\n// organizer\r\n{\r\n    \"fullName\": \"Org Rakib\",\r\n    \"email\": \"org.rakib@yopmail.com\",\r\n    \"phoneNumber\": \"+8801700000008\",\r\n    \"password\": \"123456\",\r\n    \"companyLocation\": \"Dhaka\",\r\n    \"role\": \"ORGINIZER\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/auth/register",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "login user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const result = pm.response.json();\r",
+                  "\r",
+                  "if (result?.data?.role === 'ADMIN') {\r",
+                  "    pm.collectionVariables.set('admin_token', result?.data?.accessToken);\r",
+                  "} else if (result?.data?.role === 'USER') {\r",
+                  "    pm.collectionVariables.set('user_token', result?.data?.accessToken);\r",
+                  "} else if (result?.data?.role === 'ORGINIZER') {\r",
+                  "    pm.collectionVariables.set('org_token', result?.data?.accessToken);\r",
+                  "} else {\r",
+                  "    pm.collectionVariables.set('clinic_token', result?.data?.accessToken);\r",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "//admin login\r\n// {\r\n//     \"email\": \"admin@gmail.com\",\r\n//     \"password\": \"12345678\"\r\n// }\r\n//driver\r\n// {\r\n//     \"email\": \"developr.paypal@yopmail.com\",\r\n//     \"password\": \"123456\"\r\n// }\r\n//organizer\r\n// {\r\n//     \"email\": \"org.rakib@yopmail.com\",\r\n//     \"password\": \"123456\"\r\n// }\r\n//clinic\r\n{\r\n    \"email\": \"clinic17@yopmail.com\",\r\n    \"password\": \"123456\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/auth/login",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "verify otp",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"clinic17@yopmail.com\",\r\n    \"otp\": \"0538\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/auth/verify-email-with-otp",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "auth",
+                "verify-email-with-otp"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "forgot password",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"clinic17@yopmail.com\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/auth/forget-password",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "auth",
+                "forget-password"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "resend otp",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"prohero5500@gmail.com\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/auth/resend-verification-with-otp",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "auth",
+                "resend-verification-with-otp"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "change password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{admin_token}}",
+                "type": "text",
+                "disabled": true
+              },
+              {
+                "key": "Authorization",
+                "value": "{{clinic_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"oldPassword\": \"12345678\",\r\n  \"newPassword\": \"123456\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/auth/change-password",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "auth",
+                "change-password"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "reset password",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"clinic17@yopmail.com\",\r\n    \"password\": \"12345678\"\r\n}\r\n// {\r\n//     \"email\": \"swagchaccu4554@gmail.com\",\r\n//     \"password\": \"12345678\"\r\n// }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/auth/reset-password",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "auth",
+                "reset-password"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "user",
+      "item": [
+        {
+          "name": "get my profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{user_token}}",
+                "type": "text",
+                "disabled": true
+              },
+              {
+                "key": "Authorization",
+                "value": "{{admin_token}}",
+                "type": "text",
+                "disabled": true
+              },
+              {
+                "key": "Authorization",
+                "value": "{{clinic_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/user/me",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "user",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update my profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{user_token}}",
+                "type": "text",
+                "disabled": true
+              },
+              {
+                "key": "Authorization",
+                "value": "{{driver_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "data",
+                  "value": "{\n    \"fullName\": \"Agency\",\"phoneNumber\": \"01821558090\", \n        \"companyName\":\"Asdf\" \n}",
+                  "type": "text",
+                  "uuid": "1084d1ea-b93d-429d-bea2-c2a73ac3e03a",
+                  "disabled": true
+                },
+                {
+                  "key": "image",
+                  "type": "file",
+                  "uuid": "dc05ec08-0106-498d-aaea-951e6b8592db",
+                  "src": "postman-cloud:///1f0f9c1e-79ce-4970-b85e-476252a436fd"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{url}}/user/update-profile",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "user",
+                "update-profile"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{admin_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/user/user-status/:id",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "user",
+                "user-status",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "6a238a4f01a92aa7c1c70cd4"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "create clinic",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{admin_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"clinic19@yopmail.com\",\r\n    \"fullName\": \"clinic 3\",\r\n    \"phoneNumber\": \"0111111111\",\r\n    \"clinicGmcNumber\": \"12345\",\r\n    \"serviceId\": [\r\n        \"6a238171a710b2623fd3d07f\"\r\n    ],\r\n    \"locationId\": \"6a21390ff04350b3b27d8281\",\r\n    \"isParking\": false\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/user/create-clinic",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "user",
+                "create-clinic"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get all user",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{admin_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/user?page=1&limit=10",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "user"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "role",
+                  "value": "USER",
+                  "disabled": true
+                },
+                {
+                  "key": "role",
+                  "value": "ORGINIZER",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "clinic",
+      "item": [
+        {
+          "name": "get all clinic",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{user_token}}",
+                "type": "text",
+                "disabled": true
+              },
+              {
+                "key": "Authorization",
+                "value": "{{admin_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/user/clinics",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "user",
+                "clinics"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get a single clinic",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{admin_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/user/:id",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "user",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "6a23ddf856287b8d3a35f95b"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update clinic",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{admin_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"fullName\": \"clinic 2\",\r\n    \"phoneNumber\": \"0111111111\",\r\n    \"clinicGmcNumber\": \"12345\",\r\n    \"serviceId\": [\r\n        \"6a238171a710b2623fd3d07f\"\r\n    ],\r\n    \"locationId\": \"6a21390ff04350b3b27d8281\",\r\n    \"isParking\": true\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/user/update-clinic/:id",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "user",
+                "update-clinic",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "6a238a4f01a92aa7c1c70cd4"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "location",
+      "item": [
+        {
+          "name": "create location",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{admin_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"locationName\": \"West Rampura\",\r\n    \"lat\": 23.764586719385953,\r\n    \"lng\": 90.44695654767878\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/locations",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "locations"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get all location",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{admin_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/locations?page=1&limit=10",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "locations"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "searchTerm",
+                  "value": "Aftab Nagar",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get single location",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{admin_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/locations/:id",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "locations",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "6a21390ff04350b3b27d8281"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update a location",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{admin_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"locationName\": \"AftabNagar\",\r\n    \"lat\": 23.764586719385953,\r\n    \"lng\": 90.44695654767878\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/locations/:id",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "locations",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "6a21390ff04350b3b27d8281"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete a location",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{admin_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/locations/soft-delete/:id",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "locations",
+                "soft-delete",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "6a21390ff04350b3b27d8281"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "service",
+      "item": [
+        {
+          "name": "create a service",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{admin_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "data",
+                  "value": "{ \"title\":\"Ambulance Medical\", \"description\":\"For HGV & LGV drivers\"}",
+                  "type": "text",
+                  "uuid": "c0814338-1c83-4602-9f6f-b740302562ef"
+                },
+                {
+                  "key": "files",
+                  "type": "file",
+                  "uuid": "55d8a03e-03d7-460d-ac99-85fa11c3ef03",
+                  "src": "postman-cloud:///1f0f9c1e-79ce-4970-b85e-476252a436fd"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{url}}/services",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "services"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get all services",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{admin_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/services",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "services"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get a single  service details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{admin_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/services/:id",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "services",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "6a238171a710b2623fd3d07f"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update a service",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{admin_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "data",
+                  "value": "{ \"title\":\"Ambulance Medical Pharma\", \"description\":\"For HGV & LGV drivers\"}",
+                  "type": "text",
+                  "uuid": "8f6c3e9a-c2d6-41a5-ab50-dd15b745c058"
+                },
+                {
+                  "key": "files",
+                  "type": "file",
+                  "uuid": "68b298af-1b31-4a6b-8ba4-0e825b8b93e3",
+                  "src": "/C:/Users/MD Shahed/Downloads/Rectangle 1000001686.png"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{url}}/services/:id",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "services",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "6a213d16ede97632c23de42f"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete a service",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{admin_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": []
+            },
+            "url": {
+              "raw": "{{url}}/services/soft-delete/:id",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "services",
+                "soft-delete",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "6a238171a710b2623fd3d07f"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "timeslots",
+      "item": [
+        {
+          "name": "create slot by clinic",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{clinic_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"slotDate\": \"2026-06-13\",\r\n    \"startTime\": \"09:00\",\r\n    \"endTime\": \"13:00\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/timeslots",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "timeslots"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get my availability",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{clinic_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/timeslots/my",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "timeslots",
+                "my"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get my availability by a month",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{clinic_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/timeslots/month?month=2026-06",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "timeslots",
+                "month"
+              ],
+              "query": [
+                {
+                  "key": "month",
+                  "value": "2026-06"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get all slot a specifik date",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{clinic_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "{{user_token}}",
+                "type": "text",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/timeslots/slots?serviceId=6a238171a710b2623fd3d07f&clinicId=6a238a4f01a92aa7c1c70cd4&date=2026-06-13",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "timeslots",
+                "slots"
+              ],
+              "query": [
+                {
+                  "key": "serviceId",
+                  "value": "6a238171a710b2623fd3d07f"
+                },
+                {
+                  "key": "clinicId",
+                  "value": "6a238a4f01a92aa7c1c70cd4"
+                },
+                {
+                  "key": "date",
+                  "value": "2026-06-13"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "method",
+      "item": [
+        {
+          "name": "get active method",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{user_token}}",
+                "type": "text",
+                "disabled": true
+              },
+              {
+                "key": "Authorization",
+                "value": "{{clinic_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/method",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "method"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "mark as inactive",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{admin_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/method/:id",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "method",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "6a2e0e172ffe876dd2d64831"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "booking",
+      "item": [
+        {
+          "name": "create  a booking by driver",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{user_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"clinicId\": \"6a238a4f01a92aa7c1c70cd4\",\r\n    \"serviceId\": \"6a238171a710b2623fd3d07f\",\r\n    \"timeSlotId\": \"6a2cccea7c920d65fed14ecf\",\r\n    \"scheduledAt\": \"2026-06-15T09:00:00Z\",\r\n    \"paymentType\": \"Stripe\",\r\n    \"price\": 49.99\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/bookings",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "bookings"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get all booking for admin and superadmin",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{admin_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/bookings?page=1&limit=10&createdAt=2026-06",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "bookings"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": "PENDING",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "CONFIRMED",
+                  "disabled": true
+                },
+                {
+                  "key": "clinicId",
+                  "value": "6a238a4f01a92aa7c1c70cd4",
+                  "disabled": true
+                },
+                {
+                  "key": "driverId",
+                  "value": "6a2e0f06fc45aa101de522d1",
+                  "disabled": true
+                },
+                {
+                  "key": "locationId",
+                  "value": "6a21390ff04350b3b27d8281",
+                  "disabled": true
+                },
+                {
+                  "key": "createdAt",
+                  "value": "2026-06-14",
+                  "disabled": true
+                },
+                {
+                  "key": "createdAt",
+                  "value": "2026-06"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get my booking for driver or clinic",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{clinic_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "{{user_token}}",
+                "type": "text",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/bookings/my?page=1&limit=10",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "bookings",
+                "my"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get a single booking",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{user_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "{{clinic_token}}",
+                "type": "text",
+                "disabled": true
+              },
+              {
+                "key": "Authorization",
+                "value": "{{admin_token}}",
+                "type": "text",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/bookings/:id",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "bookings",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "6a2e2c10764e1b370d915b7a"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "cancel booking",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{user_token}}",
+                "type": "text",
+                "disabled": true
+              },
+              {
+                "key": "Authorization",
+                "value": "{{clinic_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"reason\": \"Driver is unavailable on this date\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/bookings/cancel/:id",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "bookings",
+                "cancel",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "6a2e19d1fdf99e81d97dae5b"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "reschedule booking",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{user_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "{{clinic_token}}",
+                "type": "text",
+                "disabled": true
+              },
+              {
+                "key": "Authorization",
+                "value": "{{admin_token}}",
+                "type": "text",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"newTimeSlotId\": \"6a2ccce97c920d65fed14ec8\",\r\n    \"newScheduledAt\": \"2026-06-16T10:00:00Z\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/bookings/reschedule/:id",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "bookings",
+                "reschedule",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "6a2e19d1fdf99e81d97dae5b"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "confirmed booking status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{clinic_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "{{admin_token}}",
+                "type": "text",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/bookings/confirm/:id",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "bookings",
+                "confirm",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "6a2e19d1fdf99e81d97dae5b"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "medical record",
+      "item": [
+        {
+          "name": "upload a record of driver from clinic",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{clinic_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "data",
+                  "value": "{ \"organizerRequestId\":\"6a2e648aeff7995dce8f26b5\",\"driverId\":\"6a30cb68504155942cb8a769\",\"result\":\"Submitted\",\"notes\":\"Driver is medically fit for HGV\",\"expiryDate\":\"2027-06-14\"}",
+                  "type": "text",
+                  "uuid": "ccddaf4a-bda5-424e-9d92-0ce151dc65b0"
+                },
+                {
+                  "key": "files",
+                  "type": "file",
+                  "uuid": "9ef9a162-09d1-42ac-a50f-a774deed6740",
+                  "src": "postman-cloud:///1f0f9c1e-79ce-4970-b85e-476252a436fd"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{url}}/medical-records",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "medical-records"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get my medical record",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{clinic_token}}",
+                "type": "text",
+                "disabled": true
+              },
+              {
+                "key": "Authorization",
+                "value": "{{user_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/medical-records/my",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "medical-records",
+                "my"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get all medical record",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{admin_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/medical-records",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "medical-records"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get single record",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{admin_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/medical-records/:i",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "medical-records",
+                ":i"
+              ],
+              "variable": [
+                {
+                  "key": "i",
+                  "value": "6a2e6310eff7995dce8f26b3"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "organizer",
+      "item": [
+        {
+          "name": "create a driver",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{org_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"fullName\": \"Org driver\",\r\n    \"email\": \"org1.driver@mailo.com\",\r\n    \"phoneNumber\": \"6355678/125140\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/user/org-driver",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "user",
+                "org-driver"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get all my driver",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{org_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/user/org-driver",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "user",
+                "org-driver"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "create org req",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{org_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"companyName\": \"ABC\",\r\n    \"serviceId\": \"6a213cacede97632c23de42e\",\r\n    \"email\": \"abc@mail.com\",\r\n    \"phone\": \"0654580156415210\",\r\n    \"location\": \"Block C, Rampura\",\r\n    \"totalDriver\": \"2\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/organizer-requests",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "organizer-requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get all org req for admin or clinic",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{admin_token}}",
+                "type": "text",
+                "disabled": true
+              },
+              {
+                "key": "Authorization",
+                "value": "{{clinic_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/organizer-requests",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "organizer-requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "accept or decline req",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{admin_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "// {\r\n//     \"clinicId\": null,\r\n//     \"status\": \"Canceled\"\r\n// }\r\n{\r\n    \"clinicId\": \"6a238a4f01a92aa7c1c70cd4\",\r\n    \"status\": \"Confirmed\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/organizer-requests/assign-clinic/:id",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "organizer-requests",
+                "assign-clinic",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "6a2e648aeff7995dce8f26b5"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get my org req",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{org_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/organizer-requests/my",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "organizer-requests",
+                "my"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get single req details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{org_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/organizer-requests/:id",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "organizer-requests",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "6a2e648aeff7995dce8f26b5"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "add driver",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{org_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"driverIds\": [\r\n        \"6a30cb68504155942cb8a769\",\r\n        \"6a30cb9c504155942cb8a76a\"\r\n    ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/organizer-requests/:id/drivers",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "organizer-requests",
+                ":id",
+                "drivers"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "6a2e648aeff7995dce8f26b5"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get report of all driver",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{org_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/user/org-driver-reports",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "user",
+                "org-driver-reports"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "analytics",
+      "item": [
+        {
+          "name": "get analytics for admin and super",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{admin_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/analytics/admin",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "analytics",
+                "admin"
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "daily",
+                  "disabled": true
+                },
+                {
+                  "key": "period",
+                  "value": "weekly",
+                  "disabled": true
+                },
+                {
+                  "key": "period",
+                  "value": "monthly",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "get analytics for admin and super",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "{{admin_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{url}}/analytics/admin?period=daily",
+                  "host": [
+                    "{{url}}"
+                  ],
+                  "path": [
+                    "analytics",
+                    "admin"
+                  ],
+                  "query": [
+                    {
+                      "key": "period",
+                      "value": "daily"
+                    },
+                    {
+                      "key": "period",
+                      "value": "weekly",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "X-Powered-By",
+                  "value": "Express"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Access-Control-Allow-Credentials",
+                  "value": "true"
+                },
+                {
+                  "key": "RateLimit-Policy",
+                  "value": "2000;w=900"
+                },
+                {
+                  "key": "RateLimit-Limit",
+                  "value": "2000"
+                },
+                {
+                  "key": "RateLimit-Remaining",
+                  "value": "1999"
+                },
+                {
+                  "key": "RateLimit-Reset",
+                  "value": "900"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "1040"
+                },
+                {
+                  "key": "ETag",
+                  "value": "W/\"410-/wzr/gtJV9MjvBpB+5MevLr7dEc\""
+                },
+                {
+                  "key": "Date",
+                  "value": "Tue, 16 Jun 2026 08:34:08 GMT"
+                },
+                {
+                  "key": "Connection",
+                  "value": "keep-alive"
+                },
+                {
+                  "key": "Keep-Alive",
+                  "value": "timeout=5"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"success\": true,\n    \"statusCode\": 200,\n    \"message\": \"Admin analytics retrieved successfully\",\n    \"data\": {\n        \"period\": \"daily\",\n        \"rangeStart\": \"2026-06-16T00:00:00.000Z\",\n        \"rangeEnd\": \"2026-06-16T23:59:59.999Z\",\n        \"overview\": {\n            \"bookings\": 0,\n            \"pendingBookings\": 0,\n            \"revenue\": 0,\n            \"activeLocations\": 2\n        },\n        \"trend\": [\n            {\n                \"month\": \"Jan\",\n                \"bookings\": 0,\n                \"revenue\": 0\n            },\n            {\n                \"month\": \"Feb\",\n                \"bookings\": 0,\n                \"revenue\": 0\n            },\n            {\n                \"month\": \"Mar\",\n                \"bookings\": 0,\n                \"revenue\": 0\n            },\n            {\n                \"month\": \"Apr\",\n                \"bookings\": 0,\n                \"revenue\": 0\n            },\n            {\n                \"month\": \"May\",\n                \"bookings\": 0,\n                \"revenue\": 0\n            },\n            {\n                \"month\": \"Jun\",\n                \"bookings\": 1,\n                \"revenue\": 99.98\n            },\n            {\n                \"month\": \"Jul\",\n                \"bookings\": 0,\n                \"revenue\": 0\n            },\n            {\n                \"month\": \"Aug\",\n                \"bookings\": 0,\n                \"revenue\": 0\n            },\n            {\n                \"month\": \"Sep\",\n                \"bookings\": 0,\n                \"revenue\": 0\n            },\n            {\n                \"month\": \"Oct\",\n                \"bookings\": 0,\n                \"revenue\": 0\n            },\n            {\n                \"month\": \"Nov\",\n                \"bookings\": 0,\n                \"revenue\": 0\n            },\n            {\n                \"month\": \"Dec\",\n                \"bookings\": 0,\n                \"revenue\": 0\n            }\n        ],\n        \"recentBookings\": [\n            {\n                \"id\": \"6a2e2c10764e1b370d915b7a\",\n                \"driverName\": \"Driver Rakib\",\n                \"service\": \"Ambulance Medical\",\n                \"scheduledAt\": \"2026-06-15T09:00:00.000Z\",\n                \"status\": \"CONFIRMED\"\n            }\n        ],\n        \"topServices\": [\n            {\n                \"serviceId\": \"6a238171a710b2623fd3d07f\",\n                \"title\": \"Ambulance Medical\",\n                \"count\": 1\n            }\n        ]\n    }\n}"
+            }
+          ]
+        },
+        {
+          "name": "get driver analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{user_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/analytics/driver",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "analytics",
+                "driver"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "get driver analytics",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "{{user_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{url}}/analytics/driver",
+                  "host": [
+                    "{{url}}"
+                  ],
+                  "path": [
+                    "analytics",
+                    "driver"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "X-Powered-By",
+                  "value": "Express"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Access-Control-Allow-Credentials",
+                  "value": "true"
+                },
+                {
+                  "key": "RateLimit-Policy",
+                  "value": "2000;w=900"
+                },
+                {
+                  "key": "RateLimit-Limit",
+                  "value": "2000"
+                },
+                {
+                  "key": "RateLimit-Remaining",
+                  "value": "1998"
+                },
+                {
+                  "key": "RateLimit-Reset",
+                  "value": "880"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "371"
+                },
+                {
+                  "key": "ETag",
+                  "value": "W/\"173-FchKBeo8S7n+qxFdh/8JAULYr1c\""
+                },
+                {
+                  "key": "Date",
+                  "value": "Tue, 16 Jun 2026 08:34:27 GMT"
+                },
+                {
+                  "key": "Connection",
+                  "value": "keep-alive"
+                },
+                {
+                  "key": "Keep-Alive",
+                  "value": "timeout=5"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"success\": true,\n    \"statusCode\": 200,\n    \"message\": \"Driver analytics retrieved successfully\",\n    \"data\": {\n        \"overview\": {\n            \"totalAppointment\": 1,\n            \"todayAppointment\": 0,\n            \"completed\": 0,\n            \"pending\": 0\n        },\n        \"appointments\": [\n            {\n                \"id\": \"6a2e2c10764e1b370d915b7a\",\n                \"serviceTitle\": \"Ambulance Medical\",\n                \"scheduledAt\": \"2026-06-15T09:00:00.000Z\",\n                \"location\": \"AftabNagar\",\n                \"clinicName\": \"clinic 2\",\n                \"status\": \"CONFIRMED\"\n            }\n        ]\n    }\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "url",
+      "value": "http://localhost:5002/api/v1",
+      "disabled": true
+    },
+    {
+      "key": "user_token",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMmUwZjA2ZmM0NWFhMTAxZGU1MjJkMSIsIm5hbWUiOiJEcml2ZXIgUmFraWIiLCJlbWFpbCI6ImRldmVsb3ByLnBheXBhbEB5b3BtYWlsLmNvbSIsInJvbGUiOiJVU0VSIiwiaWF0IjoxNzgxNDAzNDcyLCJleHAiOjE3ODIwMDgyNzJ9.blQT-tKtVSt3jIq1kngraJAFEG74m098GHNjEaYJTDg"
+    },
+    {
+      "key": "clinic_token",
+      "value": ""
+    },
+    {
+      "key": "admin_token",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMjEzMjhlM2YxZGI4ZDMwODkxZDNjYiIsIm5hbWUiOiJTdXBlciBBZG1pbiIsImVtYWlsIjoiYWRtaW5AZ21haWwuY29tIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzgxMzE3ODY3LCJleHAiOjE3ODE5MjI2Njd9.7wA75QaPu8Kq_gPD-ObewaT5uJim7qjxkFk1sHQxKJw"
+    },
+    {
+      "key": "org_token",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMmU0OTg4ZDMzMzcxNDk5YTZlNWJjMCIsIm5hbWUiOiJPcmcgUmFraWIiLCJlbWFpbCI6Im9yZy5yYWtpYkB5b3BtYWlsLmNvbSIsInJvbGUiOiJPUkdJTklaRVIiLCJpYXQiOjE3ODE0MTg1NDgsImV4cCI6MTc4MjAyMzM0OH0.Dh3K6vt4BMR4EF6B_xq7rn2R82M2s9_iDyQ11rvLWGU"
+    },
+    {
+      "key": "url",
+      "value": "https://compliancemed-backend.vercel.app/api/v1"
+    }
+  ]
+}

@@ -3,13 +3,14 @@
 
 import { UserStatus } from "@/utils/types";
 import baseApi from "@/redux/api/baseApi";
+import type { BackendRole } from "@/utils/roles";
 
 // ===== USER LISTING =====
 export interface User {
   id: string;
   email: string;
   verified: boolean;
-  role: "ADMIN" | "USER" | "AGENCY";
+  role: BackendRole;
   status: UserStatus;
   method: string;
   otp: string | null;

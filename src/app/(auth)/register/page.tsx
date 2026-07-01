@@ -5,23 +5,10 @@ import Image from "next/image";
 import React, { useState } from "react";
 import logoImg from "@/assets/logo/logo.png";
 import Link from "next/link";
-import { useLoginUserMutation, useRegisterUserMutation } from "@/redux/service/auth/authApi";
+import { useRegisterUserMutation } from "@/redux/service/auth/authApi";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useDispatch } from "react-redux";
-import { setUser } from "@/redux/features/auth";
-import Cookies from "js-cookie";
-import { jwtDecode } from "jwt-decode";
-import { getDashboardPathByRole, normalizeRole } from "@/utils/roles";
-import { User, Mail, Phone, MapPin, Lock, Eye, EyeOff, ChevronDown } from "lucide-react";
-
-interface UserType {
-  id: string;
-  email: string;
-  role: string;
-  iat: number;
-  exp: number;
-}
+import { User, Mail, Phone, MapPin, Lock, Eye, EyeOff } from "lucide-react";
 
 const RegisterPage = () => {
   // Tab State: 'driver' | 'corporate'
@@ -44,9 +31,7 @@ const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   const [register, { isLoading }] = useRegisterUserMutation();
-  const [login] = useLoginUserMutation();
   const router = useRouter();
-  const dispatch = useDispatch();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -433,82 +418,6 @@ const RegisterPage = () => {
               Log In
             </Link>
           </div>
-        </div>
-
-        {/* Collapsible Guest Account Helper (Dev Mode only) */}
-        <div className="mt-6 w-full">
-          <details className="group bg-white/60 backdrop-blur-sm border border-slate-200/60 rounded-2xl overflow-hidden transition-all duration-300 shadow-sm">
-            <summary className="flex items-center justify-between px-5 py-3 text-xs font-bold text-slate-500 cursor-pointer hover:bg-slate-50/50 list-none select-none">
-              <span className="flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#00B2D6] animate-pulse" />
-                Quick Logins (Development / QA)
-              </span>
-              <ChevronDown className="h-4 w-4 text-slate-400 transform transition-transform group-open:rotate-180" />
-            </summary>
-            <div className="p-4 border-t border-slate-100 bg-white grid grid-cols-2 gap-2.5">
-              {[
-                { role: "Admin", email: "admin@example.com" },
-                { role: "User", email: "agent@gmail.com" },
-                { role: "Clinic", email: "clinic@example.com" },
-                { role: "Organizer", email: "organizer@example.com" },
-              ].map((guest) => (
-                <button
-                  key={guest.role}
-                  type="button"
-                  onClick={async () => {
-                    const guestEmail = guest.email;
-                    const guestPassword = "123456";
-
-                    if (guest.role === "Clinic" || guest.role === "Organizer") {
-                      // Backendless helper login handler (defined inline or matching existing layout behavior)
-                      const mappedRole = guest.role === "Clinic" ? "CLINIC" : "ORGINIZER";
-                      const mockUser = {
-                        id: `mock-${mappedRole.toLowerCase()}`,
-                        email: guestEmail,
-                        role: mappedRole,
-                        iat: Math.floor(Date.now() / 1000),
-                        exp: Math.floor(Date.now() / 1000) + 86400,
-                      };
-                      dispatch(setUser({ user: mockUser, accessToken: "mock-access-token", refreshToken: "mock-refresh-token" }));
-                      Cookies.set("accessToken", "mock-access-token", { path: "/" });
-                      Cookies.set("refreshToken", "mock-refresh-token", { path: "/" });
-                      router.push(getDashboardPathByRole(mappedRole));
-                      toast.success(`Logged in as ${guest.role} (Backendless)`);
-                      return;
-                    }
-
-                    try {
-                      const payload = { email: guestEmail, password: guestPassword };
-                      const res = await login(payload).unwrap();
-                      if (res?.success) {
-                        const { accessToken, refreshToken } = res.data;
-                        let decodedUser: UserType | null = null;
-                        decodedUser = jwtDecode<UserType>(accessToken);
-                        decodedUser = {
-                          ...decodedUser,
-                          role: normalizeRole(decodedUser.role),
-                        };
-                        dispatch(setUser({ user: decodedUser, accessToken, refreshToken }));
-                        const accessTokenExpiry = new Date(decodedUser.exp * 1000);
-                        const refreshTokenExpiry = new Date();
-                        refreshTokenExpiry.setDate(refreshTokenExpiry.getDate() + 30);
-                        Cookies.set("accessToken", accessToken, { expires: accessTokenExpiry, path: "/" });
-                        Cookies.set("refreshToken", refreshToken, { expires: refreshTokenExpiry, path: "/" });
-                        router.push(getDashboardPathByRole(decodedUser.role));
-                        toast.success(`Logged in as ${guest.role}`);
-                      }
-                    } catch {
-                      toast.error(`${guest.role} login failed.`);
-                    }
-                  }}
-                  className="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-xl hover:border-[#00B2D6] hover:bg-slate-50 transition-all duration-200 group text-center"
-                >
-                  <span className="text-[10px] font-bold text-slate-400 group-hover:text-[#00B2D6] uppercase tracking-wider">Login as</span>
-                  <span className="text-xs font-bold text-[#0F2E4A] group-hover:text-[#00B2D6]">{guest.role}</span>
-                </button>
-              ))}
-            </div>
-          </details>
         </div>
       </div>
     </div>

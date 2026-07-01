@@ -19,6 +19,8 @@ This file documents the design and coding preferences for cleaning up and buildi
 *   **`src/lib` & `src/utils`**: General helper libraries, utilities (e.g., CSV export), and context providers.
 *   **`src/middleware.ts`**: Handles route guards and role protection via JWT cookie parsing.
 *   **`.env.local`**: Hosts system variables (such as API Base URLs).
+*   **`docs/api`**: Stores backend API reference files such as Postman collections used during integration.
+*   **`prisma schema`**: Stores backend Prisma schema references used for role setup, entity fields, relationships, and TypeScript interface definitions.
 
 ---
 
@@ -66,3 +68,67 @@ This file documents the design and coding preferences for cleaning up and buildi
     *   Reset file inputs so users can repeat operations.
 5.  **Central Export Helpers**:
     *   Implement and reuse CSV export utilities under `src/utils/exportCsv.ts`.
+
+---
+
+## API Integration Preferences
+
+1.  **Backend Reference Source**:
+    *   Use `docs/api/complainced-backend.postman_collection.json` as the saved backend Postman collection reference for endpoint paths, request bodies, response shapes, and role-specific tokens/examples.
+    *   Use the root `prisma schema` folder as the backend data-model reference for entity fields, enum values, relationships, role names, and interface definitions.
+    *   Treat tokens and sample credentials in Postman files as sensitive local reference data. Do not paste them into components, docs, or chat summaries.
+2.  **Before Adding Or Changing APIs**:
+    *   Read `src/redux/api/baseApi.ts` to confirm `baseUrl`, headers, tokens, refresh behavior, and `prepareHeaders`.
+    *   Read `src/redux/store.ts` to confirm API middleware and reducer wiring.
+    *   Read a nearby existing service file such as `src/redux/service/auth/authApi.ts` or `src/redux/service/profile/profileApi.ts`.
+    *   Read the page or feature component where the API hook will be used.
+3.  **RTK Query First**:
+    *   Add feature endpoints through `baseApi.injectEndpoints`.
+    *   Keep shared configuration in `src/redux/api/baseApi.ts`.
+    *   Put feature-specific service files under `src/redux/service/[feature]/[feature]Api.ts` or the closest existing feature folder.
+    *   Export generated hooks from each service file and consume hooks in container/page-level components.
+    *   Do not call `fetch` directly inside components unless there is a strong, explicit reason.
+4.  **Endpoint Pattern**:
+    *   Use `builder.query` for `GET` endpoints and `builder.mutation` for create/update/delete actions.
+    *   Return query objects with `url`, `method`, optional `params`, and optional `body`.
+    *   Use `providesTags` for read endpoints and `invalidatesTags` for mutations that should refresh cached data.
+    *   Export hooks from the service file, for example `useGetUsersQuery`, `useCreateUserMutation`, and `useUpdateUserMutation`.
+5.  **Mock-To-API Migration Style**:
+    *   Replace `src/app/data` imports screen by screen.
+    *   Preserve the component prop contracts where reasonable, and map backend responses into the existing UI shape before changing reusable/presentational components.
+    *   Keep mock data available until the related API integration is complete and verified.
+6.  **Component Boundaries**:
+    *   Keep route `page.tsx` files thin.
+    *   Put loading, error, filter, pagination, and mutation handler logic in container/view components.
+    *   Keep tables, cards, modals, and form sections mostly presentational and driven by props.
+    *   Page or feature components call API hooks, then pass clean data down as props.
+7.  **Forms & Mutations**:
+    *   Use mutation hooks for form submissions and CRUD actions.
+    *   Use `react-hook-form` when building non-trivial forms, and add `zod` validation when validation rules are meaningful.
+    *   Use `unwrap()` for mutations when component-level success/error handling is needed.
+    *   Show loading state while submitting.
+    *   Show user feedback with `sonner` toasts for create, update, delete, login, booking, and upload actions.
+    *   Invalidate the smallest useful RTK Query tags after mutations.
+8.  **Auth & Requests**:
+    *   Continue using persisted auth state and cookies so `middleware.ts` can protect role routes.
+    *   Keep login API logic in `src/redux/service/auth/authApi.ts`.
+    *   After login, decode JWT when needed, save access/refresh tokens in Redux, save tokens in cookies, and redirect by normalized role.
+    *   Do not scatter auth-only logic randomly inside components.
+    *   Do not hardcode API base URLs. Use `NEXT_PUBLIC_API_URL`.
+    *   Use `FormData` only when the backend expects multipart upload; otherwise send JSON bodies.
+9.  **Loading, Empty & Error States**:
+    *   Handle loading, empty, and error states in the UI for integrated screens.
+    *   Show user-friendly error messages. Do not expose raw backend errors unless the details are useful to the user.
+    *   If the backend response shape differs from the UI shape, adapt it cleanly in the API layer or feature component.
+10. **Types, Roles & Enums**:
+    *   Prefer TypeScript interfaces based on the Postman response examples and Prisma schema fields together.
+    *   Use backend enum values exactly where they are persisted or returned, including `USER`, `ORGINIZER`, `CLINIC`, `ADMIN`, and `SUPERADMIN`.
+    *   Normalize frontend route labels only at the app boundary when needed, such as mapping backend `SUPERADMIN` to the existing dashboard route convention.
+    *   Reuse domain terms from Prisma for entities such as `Booking`, `Service`, `Location`, `MedicalRecord`, `OrganizerRequest`, `Payment`, and `Notification`.
+11. **Naming & Cleanup**:
+    *   Prefer current Compliance Medicals domain names for new integrations.
+    *   Do not extend old real-estate-specific API names such as `properties`, `agency`, or `roofing` unless the backend endpoint truly uses that domain.
+    *   After a screen is fully integrated, remove unused mock handlers/imports from that screen.
+12. **Verification**:
+    *   Run `npm run build` or `pnpm build` after API integration changes.
+    *   If build fails because of types, fix the types instead of using `any` everywhere.

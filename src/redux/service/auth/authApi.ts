@@ -72,13 +72,6 @@ const authApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["auth"],
     }),
-    googleLogin: builder.query({
-      query: () => ({
-        url: `/auth/google`,
-        method: "GET",
-      }),
-      providesTags: ["auth"],
-    }),
   }),
 });
 
@@ -91,6 +84,5 @@ export const {
   useForgatPasswordMutation,
   useResetPasswordMutation,
   useResendOtpMutation,
-  useGoogleLoginQuery
 } = authApi;
 export const { endpoints: authEndpoints } = authApi;

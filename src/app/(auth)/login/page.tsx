@@ -4,7 +4,7 @@ import Image from "next/image";
 import React, { useState } from "react";
 import logoImg from "@/assets/logo/logo.png";
 import Link from "next/link";
-import { Mail, Lock, Eye, EyeOff, ChevronDown } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { useLoginUserMutation } from "@/redux/service/auth/authApi";
 import { useDispatch } from "react-redux";
 import { useRouter } from "next/navigation";
@@ -12,13 +12,13 @@ import { setUser } from "@/redux/features/auth";
 import Cookies from "js-cookie";
 import { jwtDecode } from "jwt-decode";
 import { toast } from "sonner";
-import { getDashboardPathByRole, normalizeRole } from "@/utils/roles";
+import { getDashboardPathByRole, normalizeRole, type BackendRole } from "@/utils/roles";
 
 // Define or import this type to match your JWT payload
 interface UserType {
   id: string;
   email: string;
-  role: string;
+  role: BackendRole;
   iat: number;
   exp: number;
 }
@@ -32,72 +32,8 @@ const LoginPage = () => {
   const dispatch = useDispatch();
   const router = useRouter();
 
-  const handleBackendlessLogin = (role: string, email: string) => {
-    const iat = Math.floor(Date.now() / 1000);
-    const exp = iat + 86400 * 30; // 30 days
-    const payloadObj = {
-      id: `mock-${role.toLowerCase()}-id`,
-      email,
-      role: role.toUpperCase(),
-      iat,
-      exp,
-    };
-
-    const jsonStr = JSON.stringify(payloadObj);
-    const base64 = btoa(unescape(encodeURIComponent(jsonStr)))
-      .replace(/=/g, "")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_");
-
-    const accessToken = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.${base64}.mockSignature`;
-    const refreshToken = "mock-refresh-token";
-
-    const decodedUser = {
-      ...payloadObj,
-      role: normalizeRole(payloadObj.role),
-    };
-
-    dispatch(
-      setUser({
-        user: decodedUser,
-        accessToken,
-        refreshToken,
-      })
-    );
-
-    const accessTokenExpiry = new Date(exp * 1000);
-    const refreshTokenExpiry = new Date();
-    refreshTokenExpiry.setDate(refreshTokenExpiry.getDate() + 30);
-    Cookies.set("accessToken", accessToken, { expires: accessTokenExpiry, path: "/" });
-    Cookies.set("refreshToken", refreshToken, { expires: refreshTokenExpiry, path: "/" });
-
-    router.push(getDashboardPathByRole(decodedUser.role));
-    toast.success(`Logged in as ${role} (Backendless)`);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (
-      email === "clinic@example.com" ||
-      email === "organizer@example.com" ||
-      email === "superadmin@example.com" ||
-      email === "admin@example.com" ||
-      email === "agent@gmail.com" ||
-      email === "user@example.com"
-    ) {
-      const mappedRole = email === "clinic@example.com" 
-        ? "CLINIC" 
-        : email === "organizer@example.com" 
-        ? "ORGINIZER" 
-        : email === "admin@example.com"
-        ? "ADMIN"
-        : email === "superadmin@example.com"
-        ? "SUPER_ADMIN"
-        : "USER";
-      handleBackendlessLogin(mappedRole, email);
-      return;
-    }
 
     try {
       const payload = { email, password };
@@ -280,87 +216,6 @@ const LoginPage = () => {
               Sign Up
             </Link>
           </div>
-        </div>
-
-        {/* Collapsible Guest Account Helper (Dev Mode only) */}
-        <div className="mt-6 w-full">
-          <details className="group bg-white/60 backdrop-blur-sm border border-slate-200/60 rounded-2xl overflow-hidden transition-all duration-300 shadow-sm">
-            <summary className="flex items-center justify-between px-5 py-3 text-xs font-bold text-slate-500 cursor-pointer hover:bg-slate-50/50 list-none select-none">
-              <span className="flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#00B2D6] animate-pulse" />
-                Quick Logins (Development / QA)
-              </span>
-              <ChevronDown className="h-4 w-4 text-slate-400 transform transition-transform group-open:rotate-180" />
-            </summary>
-            <div className="p-4 border-t border-slate-100 bg-white grid grid-cols-2 gap-2.5">
-              {[
-                { role: "Super Admin", email: "superadmin@example.com" },
-                { role: "Admin", email: "admin@example.com" },
-                { role: "User", email: "agent@gmail.com" },
-                { role: "Clinic", email: "clinic@example.com" },
-                { role: "Organizer", email: "organizer@example.com" },
-              ].map((guest) => (
-                <button
-                  key={guest.role}
-                  type="button"
-                  onClick={async () => {
-                    const guestEmail = guest.email;
-                    const guestPassword = "123456";
-                    setEmail(guestEmail);
-                    setPassword(guestPassword);
-
-                    if (
-                      guest.role === "Clinic" ||
-                      guest.role === "Organizer" ||
-                      guest.role === "Super Admin" ||
-                      guest.role === "Admin" ||
-                      guest.role === "User"
-                    ) {
-                      const mappedRole = guest.role === "Clinic" 
-                        ? "CLINIC" 
-                        : guest.role === "Organizer" 
-                        ? "ORGINIZER" 
-                        : guest.role === "Super Admin"
-                        ? "SUPER_ADMIN"
-                        : guest.role === "Admin"
-                        ? "ADMIN"
-                        : "USER";
-                      handleBackendlessLogin(mappedRole, guestEmail);
-                      return;
-                    }
-
-                    try {
-                      const payload = { email: guestEmail, password: guestPassword };
-                      const res = await login(payload).unwrap();
-                      if (res?.success) {
-                        const { accessToken, refreshToken } = res.data;
-                        let decodedUser: UserType | null = null;
-                        decodedUser = jwtDecode<UserType>(accessToken);
-                        decodedUser = {
-                          ...decodedUser,
-                          role: normalizeRole(decodedUser.role),
-                        };
-                        dispatch(setUser({ user: decodedUser, accessToken, refreshToken }));
-                        const accessTokenExpiry = new Date(decodedUser.exp * 1000);
-                        const refreshTokenExpiry = new Date();
-                        refreshTokenExpiry.setDate(refreshTokenExpiry.getDate() + 30);
-                        Cookies.set("accessToken", accessToken, { expires: accessTokenExpiry, path: "/" });
-                        Cookies.set("refreshToken", refreshToken, { expires: refreshTokenExpiry, path: "/" });
-                        router.push(getDashboardPathByRole(decodedUser.role));
-                        toast.success(`Logged in as ${guest.role}`);
-                      }
-                    } catch {
-                      toast.error(`${guest.role} login failed.`);
-                    }
-                  }}
-                  className="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-xl hover:border-[#00B2D6] hover:bg-slate-50 transition-all duration-200 group text-center"
-                >
-                  <span className="text-[10px] font-bold text-slate-400 group-hover:text-[#00B2D6] uppercase tracking-wider">Login as</span>
-                  <span className="text-xs font-bold text-[#0F2E4A] group-hover:text-[#00B2D6]">{guest.role}</span>
-                </button>
-              ))}
-            </div>
-          </details>
         </div>
       </div>
     </div>

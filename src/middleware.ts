@@ -49,8 +49,8 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("/", request.url));
     }
 
-    // SUPER_ADMIN only
-    if (path.startsWith("/dashboard/super-admin") && role !== "SUPER_ADMIN") {
+    // SUPERADMIN only
+    if (path.startsWith("/dashboard/super-admin") && role !== "SUPERADMIN") {
       return NextResponse.redirect(new URL("/", request.url));
     }
 
