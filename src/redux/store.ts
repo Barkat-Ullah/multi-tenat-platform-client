@@ -3,7 +3,6 @@ import { configureStore } from "@reduxjs/toolkit";
 import { persistStore, persistReducer } from "redux-persist";
 import createWebStorage from "redux-persist/lib/storage/createWebStorage";
 import { baseApi } from "./api/baseApi";
-import aiApi from "./api/aiApi";
 import aiChatReducer from "./features/aiChatSlice";
 // Reducers
 import authReducer from "./features/auth";
@@ -58,7 +57,6 @@ export const store = configureStore({
 
     // API reducers
     [baseApi.reducerPath]: baseApi.reducer,
-    [aiApi.reducerPath]: aiApi.reducer,
     compare: compareReduce,
   },
   middleware: (getDefaultMiddleware) =>
@@ -77,7 +75,6 @@ export const store = configureStore({
       },
     })
       .concat(baseApi.middleware)
-      .concat(aiApi.middleware), // Add AI API middleware
 });
 
 export const persistor = persistStore(store);
