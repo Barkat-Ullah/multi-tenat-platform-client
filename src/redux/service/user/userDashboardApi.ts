@@ -1,4 +1,5 @@
 import baseApi from "@/redux/api/baseApi";
+import { CorporateAnalyticsResponse } from "../corporate/corporateDashboardApi";
 
 export interface DriverAnalyticsOverview {
   totalAppointment: number;
