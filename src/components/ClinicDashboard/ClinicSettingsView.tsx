@@ -2,23 +2,35 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import Image from "next/image";
-import { ChevronRight, Eye, EyeOff } from "lucide-react";
+import { ChevronRight, Eye, EyeOff, UserRound } from "lucide-react";
 import Spinner from "@/components/ui/Spinner";
 import { getImageUrl } from "@/utils/getImageUrl";
 import { toast } from "sonner";
+import { useChangePasswordMutation } from "@/redux/service/auth/authApi";
+import {
+  useGetProfileDataQuery,
+  useUpdateProfileDataMutation,
+} from "@/redux/service/profile/profileApi";
 
 export default function ClinicSettingsView() {
   const [activeTab, setActiveTab] = useState<"profile" | "password">("profile");
 
-  const [name, setName] = useState("St Thomas Hospital Admin");
-  const [email, setEmail] = useState("stthomas@compliancemed.co.uk");
-  const [phone, setPhone] = useState("07700 900789");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
-  const [isProfileLoading, setIsProfileLoading] = useState(false);
-  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const {
+    data: profileResponse,
+    isLoading: isProfileLoading,
+    isError: isProfileError,
+    refetch: refetchProfile,
+  } = useGetProfileDataQuery();
+  const [updateProfileData, { isLoading: isUpdatingProfile }] =
+    useUpdateProfileDataMutation();
+  const [changePassword, { isLoading: isChangingPassword }] =
+    useChangePasswordMutation();
 
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -28,6 +40,17 @@ export default function ClinicSettingsView() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const profile = profileResponse?.data;
+    if (!profile) return;
+
+    setName(profile.fullName || profile.profile?.name || "");
+    setEmail(profile.email || "");
+    setPhone(profile.phoneNumber || profile.profile?.phone || "");
+    setImagePreview(profile.image || profile.profile?.avatar || null);
+    setAvatarFile(null);
+  }, [profileResponse]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -45,22 +68,39 @@ export default function ClinicSettingsView() {
     }
   };
 
-  const handleRemovePhoto = () => {
-    setImagePreview(null);
-    setAvatarFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-    toast.info("Photo removed. Remember to save changes.");
-  };
-
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsUpdatingProfile(true);
-    setTimeout(() => {
-      setIsUpdatingProfile(false);
-      toast.success("Profile updated successfully!");
-    }, 600);
+
+    if (!name.trim()) {
+      toast.error("Name is required.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append(
+      "data",
+      JSON.stringify({
+        fullName: name.trim(),
+        phoneNumber: phone.trim(),
+      }),
+    );
+
+    if (avatarFile) {
+      formData.append("image", avatarFile);
+    }
+
+    try {
+      const response = await updateProfileData(formData).unwrap();
+      toast.success(response.message || "Profile updated successfully!");
+      setAvatarFile(null);
+    } catch (error: any) {
+      toast.error(
+        error?.data?.message ||
+          error?.error ||
+          error?.message ||
+          "Failed to update profile.",
+      );
+    }
   };
 
   const handleSavePassword = async (e: React.FormEvent) => {
@@ -78,20 +118,46 @@ export default function ClinicSettingsView() {
       return;
     }
 
-    setIsChangingPassword(true);
-    setTimeout(() => {
-      setIsChangingPassword(false);
-      toast.success("Password changed successfully!");
+    try {
+      const response = await changePassword({
+        oldPassword: oldPassword.trim(),
+        newPassword: newPassword.trim(),
+      }).unwrap();
+      toast.success(response.message || "Password changed successfully!");
       setOldPassword("");
       setNewPassword("");
       setConfirmPassword("");
-    }, 600);
+    } catch (error: any) {
+      toast.error(
+        error?.data?.message ||
+          error?.error ||
+          error?.message ||
+          "Failed to change password.",
+      );
+    }
   };
 
   if (isProfileLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Spinner />
+      </div>
+    );
+  }
+
+  if (isProfileError) {
+    return (
+      <div className="flex min-h-[400px] flex-col items-center justify-center gap-3">
+        <p className="text-sm font-bold text-red-500">
+          Failed to load profile.
+        </p>
+        <button
+          type="button"
+          onClick={() => refetchProfile()}
+          className="rounded-full bg-[#00B2D6] px-5 py-2 text-xs font-bold text-white transition-colors hover:bg-[#0092B0]"
+        >
+          Try Again
+        </button>
       </div>
     );
   }
@@ -161,7 +227,7 @@ export default function ClinicSettingsView() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="text-3xl">👤</div>
+                      <UserRound size={32} className="text-slate-400" />
                     )}
                   </div>
 
@@ -172,13 +238,6 @@ export default function ClinicSettingsView() {
                       className="bg-[#00B2D6] hover:bg-[#009cb9] text-white px-4 py-2 rounded-full font-bold text-xs transition-all cursor-pointer border-none outline-none"
                     >
                       Change Photo
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleRemovePhoto}
-                      className="border border-[#00B2D6] hover:bg-slate-50 text-[#00B2D6] bg-white px-4 py-2 rounded-full font-bold text-xs transition-all cursor-pointer outline-none"
-                    >
-                      Remove
                     </button>
                     <input
                       type="file"

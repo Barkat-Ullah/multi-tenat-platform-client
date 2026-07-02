@@ -5,50 +5,71 @@ import Link from "next/link";
 import { Select, Calendar, Popover } from "antd";
 import type { Dayjs } from "dayjs";
 import dayjs from "dayjs";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { clinicCalendarAppointments, CalendarAppointmentData } from "@/app/data/ClinicDashboardData";
+
+type CalendarDay = CalendarAppointmentData["day"];
+type ScheduledAppointment = CalendarAppointmentData & { date: string };
+
+const days: CalendarDay[] = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+const dayOffsets: Record<CalendarDay, number> = {
+  MON: 0,
+  TUE: 1,
+  WED: 2,
+  THU: 3,
+  FRI: 4,
+  SAT: 5,
+  SUN: 6,
+};
+
+const startOfWeek = (date: Dayjs) => date.startOf("day").subtract((date.day() + 6) % 7, "day");
 
 export default function ClinicScheduleView() {
   const [hospital, setHospital] = useState("Royal Free Hospital");
   const [location, setLocation] = useState("London");
-  const [viewMode, setViewMode] = useState("Weekly"); // Default to Weekly matching grid mockup
-  const [appointments] = useState<CalendarAppointmentData[]>(clinicCalendarAppointments);
+  const [viewMode, setViewMode] = useState("Weekly");
+  const [selectedDate, setSelectedDate] = useState(() => dayjs().startOf("day"));
+  const [appointments] = useState<ScheduledAppointment[]>(() => {
+    const currentWeekStart = startOfWeek(dayjs());
+
+    return clinicCalendarAppointments.map((appointment) => ({
+      ...appointment,
+      date: currentWeekStart.add(dayOffsets[appointment.day], "day").format("YYYY-MM-DD"),
+    }));
+  });
 
   const timeSlots = ["8:00 AM", "8:30 AM", "9:00 AM", "10:00 AM", "4:30 PM", "5:00 PM"];
-  const days: Array<"MON" | "TUE" | "WED" | "THU" | "FRI" | "SAT" | "SUN"> = [
-    "MON",
-    "TUE",
-    "WED",
-    "THU",
-    "FRI",
-    "SAT",
-    "SUN",
-  ];
+  const selectedWeek = days.map((_, index) => startOfWeek(selectedDate).add(index, "day"));
 
-  // Helper to filter appointments in a specific grid cell
-  const getAppointmentsForCell = (day: typeof days[number], timeSlot: string) => {
-    return appointments.filter((app) => app.day === day && app.timeSlot === timeSlot);
+  const getAppointmentsForCell = (date: Dayjs, timeSlot: string) => {
+    return appointments.filter(
+      (appointment) => appointment.date === date.format("YYYY-MM-DD") && appointment.timeSlot === timeSlot,
+    );
   };
 
-  const handlePillClick = (app: CalendarAppointmentData) => {
-    toast.info(`Appointment: ${app.patientName} - ${app.serviceType} (${app.day} ${app.timeSlot})`);
+  const handlePillClick = (app: ScheduledAppointment) => {
+    toast.info(
+      `Appointment: ${app.patientName} - ${app.serviceType} (${dayjs(app.date).format("ddd, DD MMM")} ${app.timeSlot})`,
+    );
   };
+
+  const navigateCalendar = (direction: -1 | 1) => {
+    const unit = viewMode === "Daily" ? "day" : viewMode === "Weekly" ? "week" : "month";
+    setSelectedDate((current) => current.add(direction, unit));
+  };
+
+  const periodLabel =
+    viewMode === "Daily"
+      ? selectedDate.format("dddd, DD MMMM YYYY")
+      : viewMode === "Weekly"
+        ? `${selectedWeek[0].format("DD MMM")} - ${selectedWeek[6].format("DD MMM YYYY")}`
+        : selectedDate.format("MMMM YYYY");
 
   // Ant Design Calendar custom cell renderer for Monthly view
   const monthCellRender = (current: Dayjs, info: { type: string }) => {
     if (info.type === "date") {
-      const dayIndex = current.day();
-      const indexToDayMap: Record<number, typeof days[number]> = {
-        0: "SUN",
-        1: "MON",
-        2: "TUE",
-        3: "WED",
-        4: "THU",
-        5: "FRI",
-        6: "SAT",
-      };
-      const dayKey = indexToDayMap[dayIndex];
-      const dayApps = appointments.filter((app) => app.day === dayKey);
+      const dayApps = appointments.filter((appointment) => appointment.date === current.format("YYYY-MM-DD"));
 
       if (dayApps.length === 0) return null;
 
@@ -172,6 +193,37 @@ export default function ClinicScheduleView() {
         </div>
       </div>
 
+      <div className="flex flex-wrap items-center justify-between gap-3 border-y border-slate-100 py-3">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => navigateCalendar(-1)}
+            aria-label={`Previous ${viewMode.toLowerCase()}`}
+            title={`Previous ${viewMode.toLowerCase()}`}
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:border-[#00B2D6] hover:text-[#00B2D6]"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedDate(dayjs().startOf("day"))}
+            className="h-9 rounded-lg border border-slate-200 px-4 text-xs font-bold text-[#0F2E4A] transition-colors hover:border-[#00B2D6] hover:text-[#00B2D6]"
+          >
+            Today
+          </button>
+          <button
+            type="button"
+            onClick={() => navigateCalendar(1)}
+            aria-label={`Next ${viewMode.toLowerCase()}`}
+            title={`Next ${viewMode.toLowerCase()}`}
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:border-[#00B2D6] hover:text-[#00B2D6]"
+          >
+            <ChevronRight size={18} />
+          </button>
+        </div>
+        <p className="text-sm font-extrabold text-[#0F2E4A] sm:text-base">{periodLabel}</p>
+      </div>
+
       {/* Render Daily View Grid */}
       {viewMode === "Daily" && (
         <div className="overflow-x-auto rounded-3xl border border-slate-100 shadow-[0_4px_25px_rgba(0,0,0,0.015)] bg-white">
@@ -181,15 +233,23 @@ export default function ClinicScheduleView() {
                 <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-wider text-left border-r border-slate-100 w-[120px]">
                   TIME
                 </th>
-                <th className="py-4 px-6 text-xs font-bold text-[#00B2D6] uppercase tracking-wider text-center bg-[#E6FAFF]/60">
-                  <div>MON (SELECTED DAY)</div>
-                  <div className="text-[10px] text-[#00B2D6] font-bold mt-0.5">TODAY</div>
+                <th
+                  className={`py-4 px-6 text-xs font-bold uppercase tracking-wider text-center ${
+                    selectedDate.isSame(dayjs(), "day")
+                      ? "bg-[#E6FAFF]/60 text-[#00B2D6]"
+                      : "text-slate-500"
+                  }`}
+                >
+                  <div>{selectedDate.format("ddd, DD MMM")}</div>
+                  {selectedDate.isSame(dayjs(), "day") && (
+                    <div className="text-[10px] text-[#00B2D6] font-bold mt-0.5">TODAY</div>
+                  )}
                 </th>
               </tr>
             </thead>
             <tbody>
               {timeSlots.map((timeSlot) => {
-                const cellApps = getAppointmentsForCell("MON", timeSlot);
+                const cellApps = getAppointmentsForCell(selectedDate, timeSlot);
                 return (
                   <tr key={timeSlot} className="border-b border-slate-100 last:border-b-0">
                     <td className="py-6 px-6 text-xs font-bold text-slate-400 border-r border-slate-100 bg-slate-50/10 align-middle">
@@ -223,31 +283,30 @@ export default function ClinicScheduleView() {
         </div>
       )}
 
-      {/* Render Weekly View Grid (matching mockup grid MON to FRI) */}
+      {/* Render Weekly View Grid */}
       {viewMode === "Weekly" && (
         <div className="overflow-x-auto rounded-3xl border border-slate-100 shadow-[0_4px_25px_rgba(0,0,0,0.015)] bg-white">
-          <table className="w-full border-collapse min-w-[950px] table-fixed">
+          <table className="w-full border-collapse min-w-[1200px] table-fixed">
             <thead>
               <tr className="bg-slate-50/70 border-b border-slate-100">
                 <th className="py-4 px-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-left border-r border-slate-100 w-[100px]">
                   TIME
                 </th>
-                <th className="py-4 px-4 text-xs font-bold text-[#00B2D6] uppercase tracking-wider text-center border-r border-slate-100 bg-[#E6FAFF] w-[18%]">
-                  <div>MON</div>
-                  <div className="text-[10px] text-[#00B2D6] font-bold mt-0.5">TODAY</div>
-                </th>
-                <th className="py-4 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center border-r border-slate-100 w-[18%]">
-                  TUE
-                </th>
-                <th className="py-4 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center border-r border-slate-100 w-[18%]">
-                  WED
-                </th>
-                <th className="py-4 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center border-r border-slate-100 w-[18%]">
-                  THU
-                </th>
-                <th className="py-4 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center w-[18%]">
-                  FRI
-                </th>
+                {selectedWeek.map((date) => {
+                  const isToday = date.isSame(dayjs(), "day");
+                  return (
+                    <th
+                      key={date.format("YYYY-MM-DD")}
+                      className={`py-4 px-3 text-xs font-bold uppercase tracking-wider text-center border-r border-slate-100 last:border-r-0 ${
+                        isToday ? "bg-[#E6FAFF] text-[#00B2D6]" : "text-slate-500"
+                      }`}
+                    >
+                      <div>{date.format("ddd")}</div>
+                      <div className="mt-0.5 text-[10px]">{date.format("DD MMM")}</div>
+                      {isToday && <div className="mt-0.5 text-[10px] text-[#00B2D6]">TODAY</div>}
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
@@ -256,14 +315,14 @@ export default function ClinicScheduleView() {
                   <td className="py-6 px-4 text-xs font-bold text-slate-400 border-r border-slate-100 bg-slate-50/10 align-middle">
                     {timeSlot}
                   </td>
-                  {days.slice(0, 5).map((day) => {
-                    const cellApps = getAppointmentsForCell(day, timeSlot);
-                    const isMon = day === "MON";
+                  {selectedWeek.map((date) => {
+                    const cellApps = getAppointmentsForCell(date, timeSlot);
+                    const isToday = date.isSame(dayjs(), "day");
                     return (
                       <td
-                        key={day}
+                        key={date.format("YYYY-MM-DD")}
                         className={`p-2.5 border-r border-slate-100 last:border-r-0 align-top ${
-                          isMon ? "bg-[#E6FAFF]/15" : "bg-white"
+                          isToday ? "bg-[#E6FAFF]/15" : "bg-white"
                         }`}
                       >
                         <div className="flex flex-col gap-1.5 min-h-[60px] justify-center">
@@ -296,6 +355,9 @@ export default function ClinicScheduleView() {
       {viewMode === "Monthly" && (
         <div className="bg-white rounded-3xl border border-slate-100 shadow-[0_4px_25px_rgba(0,0,0,0.015)] p-6">
           <Calendar
+            value={selectedDate}
+            onChange={(date) => setSelectedDate(date.startOf("day"))}
+            onSelect={(date) => setSelectedDate(date.startOf("day"))}
             cellRender={monthCellRender}
             className="premium-antd-calendar"
           />
