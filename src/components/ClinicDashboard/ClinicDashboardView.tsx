@@ -3,7 +3,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Users, Calendar, CheckCircle2, Clock, X } from "lucide-react";
-import Spinner from "@/components/ui/Spinner";
 import {
   ClinicAnalyticsAppointment,
   useGetClinicAnalyticsQuery,
@@ -90,12 +89,36 @@ const getStatusClassName = (status: string) => {
   return "bg-[#E6FAFF] text-[#00B2D6] border-[#00B2D6]/10";
 };
 
+const AppointmentsTableSkeleton = () => (
+  <>
+    {Array.from({ length: 6 }, (_, rowIndex) => (
+      <tr key={rowIndex} className="animate-pulse">
+        {[44, 62, 48, 58, 42].map((width, columnIndex) => (
+          <td key={columnIndex} className="px-6 py-5">
+            <div
+              className="h-2.5 rounded-full bg-slate-200"
+              style={{ width: `${width - (rowIndex % 3) * 5}%` }}
+            />
+            {columnIndex === 1 && (
+              <div className="mt-2 h-1.5 w-1/3 rounded-full bg-slate-100" />
+            )}
+          </td>
+        ))}
+        <td className="px-6 py-5 text-center">
+          <div className="mx-auto h-6 w-20 rounded-full bg-slate-200" />
+        </td>
+      </tr>
+    ))}
+  </>
+);
+
 export default function ClinicDashboardView() {
   const [viewingAppt, setViewingAppt] = useState<ClinicAppointmentRow | null>(
     null,
   );
   const [mounted, setMounted] = useState(false);
-  const { data, isLoading, isError, refetch } = useGetClinicAnalyticsQuery();
+  const { data, isLoading, isFetching, isError, refetch } =
+    useGetClinicAnalyticsQuery();
 
   useEffect(() => {
     setMounted(true);
@@ -106,6 +129,7 @@ export default function ClinicDashboardView() {
     () => (data?.data?.todaysAppointments || []).map(mapAppointment),
     [data?.data?.todaysAppointments],
   );
+  const isAppointmentsLoading = isLoading || isFetching;
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 w-full">
@@ -218,17 +242,9 @@ export default function ClinicDashboardView() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100/80">
-                {isLoading && (
-                  <tr>
-                    <td colSpan={6} className="py-10">
-                      <div className="flex justify-center">
-                        <Spinner />
-                      </div>
-                    </td>
-                  </tr>
-                )}
+                {isAppointmentsLoading && <AppointmentsTableSkeleton />}
 
-                {isError && !isLoading && (
+                {isError && !isAppointmentsLoading && (
                   <tr>
                     <td colSpan={6} className="py-8 text-center">
                       <p className="text-sm font-bold text-red-500">
@@ -245,7 +261,7 @@ export default function ClinicDashboardView() {
                   </tr>
                 )}
 
-                {!isLoading &&
+                {!isAppointmentsLoading &&
                   !isError &&
                   appointments.map((appt) => (
                     <tr
@@ -280,7 +296,9 @@ export default function ClinicDashboardView() {
                     </tr>
                   ))}
 
-                {!isLoading && !isError && appointments.length === 0 && (
+                {!isAppointmentsLoading &&
+                  !isError &&
+                  appointments.length === 0 && (
                   <tr>
                     <td
                       colSpan={6}

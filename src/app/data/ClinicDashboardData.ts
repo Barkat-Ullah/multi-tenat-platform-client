@@ -15,13 +15,6 @@ export interface ClinicTimeSlot {
   status: "Active" | "Booked" | "Inactive";
 }
 
-export interface ClinicDocument {
-  id: string;
-  docTitle: string;
-  patientName: string;
-  generatedDate: string;
-}
-
 export const clinicCalendarAppointments: CalendarAppointmentData[] = [
   // Monday
   { id: "cal-1", patientName: "John Smith", serviceType: "Taxi Medical", day: "MON", timeSlot: "8:00 AM", color: "cyan" },
@@ -72,12 +65,4 @@ export const clinicTimeSlotsData: ClinicTimeSlot[] = [
   { id: "slot-3", timeRange: "10.00 AM - 10.30 AM", status: "Active" },
   { id: "slot-4", timeRange: "10.00 AM - 10.30 AM", status: "Booked" },
   { id: "slot-5", timeRange: "10.30 AM - 11.00 AM", status: "Inactive" },
-];
-
-export const clinicDocumentsData: ClinicDocument[] = [
-  { id: "doc-1", docTitle: "HGV/Bus Medical Certificates", patientName: "SarahGomez", generatedDate: "28 May 2025" },
-  { id: "doc-2", docTitle: "HGV/Bus Medical Certificates", patientName: "SarahGomez", generatedDate: "28 May 2025" },
-  { id: "doc-3", docTitle: "HGV/Bus Medical Certificates", patientName: "SarahGomez", generatedDate: "28 May 2025" },
-  { id: "doc-4", docTitle: "HGV/Bus Medical Certificates", patientName: "SarahGomez", generatedDate: "28 May 2025" },
-  { id: "doc-5", docTitle: "HGV/Bus Medical Certificates", patientName: "SarahGomez", generatedDate: "28 May 2025" },
 ];
