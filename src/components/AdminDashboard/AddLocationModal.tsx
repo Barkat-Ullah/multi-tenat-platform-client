@@ -1,152 +1,202 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import dynamic from "next/dynamic";
 import { X } from "lucide-react";
+import type { CreateAdminLocationRequest } from "@/redux/service/admin/locationsApi";
 
 interface AddLocationModalProps {
   isOpen: boolean;
+  isSaving: boolean;
   onClose: () => void;
-  onSave: (data: { city: string; address: string; bookingsCount: number; cliniciansCount: number }) => void;
+  onSave: (data: CreateAdminLocationRequest) => Promise<boolean>;
 }
+
+const LocationPickerMap = dynamic(() => import("./LocationPickerMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-full w-full animate-pulse bg-gradient-to-br from-slate-100 via-cyan-50 to-slate-100" />
+  ),
+});
 
 export default function AddLocationModal({
   isOpen,
+  isSaving,
   onClose,
   onSave,
 }: AddLocationModalProps) {
   const [mounted, setMounted] = useState(false);
-  const [city, setCity] = useState("");
-  const [debouncedCity, setDebouncedCity] = useState("London");
-  const [error, setError] = useState("");
+  const [locationName, setLocationName] = useState("");
+  const [latitude, setLatitude] = useState("");
+  const [longitude, setLongitude] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Prevent background scrolling when modal is open
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-      setCity("");
-      setDebouncedCity("London");
-      setError("");
-    } else {
-      document.body.style.overflow = "unset";
-    }
+    if (!isOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    setLocationName("");
+    setLatitude("");
+    setLongitude("");
+    setErrors({});
+
     return () => {
-      document.body.style.overflow = "unset";
+      document.body.style.overflow = previousOverflow;
     };
   }, [isOpen]);
 
-  // Debounce the map update so it doesn't reload on every single keystroke
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (city.trim()) {
-        setDebouncedCity(city.trim());
-      } else {
-        setDebouncedCity("London");
-      }
-    }, 500);
+  const selectedLatitude = useMemo(() => {
+    const value = Number(latitude.trim());
+    return latitude.trim() && Number.isFinite(value) ? value : null;
+  }, [latitude]);
 
-    return () => clearTimeout(timer);
-  }, [city]);
+  const selectedLongitude = useMemo(() => {
+    const value = Number(longitude.trim());
+    return longitude.trim() && Number.isFinite(value) ? value : null;
+  }, [longitude]);
 
   if (!isOpen || !mounted) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
 
-    if (!city.trim()) {
-      setError("Location name is required.");
+    const nextErrors: Record<string, string> = {};
+    const lat = Number(latitude.trim());
+    const lng = Number(longitude.trim());
+
+    if (!locationName.trim()) nextErrors.locationName = "Location name is required.";
+    if (!latitude.trim() || !Number.isFinite(lat) || lat < -90 || lat > 90) {
+      nextErrors.latitude = "Enter a valid latitude between -90 and 90.";
+    }
+    if (!longitude.trim() || !Number.isFinite(lng) || lng < -180 || lng > 180) {
+      nextErrors.longitude = "Enter a valid longitude between -180 and 180.";
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
       return;
     }
 
-    onSave({
-      city: city.trim(),
-      address: `${city.trim()} Clinic, United Kingdom`,
-      bookingsCount: Math.floor(Math.random() * 15) + 5, // Simulated random bookings count
-      cliniciansCount: Math.floor(Math.random() * 3) + 1, // Simulated random clinicians count
+    const saved = await onSave({
+      locationName: locationName.trim(),
+      lat,
+      lng,
     });
-    onClose();
+    if (saved) onClose();
+  };
+
+  const handleMapSelect = (lat: number, lng: number) => {
+    setLatitude(String(lat));
+    setLongitude(String(lng));
+    setErrors((current) => ({ ...current, latitude: "", longitude: "" }));
   };
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity duration-300"
+      <button
+        type="button"
+        aria-label="Close add location dialog"
+        className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
         onClick={onClose}
       />
 
-      {/* Modal Container */}
       <form
         onSubmit={handleSubmit}
-        className="bg-white w-full max-w-[500px] rounded-[32px] border border-slate-100 shadow-[0_20px_50px_rgba(0,0,0,0.12)] p-6 sm:p-8 relative z-10 animate-in fade-in zoom-in-95 duration-200"
+        className="relative z-10 max-h-[92vh] w-full max-w-[560px] overflow-y-auto rounded-[32px] border border-slate-100 bg-white p-6 shadow-[0_20px_50px_rgba(0,0,0,0.12)] animate-in fade-in zoom-in-95 sm:p-8"
       >
-        {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-100/80">
-          <h2 className="text-xl sm:text-2xl font-extrabold text-[#0F2E4A] font-poppins">
+        <div className="flex items-center justify-between border-b border-slate-100/80 pb-4">
+          <h2 className="font-poppins text-xl font-extrabold text-[#0F2E4A] sm:text-2xl">
             Add New Location
           </h2>
-          {/* Close Button */}
           <button
             type="button"
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-[#E6FAFF] text-[#00B2D6] hover:bg-[#D0F3FC] hover:scale-105 active:scale-95 transition-all flex items-center justify-center cursor-pointer border-none outline-none"
-            aria-label="Close modal"
+            aria-label="Close add location dialog"
+            title="Close"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E6FAFF] text-[#00B2D6] hover:bg-[#D0F3FC]"
           >
-            <X size={18} className="stroke-[2.5]" />
+            <X size={18} />
           </button>
         </div>
 
-        {/* Inputs & Real Google Map */}
-        <div className="space-y-4 mt-6">
+        <div className="mt-6 space-y-4">
           <div>
-            <label className="block text-sm font-bold text-[#0F2E4A] mb-2 font-sans">
+            <label htmlFor="location-name" className="mb-2 block text-sm font-bold text-[#0F2E4A]">
               Location Name
             </label>
             <input
+              id="location-name"
               type="text"
-              placeholder="e.g., London"
-              value={city}
-              onChange={(e) => {
-                setCity(e.target.value);
-                if (error) setError("");
+              value={locationName}
+              onChange={(event) => {
+                setLocationName(event.target.value);
+                setErrors((current) => ({ ...current, locationName: "" }));
               }}
-              className="w-full px-4 py-3.5 border border-slate-200 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.01)] focus:outline-none focus:border-[#00B2D6] focus:ring-1 focus:ring-[#00B2D6] text-sm text-[#0F2E4A] placeholder-slate-400 font-semibold transition-all"
+              placeholder="e.g., West Rampura"
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3.5 text-sm font-semibold text-[#0F2E4A] placeholder:text-slate-400 focus:border-[#00B2D6] focus:outline-none focus:ring-1 focus:ring-[#00B2D6]"
             />
-            {error && <p className="text-red-500 text-xs font-bold mt-1.5">{error}</p>}
+            {errors.locationName && <p className="mt-1.5 text-xs font-bold text-red-500">{errors.locationName}</p>}
           </div>
 
-          {/* Real Google Map Embed Container */}
-          <div className="relative rounded-3xl overflow-hidden border border-slate-200 shadow-sm mt-4 h-[240px] bg-slate-100">
-            <iframe
-              title="Interactive Google Map"
-              width="100%"
-              height="100%"
-              src={`https://maps.google.com/maps?q=${encodeURIComponent(debouncedCity)}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
-              frameBorder="0"
-              scrolling="no"
-              marginHeight={0}
-              marginWidth={0}
-              className="border-none w-full h-full"
-              allowFullScreen
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="location-latitude" className="mb-2 block text-sm font-bold text-[#0F2E4A]">Latitude</label>
+              <input
+                id="location-latitude"
+                type="number"
+                step="any"
+                value={latitude}
+                onChange={(event) => {
+                  setLatitude(event.target.value);
+                  setErrors((current) => ({ ...current, latitude: "" }));
+                }}
+                placeholder="23.7645867"
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3.5 text-sm font-semibold text-[#0F2E4A] placeholder:text-slate-400 focus:border-[#00B2D6] focus:outline-none focus:ring-1 focus:ring-[#00B2D6]"
+              />
+              {errors.latitude && <p className="mt-1.5 text-xs font-bold text-red-500">{errors.latitude}</p>}
+            </div>
+            <div>
+              <label htmlFor="location-longitude" className="mb-2 block text-sm font-bold text-[#0F2E4A]">Longitude</label>
+              <input
+                id="location-longitude"
+                type="number"
+                step="any"
+                value={longitude}
+                onChange={(event) => {
+                  setLongitude(event.target.value);
+                  setErrors((current) => ({ ...current, longitude: "" }));
+                }}
+                placeholder="90.4469565"
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3.5 text-sm font-semibold text-[#0F2E4A] placeholder:text-slate-400 focus:border-[#00B2D6] focus:outline-none focus:ring-1 focus:ring-[#00B2D6]"
+              />
+              {errors.longitude && <p className="mt-1.5 text-xs font-bold text-red-500">{errors.longitude}</p>}
+            </div>
+          </div>
+
+          <div className="h-[230px] overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 shadow-sm">
+            <LocationPickerMap
+              latitude={selectedLatitude}
+              longitude={selectedLongitude}
+              onSelect={handleMapSelect}
             />
           </div>
         </div>
 
-        {/* Save Button */}
-        <div className="mt-8 flex justify-start">
-          <button
-            type="submit"
-            className="px-8 py-3 bg-[#00B2D6] hover:bg-[#009cb9] rounded-full text-white font-bold text-sm tracking-wide transition-all active:scale-[0.98] shadow-md shadow-cyan-100/50 cursor-pointer border-none outline-none"
-          >
-            Save
-          </button>
-        </div>
+        <button
+          type="submit"
+          disabled={isSaving}
+          className="mt-7 rounded-full bg-[#00B2D6] px-8 py-3 text-sm font-bold text-white shadow-md shadow-cyan-100/50 hover:bg-[#009cb9] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isSaving ? "Saving..." : "Save Location"}
+        </button>
       </form>
     </div>,
-    document.body
+    document.body,
   );
 }

@@ -37,17 +37,47 @@ export default function BookingTrends({
 
       <div className="h-[300px] w-full">
         {isLoading ? (
-          <div className="relative h-full animate-pulse overflow-hidden rounded-xl border-b border-l border-slate-100">
-            <div className="absolute inset-x-0 top-1/4 border-t border-dashed border-slate-100" />
-            <div className="absolute inset-x-0 top-2/4 border-t border-dashed border-slate-100" />
-            <div className="absolute inset-x-0 top-3/4 border-t border-dashed border-slate-100" />
-            <div className="absolute bottom-0 left-[5%] h-[28%] w-[7%] rounded-t bg-slate-100" />
-            <div className="absolute bottom-0 left-[18%] h-[42%] w-[7%] rounded-t bg-slate-200" />
-            <div className="absolute bottom-0 left-[31%] h-[34%] w-[7%] rounded-t bg-slate-100" />
-            <div className="absolute bottom-0 left-[44%] h-[58%] w-[7%] rounded-t bg-slate-200" />
-            <div className="absolute bottom-0 left-[57%] h-[48%] w-[7%] rounded-t bg-slate-100" />
-            <div className="absolute bottom-0 left-[70%] h-[66%] w-[7%] rounded-t bg-slate-200" />
-            <div className="absolute bottom-0 left-[83%] h-[38%] w-[7%] rounded-t bg-slate-100" />
+          <div
+            className="relative h-full animate-pulse overflow-hidden rounded-xl"
+            role="status"
+            aria-label="Loading booking trends"
+          >
+            <div className="absolute bottom-7 left-8 right-2 top-2 border-b border-l border-slate-200">
+              <div className="absolute inset-x-0 top-1/4 border-t border-dashed border-slate-100" />
+              <div className="absolute inset-x-0 top-2/4 border-t border-dashed border-slate-100" />
+              <div className="absolute inset-x-0 top-3/4 border-t border-dashed border-slate-100" />
+              <svg
+                viewBox="0 0 100 100"
+                preserveAspectRatio="none"
+                className="absolute inset-0 h-full w-full"
+                aria-hidden="true"
+              >
+                <path
+                  d="M0 82 C8 76, 12 64, 20 68 S32 46, 40 53 S52 28, 60 38 S72 20, 80 32 S92 16, 100 22 L100 100 L0 100 Z"
+                  fill="#f1f5f9"
+                />
+                <path
+                  d="M0 82 C8 76, 12 64, 20 68 S32 46, 40 53 S52 28, 60 38 S72 20, 80 32 S92 16, 100 22"
+                  fill="none"
+                  stroke="#cbd5e1"
+                  strokeWidth="2"
+                  vectorEffect="non-scaling-stroke"
+                />
+                <path
+                  d="M0 90 C10 86, 14 78, 22 80 S34 66, 42 70 S54 50, 62 58 S74 44, 82 49 S94 36, 100 40"
+                  fill="none"
+                  stroke="#e2e8f0"
+                  strokeWidth="2"
+                  vectorEffect="non-scaling-stroke"
+                />
+              </svg>
+            </div>
+            <div className="absolute bottom-1 left-10 right-2 flex justify-between">
+              {Array.from({ length: 8 }, (_, index) => (
+                <span key={index} className="h-1.5 w-5 rounded-full bg-slate-100" />
+              ))}
+            </div>
+            <span className="sr-only">Loading booking trends...</span>
           </div>
         ) : data.length === 0 ? (
           <div className="flex h-full items-center justify-center text-sm font-semibold text-slate-400">
