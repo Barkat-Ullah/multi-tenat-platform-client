@@ -8,9 +8,10 @@ import Spinner from "@/components/ui/Spinner";
 import {
   type ClinicAvailability,
   type ClinicTimeSlot,
-  type ClinicTimeSlotResponse,
+  type ClinicTimeSlotListResponse,
   useCreateClinicScheduleMutation,
-  useGetClinicTimeSlotsByMonthQuery,
+  useGetClinicAvailabilityByMonthQuery,
+  useGetClinicTimeSlotsQuery,
 } from "@/redux/service/clinic/clinicScheduleApi";
 
 const daysOfWeek = ["S", "M", "T", "W", "T", "F", "S"];
@@ -27,7 +28,7 @@ const getErrorMessage = (error: unknown, fallback: string) => {
   return apiError.data?.message || apiError.error || apiError.message || fallback;
 };
 
-const getTimeSlots = (response?: ClinicTimeSlotResponse): ClinicTimeSlot[] => {
+const getTimeSlots = (response?: ClinicTimeSlotListResponse): ClinicTimeSlot[] => {
   const data = response?.data;
   if (!data) return [];
 
@@ -37,14 +38,38 @@ const getTimeSlots = (response?: ClinicTimeSlotResponse): ClinicTimeSlot[] => {
 
   return data.flatMap((item) => {
     if ("slotDate" in item) {
-      return (item as ClinicAvailability).timeSlots || [];
+      const availability = item as ClinicAvailability;
+      return (availability.timeSlots || []).map((slot) => ({
+        ...slot,
+        availabilityId: slot.availabilityId || availability.id,
+        clinicId: slot.clinicId || availability.clinicId,
+        date: slot.date || availability.slotDate,
+        availabilityIsActive: availability.isActive,
+      }));
     }
     return item as ClinicTimeSlot;
   });
 };
 
+const getAvailabilities = (
+  response?: ClinicTimeSlotListResponse,
+): ClinicAvailability[] => {
+  const data = response?.data;
+  if (!Array.isArray(data)) return [];
+
+  return data.filter(
+    (item): item is ClinicAvailability => "slotDate" in item,
+  );
+};
+
 const timeToMinutes = (time: string) => {
-  const [hours, minutes] = time.split(":").map(Number);
+  const [clock, meridiem] = time.trim().split(/\s+/);
+  const [rawHours, minutes] = clock.split(":").map(Number);
+  let hours = rawHours;
+
+  if (meridiem?.toUpperCase() === "AM" && hours === 12) hours = 0;
+  if (meridiem?.toUpperCase() === "PM" && hours !== 12) hours += 12;
+
   return hours * 60 + minutes;
 };
 
@@ -60,12 +85,18 @@ export default function CreateScheduleView() {
 
   const month = visibleMonth.format("YYYY-MM");
   const {
+    data: availabilityResponse,
+    isFetching: isFetchingAvailability,
+    isError: isAvailabilityError,
+    refetch: refetchAvailability,
+  } = useGetClinicAvailabilityByMonthQuery(month);
+  const {
     data: timeSlotResponse,
     isLoading: isLoadingSlots,
     isFetching: isFetchingSlots,
     isError: isTimeSlotError,
-    refetch,
-  } = useGetClinicTimeSlotsByMonthQuery(month);
+    refetch: refetchTimeSlots,
+  } = useGetClinicTimeSlotsQuery();
   const [createClinicSchedule, { isLoading: isCreatingSchedule }] =
     useCreateClinicScheduleMutation();
 
@@ -73,11 +104,32 @@ export default function CreateScheduleView() {
     () => getTimeSlots(timeSlotResponse),
     [timeSlotResponse],
   );
+  const clinicAvailabilities = useMemo(
+    () => getAvailabilities(timeSlotResponse),
+    [timeSlotResponse],
+  );
+  const monthAvailability = availabilityResponse?.data.data || [];
+  const selectedAvailability = clinicAvailabilities.find((availability) =>
+    dayjs(availability.slotDate).isSame(selectedDate, "day"),
+  );
+  const selectedMonthAvailability = monthAvailability.find(
+    (item) => item.date === selectedDate.format("YYYY-MM-DD"),
+  );
+  const selectedDateIsPast = selectedDate.isBefore(dayjs().startOf("day"), "day");
+  const selectedDateHasSchedule =
+    Boolean(selectedAvailability) || selectedMonthAvailability?.isActive === true;
+  const isScheduleDataLoading =
+    isLoadingSlots || isFetchingSlots || isFetchingAvailability;
+  const isScheduleDataUnavailable = isTimeSlotError || isAvailabilityError;
   const selectedDateSlots = useMemo(
     () =>
       monthSlots
-        .filter((slot) => dayjs(slot.date).isSame(selectedDate, "day"))
-        .sort((a, b) => a.startTime.localeCompare(b.startTime)),
+        .filter(
+          (slot) => slot.date && dayjs(slot.date).isSame(selectedDate, "day"),
+        )
+        .sort(
+          (a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime),
+        ),
     [monthSlots, selectedDate],
   );
 
@@ -96,6 +148,21 @@ export default function CreateScheduleView() {
 
   const handleGenerateSlots = async (event: React.FormEvent) => {
     event.preventDefault();
+
+    if (selectedDateIsPast) {
+      toast.error("Schedules cannot be created for past dates.");
+      return;
+    }
+
+    if (isScheduleDataUnavailable) {
+      toast.error("Schedule data is unavailable. Please try again.");
+      return;
+    }
+
+    if (selectedDateHasSchedule) {
+      toast.error("A schedule already exists for this date.");
+      return;
+    }
 
     if (!startTime || !endTime) {
       toast.error("Start time and end time are required.");
@@ -180,9 +247,10 @@ export default function CreateScheduleView() {
 
                   const date = visibleMonth.date(day);
                   const isSelected = date.isSame(selectedDate, "day");
-                  const hasSlots = monthSlots.some((slot) =>
-                    dayjs(slot.date).isSame(date, "day"),
+                  const dayAvailability = monthAvailability.find(
+                    (item) => item.date === date.format("YYYY-MM-DD"),
                   );
+                  const isAvailable = dayAvailability?.isActive === true;
 
                   return (
                     <button
@@ -196,7 +264,7 @@ export default function CreateScheduleView() {
                       }`}
                     >
                       {day}
-                      {hasSlots && (
+                      {isAvailable && (
                         <span
                           className={`absolute bottom-1 h-1 w-1 rounded-full ${
                             isSelected ? "bg-white" : "bg-[#00B2D6]"
@@ -207,6 +275,25 @@ export default function CreateScheduleView() {
                   );
                 })}
               </div>
+              {isFetchingAvailability && (
+                <p className="text-center text-xs font-semibold text-slate-400">
+                  Updating availability...
+                </p>
+              )}
+              {isAvailabilityError && (
+                <div className="flex items-center justify-center gap-2 text-xs">
+                  <span className="font-semibold text-red-500">
+                    Failed to load availability.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => refetchAvailability()}
+                    className="font-bold text-[#00B2D6] hover:text-[#009cb9]"
+                  >
+                    Try Again
+                  </button>
+                </div>
+              )}
             </div>
 
             <form
@@ -260,10 +347,22 @@ export default function CreateScheduleView() {
 
               <button
                 type="submit"
-                disabled={isCreatingSchedule}
+                disabled={
+                  isCreatingSchedule ||
+                  isScheduleDataLoading ||
+                  isScheduleDataUnavailable ||
+                  selectedDateIsPast ||
+                  selectedDateHasSchedule
+                }
                 className="rounded-full bg-[#00B2D6] px-7 py-3 text-xs font-bold tracking-wide text-white shadow-md shadow-cyan-100/50 transition-colors hover:bg-[#009cb9] disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm"
               >
-                {isCreatingSchedule ? "Generating..." : "Generate Slot"}
+                {isCreatingSchedule
+                  ? "Generating..."
+                  : selectedDateIsPast
+                    ? "Past Date"
+                    : selectedDateHasSchedule
+                      ? "Schedule Exists"
+                      : "Generate Slot"}
               </button>
             </form>
           </div>
@@ -289,7 +388,7 @@ export default function CreateScheduleView() {
                 </p>
                 <button
                   type="button"
-                  onClick={() => refetch()}
+                  onClick={() => refetchTimeSlots()}
                   className="rounded-full bg-[#00B2D6] px-5 py-2 text-xs font-bold text-white transition-colors hover:bg-[#009cb9]"
                 >
                   Try Again
@@ -304,9 +403,17 @@ export default function CreateScheduleView() {
             ) : (
               <div className="max-h-[520px] space-y-3.5 overflow-y-auto pr-1">
                 {selectedDateSlots.map((slot) => {
-                  const isActive = slot.status === "Active";
-                  const isBooked = Boolean(slot.isBooked || slot.booked);
-                  const status = isBooked ? "Booked" : slot.status;
+                  const isAvailabilityInactive =
+                    slot.availabilityIsActive === false;
+                  const isActive =
+                    !isAvailabilityInactive && slot.status === "Active";
+                  const isBooked =
+                    !isAvailabilityInactive && slot.isBooked === true;
+                  const status = isAvailabilityInactive
+                    ? "Inactive"
+                    : isBooked
+                      ? "Booked"
+                      : slot.status;
 
                   return (
                     <div

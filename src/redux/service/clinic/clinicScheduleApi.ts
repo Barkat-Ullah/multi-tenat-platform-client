@@ -4,13 +4,14 @@ export interface ClinicTimeSlot {
   id: string;
   availabilityId?: string;
   clinicId?: string;
-  date: string;
+  date?: string;
   duration?: number;
   startTime: string;
   endTime: string;
   capacity?: number;
   booked?: number;
   isBooked?: boolean;
+  availabilityIsActive?: boolean;
   status: "Active" | "Inactive" | string;
 }
 
@@ -19,10 +20,12 @@ export interface ClinicAvailability {
   clinicId?: string;
   slotDate: string;
   isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
   timeSlots?: ClinicTimeSlot[];
 }
 
-export interface ClinicTimeSlotResponse {
+export interface ClinicTimeSlotListResponse {
   success: boolean;
   statusCode: number;
   message: string;
@@ -35,6 +38,24 @@ export interface ClinicTimeSlotResponse {
       };
 }
 
+export interface ClinicMonthlyDay {
+  date: string;
+  isActive: boolean;
+  status: "available" | "unavailable" | string;
+}
+
+export interface ClinicMonthlyAvailabilityResponse {
+  success: boolean;
+  statusCode: number;
+  message: string;
+  data: {
+    month: string;
+    offDays: string[];
+    daysInMonth: number;
+    data: ClinicMonthlyDay[];
+  };
+}
+
 export interface CreateClinicScheduleRequest {
   slotDate: string;
   startTime: string;
@@ -43,7 +64,10 @@ export interface CreateClinicScheduleRequest {
 
 const clinicScheduleApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getClinicTimeSlotsByMonth: builder.query<ClinicTimeSlotResponse, string>({
+    getClinicAvailabilityByMonth: builder.query<
+      ClinicMonthlyAvailabilityResponse,
+      string
+    >({
       query: (month) => ({
         url: "/timeslots/month",
         method: "GET",
@@ -51,8 +75,15 @@ const clinicScheduleApi = baseApi.injectEndpoints({
       }),
       providesTags: ["timeslots"],
     }),
+    getClinicTimeSlots: builder.query<ClinicTimeSlotListResponse, void>({
+      query: () => ({
+        url: "/timeslots/my",
+        method: "GET",
+      }),
+      providesTags: ["timeslots"],
+    }),
     createClinicSchedule: builder.mutation<
-      ClinicTimeSlotResponse,
+      ClinicTimeSlotListResponse,
       CreateClinicScheduleRequest
     >({
       query: (body) => ({
@@ -66,6 +97,7 @@ const clinicScheduleApi = baseApi.injectEndpoints({
 });
 
 export const {
-  useGetClinicTimeSlotsByMonthQuery,
+  useGetClinicAvailabilityByMonthQuery,
+  useGetClinicTimeSlotsQuery,
   useCreateClinicScheduleMutation,
 } = clinicScheduleApi;
