@@ -3,12 +3,12 @@
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
-import { ReportItemData } from "@/app/data/AdminDashboardData";
+import type { AdminMedicalRecord } from "@/redux/service/admin/reportsApi";
 
 interface ReportDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  report: ReportItemData | null;
+  report: AdminMedicalRecord | null;
 }
 
 export default function ReportDetailsModal({
@@ -35,6 +35,21 @@ export default function ReportDetailsModal({
   }, [isOpen]);
 
   if (!isOpen || !report || !mounted) return null;
+
+  const generatedDate = new Date(report.createdAt).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+  const expiryDate = report.expiryDate
+    ? new Date(report.expiryDate).toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })
+    : "N/A";
+  const driverName = report.driver?.fullName || report.driverId;
+  const title = report.booking?.service?.title || "Medical Report";
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
@@ -65,55 +80,55 @@ export default function ReportDetailsModal({
         <div className="space-y-4 text-[15px] sm:text-base text-[#0F2E4A] font-sans mt-6">
           <div className="flex items-start gap-1.5">
             <span className="font-extrabold whitespace-nowrap">Report :</span>
-            <span className="font-semibold text-slate-500">{report.title}</span>
+            <span className="font-semibold text-slate-500">{title}</span>
           </div>
 
           <div className="flex items-start sm:items-center gap-1.5">
             <span className="font-extrabold whitespace-nowrap">Driver Name :</span>
-            <span className="font-semibold text-slate-500">{report.driverName}</span>
+            <span className="font-semibold text-slate-500 break-all">{driverName}</span>
           </div>
 
           <div className="flex items-start sm:items-center gap-1.5">
-            <span className="font-extrabold whitespace-nowrap">Email :</span>
-            <span className="font-semibold text-slate-500">{report.details?.email || "N/A"}</span>
+            <span className="font-extrabold whitespace-nowrap">Driver ID :</span>
+            <span className="font-semibold text-slate-500 break-all">{report.driverId}</span>
           </div>
 
           <div className="flex items-start sm:items-center gap-1.5">
-            <span className="font-extrabold whitespace-nowrap">Client ID :</span>
-            <span className="font-semibold text-slate-500">{report.details?.clientId || "N/A"}</span>
+            <span className="font-extrabold whitespace-nowrap">Clinic :</span>
+            <span className="font-semibold text-slate-500 break-all">{report.clinic?.fullName || report.clinic?.email || report.clinicId}</span>
           </div>
 
           <div className="flex items-start sm:items-center gap-1.5">
-            <span className="font-extrabold whitespace-nowrap">Hospital :</span>
-            <span className="font-semibold text-slate-500">{report.hospital}</span>
-          </div>
-
-          <div className="flex items-start sm:items-center gap-1.5">
-            <span className="font-extrabold whitespace-nowrap">Clinician :</span>
-            <span className="font-semibold text-slate-500">{report.details?.clinician || "N/A"}</span>
+            <span className="font-extrabold whitespace-nowrap">Booking ID :</span>
+            <span className="font-semibold text-slate-500 break-all">{report.bookingId || "N/A"}</span>
           </div>
 
           <div className="flex items-start sm:items-center gap-1.5">
             <span className="font-extrabold whitespace-nowrap">Generated On :</span>
-            <span className="font-semibold text-slate-500">{report.date}</span>
+            <span className="font-semibold text-slate-500">{generatedDate}</span>
+          </div>
+
+          <div className="flex items-start sm:items-center gap-1.5">
+            <span className="font-extrabold whitespace-nowrap">Expiry Date :</span>
+            <span className="font-semibold text-slate-500">{expiryDate}</span>
           </div>
 
           <div className="flex items-start sm:items-center gap-1.5">
             <span className="font-extrabold whitespace-nowrap">Status :</span>
             <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
-              report.details?.status === "Approved"
+              report.result.toLowerCase() === "submitted"
                 ? "bg-emerald-50 text-emerald-600"
                 : "bg-amber-50 text-amber-600"
             }`}>
-              {report.details?.status || "Approved"}
+              {report.result}
             </span>
           </div>
 
-          {report.details?.notes && (
+          {report.notes && (
             <div className="mt-4 pt-3.5 border-t border-slate-100">
               <span className="font-extrabold block mb-1">Notes:</span>
               <p className="text-xs font-semibold text-slate-500 leading-relaxed bg-slate-50 p-3 rounded-2xl">
-                {report.details.notes}
+                {report.notes}
               </p>
             </div>
           )}

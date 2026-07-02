@@ -2,49 +2,96 @@
 
 import React, { useState, useMemo } from "react";
 import { Search, FileText, Eye, Download } from "lucide-react";
-import { adminReportsData, ReportItemData } from "@/app/data/AdminDashboardData";
 import Pagination from "./Pagination";
 import ReportDetailsModal from "./ReportDetailsModal";
 import { toast } from "sonner";
+import {
+  AdminMedicalRecord,
+  useGetAdminReportsQuery,
+} from "@/redux/service/admin/reportsApi";
+
+const ITEMS_PER_PAGE = 10;
+
+const formatDate = (value: string) =>
+  new Date(value).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+
+const ReportsSkeleton = () => (
+  <div className="space-y-4">
+    {Array.from({ length: 5 }).map((_, index) => (
+      <div
+        key={index}
+        className="flex items-center justify-between gap-4 rounded-3xl border border-slate-100 bg-white p-4 shadow-[0_4px_25px_rgba(0,0,0,0.015)] sm:p-5"
+      >
+        <div className="flex min-w-0 flex-1 items-center gap-4">
+          <div className="h-12 w-12 shrink-0 animate-pulse rounded-2xl bg-slate-100" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="h-4 w-48 max-w-full animate-pulse rounded bg-slate-100" />
+            <div className="h-3 w-36 animate-pulse rounded bg-slate-100" />
+            <div className="h-3 w-64 max-w-full animate-pulse rounded bg-slate-100" />
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <div className="h-10 w-10 animate-pulse rounded-full bg-slate-100" />
+          <div className="h-10 w-10 animate-pulse rounded-full bg-slate-100" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
 
 export default function ReportsView() {
-  const [reports, setReports] = useState<ReportItemData[]>(adminReportsData);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedReport, setSelectedReport] = useState<ReportItemData | null>(null);
+  const [selectedReport, setSelectedReport] = useState<AdminMedicalRecord | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
-  const itemsPerPage = 5;
+  const { data, isLoading, isFetching, isError, refetch } = useGetAdminReportsQuery({
+    page: currentPage,
+    limit: ITEMS_PER_PAGE,
+    ...(searchTerm.trim() ? { searchTerm: searchTerm.trim() } : {}),
+  });
 
-  // Filter reports based on driver name
+  const reports = data?.data || [];
+
   const filteredReports = useMemo(() => {
     return reports.filter((rep) => {
       const term = searchTerm.toLowerCase();
-      return rep.driverName.toLowerCase().includes(term);
+      return [
+        rep.driver?.fullName,
+        rep.driver?.email,
+        rep.driverId,
+        rep.clinic?.email,
+        rep.clinic?.fullName,
+        rep.result,
+        rep.notes,
+      ]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(term));
     });
   }, [reports, searchTerm]);
 
-  // Total pages calculation
   const totalPages = useMemo(() => {
-    return Math.max(1, Math.ceil(filteredReports.length / itemsPerPage));
-  }, [filteredReports]);
+    return Math.max(1, Math.ceil((data?.meta.total || 0) / ITEMS_PER_PAGE));
+  }, [data?.meta.total]);
 
-  // Reset page when search term changes
   React.useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm]);
 
-  // Paginated slice
-  const paginatedReports = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredReports.slice(start, start + itemsPerPage);
-  }, [filteredReports, currentPage]);
-
-  const handleDownload = (rep: ReportItemData) => {
-    toast.success(`Successfully downloaded report for ${rep.driverName} (PDF)`);
+  const handleDownload = (rep: AdminMedicalRecord) => {
+    if (!rep.files) {
+      toast.error("No report file available.");
+      return;
+    }
+    window.open(rep.files, "_blank", "noopener,noreferrer");
+    toast.success("Report file opened.");
   };
 
-  const handleView = (rep: ReportItemData) => {
+  const handleView = (rep: AdminMedicalRecord) => {
     setSelectedReport(rep);
     setIsDetailsOpen(true);
   };
@@ -70,10 +117,28 @@ export default function ReportsView() {
         />
       </div>
 
-      {/* Reports Cards List */}
-      {paginatedReports.length > 0 ? (
+      {isLoading || isFetching ? (
+        <ReportsSkeleton />
+      ) : isError ? (
+        <div className="rounded-3xl border border-red-100 bg-white p-12 text-center shadow-[0_4px_25px_rgba(0,0,0,0.015)]">
+          <p className="text-sm font-semibold text-red-500">
+            Failed to load reports.
+          </p>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="mt-4 rounded-full bg-[#00B2D6] px-5 py-2 text-xs font-bold text-white hover:bg-[#009cb9]"
+          >
+            Try Again
+          </button>
+        </div>
+      ) : filteredReports.length > 0 ? (
         <div className="space-y-4">
-          {paginatedReports.map((rep) => (
+          {filteredReports.map((rep) => {
+            const reportTitle = rep.booking?.service?.title || "Medical Report";
+            const driverName = rep.driver?.fullName || rep.driverId;
+
+            return (
             <div
               key={rep.id}
               className="bg-white rounded-3xl border border-slate-100 shadow-[0_4px_25px_rgba(0,0,0,0.015)] p-4 sm:p-5 flex items-center justify-between hover:shadow-[0_8px_30px_rgba(0,0,0,0.025)] transition-all duration-300 gap-4"
@@ -86,13 +151,13 @@ export default function ReportsView() {
 
                 <div className="min-w-0">
                   <h3 className="font-bold text-[#0F2E4A] text-sm sm:text-base font-poppins tracking-tight truncate">
-                    {rep.title}
+                    {reportTitle}
                   </h3>
                   <p className="text-xs font-semibold text-slate-400 mt-0.5 truncate">
-                    {rep.driverName}
+                    {driverName}
                   </p>
                   <p className="text-xs font-medium text-slate-400 mt-0.5">
-                    Generated: {rep.date} | <strong className="font-bold text-[#0F2E4A]">{rep.hospital}</strong>
+                    Generated: {formatDate(rep.createdAt)} | <strong className="font-bold text-[#0F2E4A]">{rep.clinic?.email || rep.clinicId}</strong>
                   </p>
                 </div>
               </div>
@@ -115,7 +180,8 @@ export default function ReportsView() {
                 </button>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <div className="bg-white rounded-3xl border border-slate-100 shadow-[0_4px_25px_rgba(0,0,0,0.015)] p-12 text-center">
@@ -126,7 +192,7 @@ export default function ReportsView() {
       )}
 
       {/* Pagination Controls */}
-      {totalPages > 1 && (
+      {!isLoading && !isFetching && !isError && totalPages > 1 && (
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}
