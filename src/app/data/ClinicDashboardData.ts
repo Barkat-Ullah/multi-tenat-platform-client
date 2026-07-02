@@ -15,16 +15,6 @@ export interface ClinicTimeSlot {
   status: "Active" | "Booked" | "Inactive";
 }
 
-export interface ClinicPatient {
-  id: string;
-  clientName: string;
-  clientEmail: string;
-  serviceType: string;
-  appointmentTime: string;
-  location: string;
-  status: "Completed" | "Canceled" | "Pending";
-}
-
 export interface ClinicCorporate {
   id: string;
   companyName: string;
@@ -100,18 +90,6 @@ export const clinicTimeSlotsData: ClinicTimeSlot[] = [
   { id: "slot-3", timeRange: "10.00 AM - 10.30 AM", status: "Active" },
   { id: "slot-4", timeRange: "10.00 AM - 10.30 AM", status: "Booked" },
   { id: "slot-5", timeRange: "10.30 AM - 11.00 AM", status: "Inactive" },
-];
-
-export const clinicPatientsData: ClinicPatient[] = [
-  { id: "pat-1", clientName: "Sarah Gomez", clientEmail: "emap@gmail.com", serviceType: "Taxi Medicals", appointmentTime: "Today, 9:00 AM", location: "Manchester", status: "Completed" },
-  { id: "pat-2", clientName: "Sarah Gomez", clientEmail: "emap@gmail.com", serviceType: "Taxi Medicals", appointmentTime: "Today, 9:00 AM", location: "Manchester", status: "Canceled" },
-  { id: "pat-3", clientName: "Sarah Gomez", clientEmail: "emap@gmail.com", serviceType: "Taxi Medicals", appointmentTime: "Today, 9:00 AM", location: "Manchester", status: "Pending" },
-  { id: "pat-4", clientName: "Sarah Gomez", clientEmail: "emap@gmail.com", serviceType: "Taxi Medicals", appointmentTime: "Today, 9:00 AM", location: "Manchester", status: "Completed" },
-  { id: "pat-5", clientName: "Sarah Gomez", clientEmail: "emap@gmail.com", serviceType: "Taxi Medicals", appointmentTime: "Today, 9:00 AM", location: "Manchester", status: "Pending" },
-  { id: "pat-6", clientName: "Sarah Gomez", clientEmail: "emap@gmail.com", serviceType: "Taxi Medicals", appointmentTime: "Today, 9:00 AM", location: "Manchester", status: "Completed" },
-  { id: "pat-7", clientName: "Sarah Gomez", clientEmail: "emap@gmail.com", serviceType: "Taxi Medicals", appointmentTime: "Today, 9:00 AM", location: "Manchester", status: "Pending" },
-  { id: "pat-8", clientName: "Sarah Gomez", clientEmail: "emap@gmail.com", serviceType: "Taxi Medicals", appointmentTime: "Today, 9:00 AM", location: "Manchester", status: "Canceled" },
-  { id: "pat-9", clientName: "Sarah Gomez", clientEmail: "emap@gmail.com", serviceType: "Taxi Medicals", appointmentTime: "Today, 9:00 AM", location: "Manchester", status: "Completed" },
 ];
 
 export const clinicCorporatesData: ClinicCorporate[] = [

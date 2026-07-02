@@ -4,7 +4,6 @@ import React, { useMemo, useState } from "react";
 import dayjs, { type Dayjs } from "dayjs";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
-import Spinner from "@/components/ui/Spinner";
 import {
   type ClinicAvailability,
   type ClinicTimeSlot,
@@ -15,6 +14,36 @@ import {
 } from "@/redux/service/clinic/clinicScheduleApi";
 
 const daysOfWeek = ["S", "M", "T", "W", "T", "F", "S"];
+
+const TimeSlotsSkeleton = () => (
+  <div
+    className="space-y-3.5"
+    role="status"
+    aria-label="Loading time slots"
+  >
+    {Array.from({ length: 7 }, (_, index) => (
+      <div
+        key={index}
+        className="flex h-[58px] animate-pulse items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-white px-5"
+      >
+        <div className="space-y-2">
+          <div
+            className={`h-2.5 rounded-full bg-slate-200 ${
+              index % 3 === 0
+                ? "w-36"
+                : index % 3 === 1
+                  ? "w-40"
+                  : "w-32"
+            }`}
+          />
+          <div className="h-1.5 w-16 rounded-full bg-slate-100" />
+        </div>
+        <div className="h-5 w-14 rounded-lg bg-slate-200" />
+      </div>
+    ))}
+    <span className="sr-only">Loading time slots...</span>
+  </div>
+);
 
 const getErrorMessage = (error: unknown, fallback: string) => {
   if (typeof error !== "object" || error === null) return fallback;
@@ -378,9 +407,7 @@ export default function CreateScheduleView() {
             </div>
 
             {isLoadingSlots || isFetchingSlots ? (
-              <div className="flex min-h-[220px] items-center justify-center">
-                <Spinner />
-              </div>
+              <TimeSlotsSkeleton />
             ) : isTimeSlotError ? (
               <div className="flex min-h-[220px] flex-col items-center justify-center gap-3 text-center">
                 <p className="text-sm font-bold text-red-500">
