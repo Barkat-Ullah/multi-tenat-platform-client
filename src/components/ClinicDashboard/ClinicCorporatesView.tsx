@@ -1,162 +1,249 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Search, ChevronLeft, ChevronRight, ArrowLeft, Upload, X } from "lucide-react";
-import { clinicCorporatesData, ClinicCorporate } from "@/app/data/ClinicDashboardData";
+import {
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  Upload,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
+import {
+  type ClinicCorporateRequest,
+  type CorporateDriver,
+  useGetClinicCorporatesQuery,
+  useUploadCorporateDriverRecordMutation,
+} from "@/redux/service/clinic/clinicCorporatesApi";
 
-interface MockDriver {
-  id: string;
-  clientName: string;
-  clientEmail: string;
-  servicesName: string;
-  appointmentTime: string;
-  location: string;
-}
+const PAGE_LIMIT = 10;
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const ACCEPTED_FILE_TYPES = ["image/jpeg", "image/png"];
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (typeof error !== "object" || error === null) return fallback;
+
+  const apiError = error as {
+    data?: { message?: string };
+    error?: string;
+    message?: string;
+  };
+
+  return apiError.data?.message || apiError.error || apiError.message || fallback;
+};
+
+const getStatusClassName = (status: string) => {
+  switch (status.toLowerCase()) {
+    case "confirmed":
+      return "border-emerald-100 bg-emerald-50 text-emerald-600";
+    case "canceled":
+    case "cancelled":
+      return "border-red-100 bg-red-50 text-red-500";
+    default:
+      return "border-amber-100 bg-amber-50 text-amber-600";
+  }
+};
+
+const TableSkeleton = ({ columns }: { columns: number }) => (
+  <tbody className="divide-y divide-slate-100/80" aria-label="Loading records">
+    {Array.from({ length: 6 }, (_, rowIndex) => (
+      <tr key={rowIndex} className="animate-pulse">
+        {Array.from({ length: columns }, (_, columnIndex) => (
+          <td key={columnIndex} className="px-6 py-5">
+            <div
+              className={`h-2.5 rounded-full bg-slate-200 ${
+                columnIndex === columns - 1 ? "mx-auto w-20" : "w-2/3"
+              }`}
+            />
+          </td>
+        ))}
+      </tr>
+    ))}
+  </tbody>
+);
 
 export default function ClinicCorporatesView() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [corporates] = useState<ClinicCorporate[]>(clinicCorporatesData);
-  
-  // State to track if we clicked on "View All Driver" for a company
-  const [selectedCorp, setSelectedCorp] = useState<ClinicCorporate | null>(null);
-  
-  // Driver search state
   const [driverSearch, setDriverSearch] = useState("");
-  
-  // File upload state
-  const [uploadingDriver, setUploadingDriver] = useState<MockDriver | null>(null);
+  const [page, setPage] = useState(1);
+  const [selectedCorporate, setSelectedCorporate] =
+    useState<ClinicCorporateRequest | null>(null);
+  const [uploadingDriver, setUploadingDriver] =
+    useState<CorporateDriver | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [mounted, setMounted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [mounted, setMounted] = useState(false);
+  const {
+    data: corporateResponse,
+    isLoading,
+    isFetching,
+    isError,
+    refetch,
+  } = useGetClinicCorporatesQuery({ page, limit: PAGE_LIMIT });
+  const [uploadCorporateDriverRecord, { isLoading: isUploading }] =
+    useUploadCorporateDriverRecordMutation();
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Mock list of drivers inside the selected company
-  const mockDrivers: MockDriver[] = [
-    { id: "drv-1", clientName: "Sarah Gomez", clientEmail: "emap@gmail.com", servicesName: "Taxi Medicals", appointmentTime: "Today, 9:00 AM", location: "Manchester" },
-    { id: "drv-2", clientName: "Sarah Gomez", clientEmail: "emap@gmail.com", servicesName: "Taxi Medicals", appointmentTime: "Today, 9:00 AM", location: "Manchester" },
-    { id: "drv-3", clientName: "Sarah Gomez", clientEmail: "emap@gmail.com", servicesName: "Taxi Medicals", appointmentTime: "Today, 9:00 AM", location: "Manchester" },
-    { id: "drv-4", clientName: "Sarah Gomez", clientEmail: "emap@gmail.com", servicesName: "Taxi Medicals", appointmentTime: "Today, 9:00 AM", location: "Manchester" },
-    { id: "drv-5", clientName: "Sarah Gomez", clientEmail: "emap@gmail.com", servicesName: "Taxi Medicals", appointmentTime: "Today, 9:00 AM", location: "Manchester" },
-    { id: "drv-6", clientName: "Sarah Gomez", clientEmail: "emap@gmail.com", servicesName: "Taxi Medicals", appointmentTime: "Today, 9:00 AM", location: "Manchester" },
-    { id: "drv-7", clientName: "Sarah Gomez", clientEmail: "emap@gmail.com", servicesName: "Taxi Medicals", appointmentTime: "Today, 9:00 AM", location: "Manchester" },
-    { id: "drv-8", clientName: "Sarah Gomez", clientEmail: "emap@gmail.com", servicesName: "Taxi Medicals", appointmentTime: "Today, 9:00 AM", location: "Manchester" },
-    { id: "drv-9", clientName: "Sarah Gomez", clientEmail: "emap@gmail.com", servicesName: "Taxi Medicals", appointmentTime: "Today, 9:00 AM", location: "Manchester" },
-  ];
+  const corporates = corporateResponse?.data || [];
+  const filteredCorporates = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return corporates;
 
-  // Filtering Logic
-  const filteredCorporates = corporates.filter(
-    (c) =>
-      c.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.companyEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.services.toLowerCase().includes(searchQuery.toLowerCase())
+    return corporates.filter((corporate) =>
+      [
+        corporate.companyName,
+        corporate.email,
+        corporate.service?.title,
+        corporate.location,
+        corporate.status,
+      ].some((value) => value?.toLowerCase().includes(query)),
+    );
+  }, [corporates, searchQuery]);
+
+  const filteredDrivers = useMemo(() => {
+    const drivers = selectedCorporate?.drivers || [];
+    const query = driverSearch.trim().toLowerCase();
+    if (!query) return drivers;
+
+    return drivers.filter(({ driver }) =>
+      [driver.fullName, driver.email, driver.phoneNumber].some((value) =>
+        value?.toLowerCase().includes(query),
+      ),
+    );
+  }, [driverSearch, selectedCorporate]);
+
+  const total = corporateResponse?.meta.total || 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_LIMIT));
+  const firstVisiblePage = Math.max(1, Math.min(page - 2, totalPages - 4));
+  const visiblePages = Array.from(
+    { length: Math.min(5, totalPages) },
+    (_, index) => firstVisiblePage + index,
   );
 
-  const filteredDrivers = mockDrivers.filter(
-    (d) =>
-      d.clientName.toLowerCase().includes(driverSearch.toLowerCase()) ||
-      d.clientEmail.toLowerCase().includes(driverSearch.toLowerCase()) ||
-      d.servicesName.toLowerCase().includes(driverSearch.toLowerCase())
-  );
+  const closeUploadModal = () => {
+    setUploadingDriver(null);
+    setSelectedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && uploadingDriver) {
-      toast.success(`Successfully uploaded medical certificate "${file.name}" for ${uploadingDriver.clientName}!`);
-      setUploadingDriver(null);
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!ACCEPTED_FILE_TYPES.includes(file.type)) {
+      toast.error("Only JPG, JPEG, and PNG files are allowed.");
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error("File is too large. Maximum size is 5MB.");
+      event.target.value = "";
+      return;
+    }
+
+    setSelectedFile(file);
+  };
+
+  const handleUpload = async () => {
+    if (!selectedCorporate || !uploadingDriver) return;
+
+    if (!selectedFile) {
+      toast.error("Please select a document file to upload.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append(
+      "data",
+      JSON.stringify({
+        organizerRequestId: selectedCorporate.id,
+        driverId: uploadingDriver.driverId || uploadingDriver.driver.id,
+        result: "Submitted",
+      }),
+    );
+    formData.append("files", selectedFile);
+
+    try {
+      const response = await uploadCorporateDriverRecord(formData).unwrap();
+      toast.success(response.message || "Medical record uploaded successfully.");
+      closeUploadModal();
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, "Failed to upload medical record."));
     }
   };
 
-  // If a company is selected, render the Driver List view instead of the Corporate List
-  if (selectedCorp) {
+  if (selectedCorporate) {
     return (
-      <div className="p-4 md:p-6 lg:p-8 space-y-6 w-full animate-in fade-in duration-200">
-        {/* Header with Back Arrow and Title */}
+      <div className="w-full space-y-6 p-4 animate-in fade-in md:p-6 lg:p-8">
         <div className="flex items-center gap-3">
           <button
+            type="button"
             onClick={() => {
-              setSelectedCorp(null);
+              setSelectedCorporate(null);
               setDriverSearch("");
             }}
-            className="w-10 h-10 rounded-full border border-slate-200 hover:bg-slate-50 transition-all flex items-center justify-center cursor-pointer text-[#0F2E4A] outline-none"
             aria-label="Back to corporate list"
+            title="Back"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-[#0F2E4A] transition-colors hover:bg-slate-50"
           >
             <ArrowLeft size={18} className="stroke-[2.5]" />
           </button>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0F2E4A] font-poppins tracking-tight">
-            Driver List
-          </h1>
+          <div>
+            <h1 className="font-poppins text-2xl font-extrabold tracking-tight text-[#0F2E4A] sm:text-3xl">
+              Driver List
+            </h1>
+            <p className="mt-1 text-xs font-semibold text-slate-400">
+              {selectedCorporate.companyName}
+            </p>
+          </div>
         </div>
 
-        {/* Search Bar for Driver Name */}
         <div className="relative w-full">
           <span className="absolute inset-y-0 left-4 flex items-center text-slate-400">
             <Search size={18} />
           </span>
           <input
-            type="text"
+            type="search"
             value={driverSearch}
-            onChange={(e) => setDriverSearch(e.target.value)}
-            placeholder="Search driver Name"
-            className="w-full pl-12 pr-4 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200/80 rounded-2xl focus:outline-none focus:border-[#00B2D6] focus:ring-1 focus:ring-[#00B2D6] text-xs sm:text-sm text-[#0F2E4A] placeholder-slate-400 font-semibold transition-all shadow-[0_2px_10px_rgba(0,0,0,0.005)]"
+            onChange={(event) => setDriverSearch(event.target.value)}
+            placeholder="Search Driver"
+            className="w-full rounded-2xl border border-slate-200/80 bg-slate-50/50 py-3.5 pl-12 pr-4 text-xs font-semibold text-[#0F2E4A] placeholder:text-slate-400 focus:border-[#00B2D6] focus:outline-none focus:ring-1 focus:ring-[#00B2D6] sm:text-sm"
           />
         </div>
 
-        {/* Drivers table container */}
-        <div className="bg-white rounded-[24px] border border-slate-100/90 shadow-[0_4px_25px_rgba(0,0,0,0.01)] overflow-hidden">
-          <div className="overflow-x-auto w-full">
-            <table className="w-full min-w-[1000px] border-collapse text-left">
+        <div className="overflow-hidden rounded-[24px] border border-slate-100/90 bg-white shadow-[0_4px_25px_rgba(0,0,0,0.01)]">
+          <div className="w-full overflow-x-auto">
+            <table className="w-full min-w-[850px] border-collapse text-left">
               <thead>
-                <tr className="border-b border-[#00B2D6] bg-white">
-                  <th className="py-4 px-6 text-xs sm:text-sm font-bold text-[#0F2E4A] font-poppins w-[18%]">
-                    Client Name
-                  </th>
-                  <th className="py-4 px-6 text-xs sm:text-sm font-bold text-[#0F2E4A] font-poppins w-[22%]">
-                    Client Email
-                  </th>
-                  <th className="py-4 px-6 text-xs sm:text-sm font-bold text-[#0F2E4A] font-poppins w-[18%]">
-                    Services Name
-                  </th>
-                  <th className="py-4 px-6 text-xs sm:text-sm font-bold text-[#0F2E4A] font-poppins w-[18%]">
-                    Appointment Time
-                  </th>
-                  <th className="py-4 px-6 text-xs sm:text-sm font-bold text-[#0F2E4A] font-poppins w-[14%]">
-                    Location
-                  </th>
-                  <th className="py-4 px-6 text-xs sm:text-sm font-bold text-[#0F2E4A] font-poppins text-center w-[10%]">
-                    Action
-                  </th>
+                <tr className="border-b border-[#00B2D6]">
+                  <th className="w-[22%] px-6 py-4 text-xs font-bold text-[#0F2E4A] sm:text-sm">Driver Name</th>
+                  <th className="w-[28%] px-6 py-4 text-xs font-bold text-[#0F2E4A] sm:text-sm">Email</th>
+                  <th className="w-[18%] px-6 py-4 text-xs font-bold text-[#0F2E4A] sm:text-sm">Phone</th>
+                  <th className="w-[20%] px-6 py-4 text-xs font-bold text-[#0F2E4A] sm:text-sm">Service</th>
+                  <th className="w-[12%] px-6 py-4 text-center text-xs font-bold text-[#0F2E4A] sm:text-sm">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100/80">
-                {filteredDrivers.map((drv) => (
-                  <tr key={drv.id} className="hover:bg-slate-50/40 transition-colors">
-                    <td className="py-3.5 px-6 text-xs sm:text-sm text-[#0F2E4A] font-bold font-sans">
-                      {drv.clientName}
-                    </td>
-                    <td className="py-3.5 px-6 text-xs sm:text-sm text-slate-500 font-semibold font-sans">
-                      {drv.clientEmail}
-                    </td>
-                    <td className="py-3.5 px-6 text-xs sm:text-sm text-slate-500 font-semibold font-sans">
-                      {drv.servicesName}
-                    </td>
-                    <td className="py-3.5 px-6 text-xs sm:text-sm text-slate-500 font-semibold font-sans">
-                      {drv.appointmentTime}
-                    </td>
-                    <td className="py-3.5 px-6 text-xs sm:text-sm text-slate-500 font-semibold font-sans">
-                      {drv.location}
-                    </td>
-                    <td className="py-3.5 px-6 text-center">
+                {filteredDrivers.map((item) => (
+                  <tr key={item.id} className="transition-colors hover:bg-slate-50/40">
+                    <td className="px-6 py-3.5 text-xs font-bold text-[#0F2E4A] sm:text-sm">{item.driver.fullName}</td>
+                    <td className="px-6 py-3.5 text-xs font-semibold text-slate-500 sm:text-sm">{item.driver.email}</td>
+                    <td className="px-6 py-3.5 text-xs font-semibold text-slate-500 sm:text-sm">{item.driver.phoneNumber || "N/A"}</td>
+                    <td className="px-6 py-3.5 text-xs font-semibold text-slate-500 sm:text-sm">{selectedCorporate.service?.title || "N/A"}</td>
+                    <td className="px-6 py-3.5 text-center">
                       <button
                         type="button"
-                        onClick={() => setUploadingDriver(drv)}
-                        className="px-5 py-1.5 rounded-full text-[10px] sm:text-xs font-bold bg-[#FEF9E7] text-[#D9A700] hover:bg-[#FDF2D0] hover:scale-105 active:scale-95 transition-all outline-none border-none cursor-pointer tracking-wider"
+                        onClick={() => setUploadingDriver(item)}
+                        className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-4 py-1.5 text-[10px] font-bold text-amber-600 transition-colors hover:bg-amber-100 sm:text-xs"
                       >
+                        <Upload size={13} />
                         Upload
                       </button>
                     </td>
@@ -164,291 +251,197 @@ export default function ClinicCorporatesView() {
                 ))}
               </tbody>
             </table>
+
+            {filteredDrivers.length === 0 && (
+              <div className="flex min-h-[240px] items-center justify-center border-t border-slate-100 px-6 text-center">
+                <p className="text-sm font-semibold text-slate-400">
+                  {driverSearch.trim()
+                    ? "No drivers match your search."
+                    : "No drivers found for this corporate request."}
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Bottom Pagination Control Section */}
-        <div className="flex items-center justify-end gap-2 pt-4">
-          <button
-            type="button"
-            className="px-3.5 py-1.5 border border-slate-200 hover:bg-slate-50 rounded-lg text-slate-400 font-bold text-xs sm:text-sm flex items-center gap-1 transition-all outline-none cursor-pointer"
-          >
-            <ChevronLeft size={14} />
-            <span>Previous</span>
-          </button>
-          
-          <button
-            type="button"
-            className="w-8 h-8 rounded-lg bg-[#00B2D6] text-white flex items-center justify-center font-bold text-xs sm:text-sm border border-[#00B2D6] shadow-sm cursor-pointer"
-          >
-            1
-          </button>
-          
-          <button
-            type="button"
-            className="w-8 h-8 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 flex items-center justify-center font-bold text-xs sm:text-sm cursor-pointer"
-          >
-            2
-          </button>
-
-          <button
-            type="button"
-            className="w-8 h-8 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 flex items-center justify-center font-bold text-xs sm:text-sm cursor-pointer"
-          >
-            3
-          </button>
-
-          <button
-            type="button"
-            className="px-3.5 py-1.5 border border-slate-200 hover:bg-slate-50 rounded-lg text-slate-500 font-bold text-xs sm:text-sm flex items-center gap-1 transition-all outline-none cursor-pointer"
-          >
-            <span>Next</span>
-            <ChevronRight size={14} />
-          </button>
-        </div>
-
-        {/* Global File Upload Dialog */}
-        {uploadingDriver && mounted && createPortal(
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-            <div
-              className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
-              onClick={() => {
-                setUploadingDriver(null);
-                setSelectedFile(null);
-              }}
-            />
-
-            <div className="bg-white w-full max-w-[580px] rounded-[32px] border border-slate-100 shadow-[0_20px_50px_rgba(0,0,0,0.1)] p-8 sm:p-10 relative z-10 animate-in fade-in zoom-in-95 duration-200">
-              {/* Header */}
-              <div className="flex items-center justify-between pb-4">
-                <h2 className="text-xl sm:text-2xl font-extrabold text-[#0F2E4A] font-poppins">
-                  Upload Docoment
-                </h2>
-                <button
-                  onClick={() => {
-                    setUploadingDriver(null);
-                    setSelectedFile(null);
-                  }}
-                  className="w-7 h-7 rounded-full bg-[#FDF2F2] text-[#E53E3E] hover:bg-[#FDE8E8] transition-all flex items-center justify-center cursor-pointer border-none outline-none"
-                >
-                  <X size={14} className="stroke-[2.5]" />
-                </button>
-              </div>
-
-              {/* Uploader Box */}
-              <div className="space-y-6">
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  className="border border-dashed border-slate-400 rounded-3xl p-10 flex flex-col items-center justify-center gap-4 cursor-pointer transition-colors bg-[#FAFCFD]/30 hover:bg-[#FAFCFD]"
-                >
-                  <span className="text-sm font-bold text-[#0F2E4A] font-sans">
-                    Upload Docoment
-                  </span>
-
-                  <div className="text-slate-400">
-                    <svg
-                      width="54"
-                      height="54"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="text-slate-400"
-                    >
-                      <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" />
-                      <path d="M12 12v9" />
-                      <path d="m9 15 3-3 3 3" />
-                    </svg>
+        {uploadingDriver &&
+          mounted &&
+          createPortal(
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+              <button
+                type="button"
+                aria-label="Close upload dialog"
+                className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
+                onClick={closeUploadModal}
+              />
+              <div className="relative z-10 w-full max-w-[560px] rounded-[32px] border border-slate-100 bg-white p-7 shadow-[0_20px_50px_rgba(0,0,0,0.1)] animate-in fade-in zoom-in-95 sm:p-9">
+                <div className="flex items-center justify-between pb-5">
+                  <div>
+                    <h2 className="font-poppins text-xl font-extrabold text-[#0F2E4A] sm:text-2xl">Upload Document</h2>
+                    <p className="mt-1 text-xs font-semibold text-slate-400">{uploadingDriver.driver.fullName}</p>
                   </div>
-
-                  {selectedFile ? (
-                    <span className="text-xs font-bold text-[#00B2D6] bg-[#E6FAFF] px-3.5 py-1 rounded-full truncate max-w-[300px]">
-                      Selected: {selectedFile.name}
-                    </span>
-                  ) : (
-                    <span className="text-[10px] sm:text-xs text-slate-400 font-bold font-sans tracking-wide">
-                      Formats: JPG, PNG, JPEG – Max 5MB each
-                    </span>
-                  )}
-
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        if (file.size > 5 * 1024 * 1024) {
-                          toast.error("File is too large. Max size is 5MB.");
-                          return;
-                        }
-                        setSelectedFile(file);
-                      }
-                    }}
-                    className="hidden"
-                    accept="image/jpeg,image/png,image/jpg"
-                  />
-                </div>
-
-                {/* Footer Submit Button */}
-                <div>
                   <button
                     type="button"
-                    onClick={() => {
-                      if (!selectedFile) {
-                        toast.error("Please select a document file to upload.");
-                        return;
-                      }
-                      toast.success(`Successfully uploaded medical certificate "${selectedFile.name}" for ${uploadingDriver.clientName}!`);
-                      setUploadingDriver(null);
-                      setSelectedFile(null);
-                    }}
-                    className="w-full py-4 bg-[#00B2D6] hover:bg-[#009cb9] text-white rounded-full font-bold text-sm tracking-wide transition-all shadow-md shadow-cyan-100/50 cursor-pointer border-none outline-none active:scale-[0.99]"
+                    onClick={closeUploadModal}
+                    aria-label="Close upload dialog"
+                    title="Close"
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-red-50 text-red-500 transition-colors hover:bg-red-100"
                   >
-                    Submit
+                    <X size={15} />
                   </button>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex min-h-[220px] w-full flex-col items-center justify-center gap-4 rounded-3xl border border-dashed border-slate-300 bg-slate-50/40 p-8 text-center transition-colors hover:border-[#00B2D6] hover:bg-cyan-50/30"
+                >
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-cyan-50 text-[#00B2D6]">
+                    <Upload size={23} />
+                  </span>
+                  <span className="text-sm font-bold text-[#0F2E4A]">Choose Medical Document</span>
+                  {selectedFile ? (
+                    <span className="max-w-full truncate rounded-full bg-cyan-50 px-3.5 py-1 text-xs font-bold text-[#00B2D6]">{selectedFile.name}</span>
+                  ) : (
+                    <span className="text-xs font-semibold text-slate-400">JPG, JPEG or PNG, maximum 5MB</span>
+                  )}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+
+                <button
+                  type="button"
+                  onClick={handleUpload}
+                  disabled={isUploading}
+                  className="mt-6 w-full rounded-full bg-[#00B2D6] py-3.5 text-sm font-bold text-white shadow-md shadow-cyan-100 transition-colors hover:bg-[#009cb9] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isUploading ? "Uploading..." : "Submit"}
+                </button>
               </div>
-            </div>
-          </div>,
-          document.body
-        )}
+            </div>,
+            document.body,
+          )}
       </div>
     );
   }
 
-  // Otherwise, render Corporate List
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6 w-full animate-in fade-in duration-200">
-      {/* Title */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0F2E4A] font-poppins tracking-tight">
-          Corporate List
-        </h1>
-      </div>
+    <div className="w-full space-y-6 p-4 animate-in fade-in md:p-6 lg:p-8">
+      <h1 className="font-poppins text-2xl font-extrabold tracking-tight text-[#0F2E4A] sm:text-3xl">Corporate List</h1>
 
-      {/* Search Bar */}
       <div className="relative w-full">
-        <span className="absolute inset-y-0 left-4 flex items-center text-slate-400">
-          <Search size={18} />
-        </span>
+        <span className="absolute inset-y-0 left-4 flex items-center text-slate-400"><Search size={18} /></span>
         <input
-          type="text"
+          type="search"
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search Company Name"
-          className="w-full pl-12 pr-4 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200/80 rounded-2xl focus:outline-none focus:border-[#00B2D6] focus:ring-1 focus:ring-[#00B2D6] text-xs sm:text-sm text-[#0F2E4A] placeholder-slate-400 font-semibold transition-all shadow-[0_2px_10px_rgba(0,0,0,0.005)]"
+          onChange={(event) => setSearchQuery(event.target.value)}
+          placeholder="Search Company"
+          className="w-full rounded-2xl border border-slate-200/80 bg-slate-50/50 py-3.5 pl-12 pr-4 text-xs font-semibold text-[#0F2E4A] placeholder:text-slate-400 focus:border-[#00B2D6] focus:outline-none focus:ring-1 focus:ring-[#00B2D6] sm:text-sm"
         />
       </div>
 
-      {/* Corporates Log List */}
       <div className="space-y-4 pt-2">
-        <h2 className="text-xl sm:text-2xl font-extrabold text-[#0F2E4A] font-poppins tracking-tight">
-          Corporate List
-        </h2>
+        <div className="flex items-end justify-between gap-4">
+          <h2 className="font-poppins text-xl font-extrabold tracking-tight text-[#0F2E4A] sm:text-2xl">Corporate Requests</h2>
+          {!isLoading && !isError && <span className="text-xs font-semibold text-slate-400">{total} {total === 1 ? "request" : "requests"}</span>}
+        </div>
 
-        <div className="bg-white rounded-[24px] border border-slate-100/90 shadow-[0_4px_25px_rgba(0,0,0,0.01)] overflow-hidden">
-          <div className="overflow-x-auto w-full">
-            <table className="w-full min-w-[1000px] border-collapse text-left">
+        <div className="overflow-hidden rounded-[24px] border border-slate-100/90 bg-white shadow-[0_4px_25px_rgba(0,0,0,0.01)]">
+          <div className="w-full overflow-x-auto">
+            <table className="w-full min-w-[1100px] border-collapse text-left">
               <thead>
-                <tr className="border-b border-[#00B2D6] bg-white">
-                  <th className="py-4 px-6 text-xs sm:text-sm font-bold text-[#0F2E4A] font-poppins w-[20%]">
-                    Company name
-                  </th>
-                  <th className="py-4 px-6 text-xs sm:text-sm font-bold text-[#0F2E4A] font-poppins w-[25%]">
-                    Company email
-                  </th>
-                  <th className="py-4 px-6 text-xs sm:text-sm font-bold text-[#0F2E4A] font-poppins w-[15%]">
-                    Num. of driver
-                  </th>
-                  <th className="py-4 px-6 text-xs sm:text-sm font-bold text-[#0F2E4A] font-poppins w-[15%]">
-                    Services
-                  </th>
-                  <th className="py-4 px-6 text-xs sm:text-sm font-bold text-[#0F2E4A] font-poppins w-[15%]">
-                    Location
-                  </th>
-                  <th className="py-4 px-6 text-xs sm:text-sm font-bold text-[#0F2E4A] font-poppins text-center w-[10%]">
-                    Action
-                  </th>
+                <tr className="border-b border-[#00B2D6]">
+                  <th className="w-[17%] px-6 py-4 text-xs font-bold text-[#0F2E4A] sm:text-sm">Company Name</th>
+                  <th className="w-[20%] px-6 py-4 text-xs font-bold text-[#0F2E4A] sm:text-sm">Company Email</th>
+                  <th className="w-[10%] px-6 py-4 text-xs font-bold text-[#0F2E4A] sm:text-sm">Drivers</th>
+                  <th className="w-[17%] px-6 py-4 text-xs font-bold text-[#0F2E4A] sm:text-sm">Service</th>
+                  <th className="w-[18%] px-6 py-4 text-xs font-bold text-[#0F2E4A] sm:text-sm">Location</th>
+                  <th className="w-[9%] px-6 py-4 text-center text-xs font-bold text-[#0F2E4A] sm:text-sm">Status</th>
+                  <th className="w-[9%] px-6 py-4 text-center text-xs font-bold text-[#0F2E4A] sm:text-sm">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100/80">
-                {filteredCorporates.map((corp) => (
-                  <tr
-                    key={corp.id}
-                    className="hover:bg-slate-50/40 transition-colors"
-                  >
-                    <td className="py-3.5 px-6 text-xs sm:text-sm text-[#0F2E4A] font-bold font-sans">
-                      {corp.companyName}
-                    </td>
-                    <td className="py-3.5 px-6 text-xs sm:text-sm text-slate-500 font-semibold font-sans">
-                      {corp.companyEmail}
-                    </td>
-                    <td className="py-3.5 px-6 text-xs sm:text-sm text-slate-500 font-semibold font-sans">
-                      {corp.numOfDriver}
-                    </td>
-                    <td className="py-3.5 px-6 text-xs sm:text-sm text-slate-500 font-semibold font-sans">
-                      {corp.services}
-                    </td>
-                    <td className="py-3.5 px-6 text-xs sm:text-sm text-slate-500 font-semibold font-sans">
-                      {corp.location}
-                    </td>
-                    <td className="py-3.5 px-6 text-center">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedCorp(corp)}
-                        className="px-4 py-1.5 rounded-full text-[10px] sm:text-xs font-bold bg-[#E6FAFF] text-[#00B2D6] hover:bg-[#D0F3FC] hover:scale-105 active:scale-95 transition-all outline-none border-none cursor-pointer tracking-wider"
-                      >
-                        View All Driver
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
+              {isLoading || isFetching ? (
+                <TableSkeleton columns={7} />
+              ) : (
+                <tbody className="divide-y divide-slate-100/80">
+                  {filteredCorporates.map((corporate) => (
+                    <tr key={corporate.id} className="transition-colors hover:bg-slate-50/40">
+                      <td className="px-6 py-3.5 text-xs font-bold text-[#0F2E4A] sm:text-sm">{corporate.companyName}</td>
+                      <td className="px-6 py-3.5 text-xs font-semibold text-slate-500 sm:text-sm">{corporate.email}</td>
+                      <td className="px-6 py-3.5 text-xs font-semibold text-slate-500 sm:text-sm">{corporate.totalDriver}</td>
+                      <td className="px-6 py-3.5 text-xs font-semibold text-slate-500 sm:text-sm">{corporate.service?.title || "N/A"}</td>
+                      <td className="px-6 py-3.5 text-xs font-semibold text-slate-500 sm:text-sm">{corporate.location || "N/A"}</td>
+                      <td className="px-6 py-3.5 text-center">
+                        <span className={`inline-flex rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${getStatusClassName(corporate.status)}`}>{corporate.status}</span>
+                      </td>
+                      <td className="px-6 py-3.5 text-center">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedCorporate(corporate)}
+                          className="whitespace-nowrap rounded-full bg-cyan-50 px-4 py-1.5 text-[10px] font-bold text-[#00A5C7] transition-colors hover:bg-cyan-100 sm:text-xs"
+                        >
+                          View Drivers
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              )}
             </table>
+
+            {!isLoading && !isFetching && isError && (
+              <div className="flex min-h-[260px] flex-col items-center justify-center gap-3 border-t border-slate-100 text-center">
+                <p className="text-sm font-bold text-red-500">Failed to load corporate requests.</p>
+                <button type="button" onClick={() => refetch()} className="rounded-full bg-[#00B2D6] px-5 py-2 text-xs font-bold text-white hover:bg-[#009cb9]">Try Again</button>
+              </div>
+            )}
+
+            {!isLoading && !isFetching && !isError && filteredCorporates.length === 0 && (
+              <div className="flex min-h-[260px] items-center justify-center border-t border-slate-100 px-6 text-center">
+                <p className="text-sm font-semibold text-slate-400">{searchQuery.trim() ? "No corporate requests match your search." : "No corporate requests found."}</p>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Bottom Pagination Control Section */}
-        <div className="flex items-center justify-end gap-2 pt-4">
-          <button
-            type="button"
-            className="px-3.5 py-1.5 border border-slate-200 hover:bg-slate-50 rounded-lg text-slate-400 font-bold text-xs sm:text-sm flex items-center gap-1 transition-all outline-none cursor-pointer"
-          >
-            <ChevronLeft size={14} />
-            <span>Previous</span>
-          </button>
-          
-          <button
-            type="button"
-            className="w-8 h-8 rounded-lg bg-[#00B2D6] text-white flex items-center justify-center font-bold text-xs sm:text-sm border border-[#00B2D6] shadow-sm cursor-pointer"
-          >
-            1
-          </button>
-          
-          <button
-            type="button"
-            className="w-8 h-8 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 flex items-center justify-center font-bold text-xs sm:text-sm cursor-pointer"
-          >
-            2
-          </button>
-
-          <button
-            type="button"
-            className="w-8 h-8 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 flex items-center justify-center font-bold text-xs sm:text-sm cursor-pointer"
-          >
-            3
-          </button>
-
-          <button
-            type="button"
-            className="px-3.5 py-1.5 border border-slate-200 hover:bg-slate-50 rounded-lg text-slate-500 font-bold text-xs sm:text-sm flex items-center gap-1 transition-all outline-none cursor-pointer"
-          >
-            <span>Next</span>
-            <ChevronRight size={14} />
-          </button>
-        </div>
+        {!isLoading && !isError && totalPages > 1 && (
+          <div className="flex flex-wrap items-center justify-end gap-2 pt-4">
+            <button
+              type="button"
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
+              disabled={page === 1 || isFetching}
+              className="flex items-center gap-1 rounded-lg border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:text-sm"
+            >
+              <ChevronLeft size={14} /><span>Previous</span>
+            </button>
+            {visiblePages.map((pageNumber) => (
+              <button
+                key={pageNumber}
+                type="button"
+                onClick={() => setPage(pageNumber)}
+                disabled={isFetching}
+                aria-label={`Page ${pageNumber}`}
+                aria-current={pageNumber === page ? "page" : undefined}
+                className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-bold ${pageNumber === page ? "border-[#00B2D6] bg-[#00B2D6] text-white" : "border-slate-200 text-slate-500 hover:bg-slate-50"}`}
+              >
+                {pageNumber}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+              disabled={page === totalPages || isFetching}
+              className="flex items-center gap-1 rounded-lg border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:text-sm"
+            >
+              <span>Next</span><ChevronRight size={14} />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

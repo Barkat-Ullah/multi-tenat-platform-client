@@ -15,15 +15,6 @@ export interface ClinicTimeSlot {
   status: "Active" | "Booked" | "Inactive";
 }
 
-export interface ClinicCorporate {
-  id: string;
-  companyName: string;
-  companyEmail: string;
-  numOfDriver: number;
-  services: string;
-  location: string;
-}
-
 export interface ClinicMedicalForm {
   id: string;
   clientName: string;
@@ -90,18 +81,6 @@ export const clinicTimeSlotsData: ClinicTimeSlot[] = [
   { id: "slot-3", timeRange: "10.00 AM - 10.30 AM", status: "Active" },
   { id: "slot-4", timeRange: "10.00 AM - 10.30 AM", status: "Booked" },
   { id: "slot-5", timeRange: "10.30 AM - 11.00 AM", status: "Inactive" },
-];
-
-export const clinicCorporatesData: ClinicCorporate[] = [
-  { id: "corp-1", companyName: "Novalis limited", companyEmail: "exaple@gmail.com", numOfDriver: 20, services: "HGV Medicals", location: "Manchester" },
-  { id: "corp-2", companyName: "Novalis limited", companyEmail: "exaple@gmail.com", numOfDriver: 20, services: "HGV Medicals", location: "Manchester" },
-  { id: "corp-3", companyName: "Novalis limited", companyEmail: "exaple@gmail.com", numOfDriver: 20, services: "HGV Medicals", location: "Manchester" },
-  { id: "corp-4", companyName: "Novalis limited", companyEmail: "exaple@gmail.com", numOfDriver: 20, services: "HGV Medicals", location: "Manchester" },
-  { id: "corp-5", companyName: "Novalis limited", companyEmail: "exaple@gmail.com", numOfDriver: 20, services: "HGV Medicals", location: "Manchester" },
-  { id: "corp-6", companyName: "Novalis limited", companyEmail: "exaple@gmail.com", numOfDriver: 20, services: "HGV Medicals", location: "Manchester" },
-  { id: "corp-7", companyName: "Novalis limited", companyEmail: "exaple@gmail.com", numOfDriver: 20, services: "HGV Medicals", location: "Manchester" },
-  { id: "corp-8", companyName: "Novalis limited", companyEmail: "exaple@gmail.com", numOfDriver: 20, services: "HGV Medicals", location: "Manchester" },
-  { id: "corp-9", companyName: "Novalis limited", companyEmail: "exaple@gmail.com", numOfDriver: 20, services: "HGV Medicals", location: "Manchester" },
 ];
 
 export const clinicMedicalFormsData: ClinicMedicalForm[] = [
