@@ -1,187 +1,264 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Search, Plus, MoreVertical } from "lucide-react";
 import { Dropdown } from "antd";
-import { adminCliniciansData, ClinicianItemData } from "@/app/data/AdminDashboardData";
 import Pagination from "./Pagination";
 import AddClinicianModal from "./AddClinicianModal";
 import ClinicianDetailsModal from "./ClinicianDetailsModal";
 import { toast } from "sonner";
+import {
+  AdminClinic,
+  CreateAdminClinicRequest,
+  useCreateAdminClinicMutation,
+  useGetAdminClinicsQuery,
+} from "@/redux/service/admin/cliniciansApi";
+import { useGetAdminLocationsQuery } from "@/redux/service/admin/locationsApi";
+import { useGetAdminServicesQuery } from "@/redux/service/admin/servicesApi";
+
+const PAGE_LIMIT = 10;
+
+const CliniciansTableSkeleton = () => (
+  <>
+    {Array.from({ length: 6 }).map((_, index) => (
+      <tr key={index} className="border-b border-slate-100 last:border-b-0">
+        {Array.from({ length: 6 }).map((__, cellIndex) => (
+          <td key={cellIndex} className="px-6 py-4">
+            <div className="h-4 w-full max-w-[150px] animate-pulse rounded bg-slate-100" />
+          </td>
+        ))}
+      </tr>
+    ))}
+  </>
+);
+
+const formatServices = (clinician: AdminClinic) =>
+  clinician.services?.map((service) => service.title).join(", ") || "N/A";
+
+const normalizeStatus = (status: string) =>
+  status.toUpperCase() === "ACTIVE" ? "Active" : "Inactive";
 
 export default function CliniciansView() {
-  const [clinicians, setClinicians] = useState<ClinicianItemData[]>(adminCliniciansData);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedClinician, setSelectedClinician] = useState<ClinicianItemData | null>(null);
+  const [selectedClinician, setSelectedClinician] = useState<AdminClinic | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
-  const itemsPerPage = 9; // Show 9 items per page matching the mockup list count
+  const {
+    data,
+    isLoading,
+    isFetching,
+    isError,
+    refetch,
+  } = useGetAdminClinicsQuery({
+    page: currentPage,
+    limit: PAGE_LIMIT,
+    ...(searchTerm.trim() ? { searchTerm: searchTerm.trim() } : {}),
+  });
+  const {
+    data: locationsData,
+    isLoading: isLocationsLoading,
+    isFetching: isLocationsFetching,
+  } = useGetAdminLocationsQuery({ page: 1, limit: 100 });
+  const {
+    data: servicesData,
+    isLoading: isServicesLoading,
+    isFetching: isServicesFetching,
+  } = useGetAdminServicesQuery({ page: 1, limit: 100 });
+  const [createClinic, { isLoading: isCreating }] = useCreateAdminClinicMutation();
 
-  // Filter clinicians based on clinicianName
+  const clinicians = data?.data || [];
+  const locations = locationsData?.data || [];
+  const services = servicesData?.data || [];
+  const isOptionsLoading =
+    isLocationsLoading ||
+    isLocationsFetching ||
+    isServicesLoading ||
+    isServicesFetching;
+
   const filteredClinicians = useMemo(() => {
-    return clinicians.filter((clin) => {
-      const term = searchTerm.toLowerCase();
-      return clin.clinicianName.toLowerCase().includes(term);
-    });
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return clinicians;
+
+    return clinicians.filter((clinician) =>
+      [
+        clinician.fullName,
+        clinician.email,
+        clinician.phoneNumber,
+        clinician.status,
+        clinician.clinicGmcNumber,
+        clinician.location?.locationName,
+        formatServices(clinician),
+      ]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(term)),
+    );
   }, [clinicians, searchTerm]);
 
-  // Reset page when search term changes
-  React.useEffect(() => {
+  const totalPages = useMemo(() => {
+    return Math.max(1, Math.ceil((data?.meta.total || 0) / PAGE_LIMIT));
+  }, [data?.meta.total]);
+
+  useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm]);
 
-  const totalPages = useMemo(() => {
-    return Math.max(1, Math.ceil(filteredClinicians.length / itemsPerPage));
-  }, [filteredClinicians]);
-
-  // Paginated slice
-  const paginatedClinicians = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredClinicians.slice(start, start + itemsPerPage);
-  }, [filteredClinicians, currentPage]);
-
-  const handleSaveClinician = (newClinician: Omit<ClinicianItemData, "id">) => {
-    const created: ClinicianItemData = {
-      id: `clin-${Date.now()}`,
-      ...newClinician,
-    };
-    setClinicians((prev) => [created, ...prev]);
-    toast.success("Successfully added new clinician!");
+  const handleSaveClinician = async (payload: CreateAdminClinicRequest) => {
+    try {
+      const response = await createClinic(payload).unwrap();
+      toast.success(response.message || "Successfully added new clinician!");
+      setCurrentPage(1);
+      return true;
+    } catch (error) {
+      const message =
+        (error as { data?: { message?: string } })?.data?.message ||
+        "Failed to add clinician.";
+      toast.error(message);
+      return false;
+    }
   };
 
-  const handleViewClinician = (clin: ClinicianItemData) => {
-    setSelectedClinician(clin);
+  const handleViewClinician = (clinician: AdminClinic) => {
+    setSelectedClinician(clinician);
     setIsDetailsOpen(true);
   };
 
-  const handleDeleteClinician = (id: string) => {
-    setClinicians((prev) => prev.filter((c) => c.id !== id));
-    toast.success("Successfully deleted clinician record.");
-  };
-
-  // Ant Design Dropdown items builder
-  const getActionMenuItems = (clin: ClinicianItemData) => [
+  const getActionMenuItems = (clinician: AdminClinic) => [
     {
       key: "view",
-      label: <span className="font-semibold text-slate-700 font-sans px-2 block">View</span>,
-      onClick: () => handleViewClinician(clin),
-    },
-    {
-      key: "delete",
-      label: <span className="font-semibold text-red-500 font-sans px-2 block">Delete</span>,
-      onClick: () => handleDeleteClinician(clin.id),
+      label: <span className="block px-2 font-sans font-semibold text-slate-700">View</span>,
+      onClick: () => handleViewClinician(clinician),
     },
   ];
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6">
-      {/* Top Header Section */}
+    <div className="space-y-6 p-4 md:p-6 lg:p-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0F2E4A] font-poppins tracking-tight">
+        <h1 className="font-poppins text-2xl font-extrabold tracking-tight text-[#0F2E4A] sm:text-3xl">
           Clinicians
         </h1>
-        {/* Add Clinician Button */}
         <button
+          type="button"
           onClick={() => setIsModalOpen(true)}
-          className="bg-[#00B2D6] hover:bg-[#009cb9] text-white px-5 py-2.5 rounded-full font-bold text-xs sm:text-sm tracking-wide flex items-center gap-2 transition-all shadow-md shadow-cyan-100/50 cursor-pointer border-none outline-none active:scale-[0.98]"
+          className="flex items-center gap-2 rounded-full bg-[#00B2D6] px-5 py-2.5 text-xs font-bold tracking-wide text-white shadow-md shadow-cyan-100/50 transition-all hover:bg-[#009cb9] active:scale-[0.98] sm:text-sm"
         >
           <span>Add Clinician</span>
           <Plus size={16} className="stroke-[3]" />
         </button>
       </div>
 
-      {/* Search Input Box */}
       <div className="relative">
-        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+        <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
           <Search size={18} />
         </span>
         <input
           type="text"
-          placeholder="Search Patient" // Placeholder matching mockup exactly
+          placeholder="Search clinician"
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-12 pr-4 py-3 border border-slate-200 bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.01)] focus:outline-none focus:border-[#00B2D6] focus:ring-1 focus:ring-[#00B2D6] text-sm text-[#0F2E4A] placeholder-slate-400 transition-all font-semibold"
+          onChange={(event) => setSearchTerm(event.target.value)}
+          className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-12 pr-4 text-sm font-semibold text-[#0F2E4A] shadow-[0_2px_10px_rgba(0,0,0,0.01)] transition-all placeholder:text-slate-400 focus:border-[#00B2D6] focus:outline-none focus:ring-1 focus:ring-[#00B2D6]"
         />
       </div>
 
-      {/* Second Heading & Table container */}
       <div className="space-y-4">
-        <h2 className="text-lg sm:text-xl font-bold text-[#0F2E4A] font-poppins">
+        <h2 className="font-poppins text-lg font-bold text-[#0F2E4A] sm:text-xl">
           Clinicians
         </h2>
 
-        {/* Data Table */}
-        <div className="overflow-x-auto bg-white rounded-3xl border border-slate-100 shadow-[0_4px_25px_rgba(0,0,0,0.01)]">
-          <table className="w-full border-collapse min-w-[800px]">
+        <div className="overflow-x-auto rounded-3xl border border-slate-100 bg-white shadow-[0_4px_25px_rgba(0,0,0,0.01)]">
+          <table className="w-full min-w-[800px] border-collapse">
             <thead>
-              {/* Note the thin solid cyan line bottom border matching the mockup */}
               <tr className="border-b-2 border-[#00B2D6] text-left">
-                <th className="py-4 px-6 text-sm font-bold text-[#0F2E4A] font-sans">
+                <th className="px-6 py-4 font-sans text-sm font-bold text-[#0F2E4A]">
                   Clinician
                 </th>
-                <th className="py-4 px-6 text-sm font-bold text-[#0F2E4A] font-sans">
+                <th className="px-6 py-4 font-sans text-sm font-bold text-[#0F2E4A]">
                   Email
                 </th>
-                <th className="py-4 px-6 text-sm font-bold text-[#0F2E4A] font-sans">
+                <th className="px-6 py-4 font-sans text-sm font-bold text-[#0F2E4A]">
                   Locations
                 </th>
-                <th className="py-4 px-6 text-sm font-bold text-[#0F2E4A] font-sans">
+                <th className="px-6 py-4 font-sans text-sm font-bold text-[#0F2E4A]">
                   Speciality
                 </th>
-                <th className="py-4 px-6 text-sm font-bold text-[#0F2E4A] font-sans text-center">
+                <th className="px-6 py-4 text-center font-sans text-sm font-bold text-[#0F2E4A]">
                   Status
                 </th>
-                <th className="py-4 px-6 text-sm font-bold text-[#0F2E4A] font-sans text-right">
+                <th className="px-6 py-4 text-right font-sans text-sm font-bold text-[#0F2E4A]">
                   Action
                 </th>
               </tr>
             </thead>
             <tbody>
-              {paginatedClinicians.length > 0 ? (
-                paginatedClinicians.map((clin) => (
-                  <tr key={clin.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors last:border-b-0">
-                    <td className="py-4 px-6 text-sm font-semibold text-slate-500">
-                      {clin.clinicianName}
-                    </td>
-                    <td className="py-4 px-6 text-sm font-semibold text-slate-500">
-                      {clin.email}
-                    </td>
-                    <td className="py-4 px-6 text-sm font-semibold text-slate-500">
-                      {clin.locations}
-                    </td>
-                    <td className="py-4 px-6 text-sm font-semibold text-slate-500">
-                      {clin.speciality}
-                    </td>
-                    <td className="py-4 px-6 text-center">
-                      <span className={`px-4 py-1.5 rounded-full text-xs font-bold inline-block tracking-wide ${
-                        clin.status === "Active"
-                          ? "bg-[#E6FDF5] text-[#10B981]"
-                          : "bg-[#FFF8E6] text-[#F59E0B]"
-                      }`}>
-                        {clin.status}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6 text-right">
-                      <Dropdown
-                        menu={{ items: getActionMenuItems(clin) }}
-                        trigger={["click"]}
-                        placement="bottomRight"
-                      >
-                        <button
-                          className="w-8 h-8 rounded-full bg-[#E6FAFF] text-[#00B2D6] hover:bg-[#D0F3FC] hover:scale-105 active:scale-95 transition-all flex items-center justify-center cursor-pointer border-none outline-none ml-auto"
-                          aria-label="More actions"
+              {isLoading || isFetching ? (
+                <CliniciansTableSkeleton />
+              ) : isError ? (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center">
+                    <p className="text-sm font-semibold text-red-500">
+                      Failed to load clinicians.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => refetch()}
+                      className="mt-4 rounded-full bg-[#00B2D6] px-5 py-2 text-xs font-bold text-white hover:bg-[#009cb9]"
+                    >
+                      Try Again
+                    </button>
+                  </td>
+                </tr>
+              ) : filteredClinicians.length > 0 ? (
+                filteredClinicians.map((clinician) => {
+                  const status = normalizeStatus(clinician.status);
+
+                  return (
+                    <tr
+                      key={clinician.id}
+                      className="border-b border-slate-100 transition-colors last:border-b-0 hover:bg-slate-50/50"
+                    >
+                      <td className="px-6 py-4 text-sm font-semibold text-slate-500">
+                        {clinician.fullName}
+                      </td>
+                      <td className="px-6 py-4 text-sm font-semibold text-slate-500">
+                        {clinician.email}
+                      </td>
+                      <td className="px-6 py-4 text-sm font-semibold text-slate-500">
+                        {clinician.location?.locationName || "N/A"}
+                      </td>
+                      <td className="max-w-[220px] truncate px-6 py-4 text-sm font-semibold text-slate-500">
+                        {formatServices(clinician)}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className={`inline-block rounded-full px-4 py-1.5 text-xs font-bold tracking-wide ${
+                          status === "Active"
+                            ? "bg-[#E6FDF5] text-[#10B981]"
+                            : "bg-[#FFF8E6] text-[#F59E0B]"
+                        }`}>
+                          {status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <Dropdown
+                          menu={{ items: getActionMenuItems(clinician) }}
+                          trigger={["click"]}
+                          placement="bottomRight"
                         >
-                          <MoreVertical size={16} className="stroke-[2.5]" />
-                        </button>
-                      </Dropdown>
-                    </td>
-                  </tr>
-                ))
+                          <button
+                            type="button"
+                            className="ml-auto flex h-8 w-8 items-center justify-center rounded-full bg-[#E6FAFF] text-[#00B2D6] transition-all hover:scale-105 hover:bg-[#D0F3FC] active:scale-95"
+                            aria-label="More actions"
+                          >
+                            <MoreVertical size={16} className="stroke-[2.5]" />
+                          </button>
+                        </Dropdown>
+                      </td>
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-500 font-semibold">
+                  <td colSpan={6} className="py-12 text-center font-semibold text-slate-500">
                     No clinicians found matching your search.
                   </td>
                 </tr>
@@ -191,8 +268,7 @@ export default function CliniciansView() {
         </div>
       </div>
 
-      {/* Pagination Panel */}
-      {totalPages > 1 && (
+      {!isLoading && !isFetching && !isError && totalPages > 1 && (
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}
@@ -200,14 +276,16 @@ export default function CliniciansView() {
         />
       )}
 
-      {/* Add Clinician Popup Form Overlay */}
       <AddClinicianModal
         isOpen={isModalOpen}
+        isSaving={isCreating}
+        locations={locations}
+        services={services}
+        isOptionsLoading={isOptionsLoading}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveClinician}
       />
 
-      {/* View Clinician Details Modal */}
       <ClinicianDetailsModal
         isOpen={isDetailsOpen}
         onClose={() => setIsDetailsOpen(false)}

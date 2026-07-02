@@ -3,12 +3,12 @@
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
-import { ClinicianItemData } from "@/app/data/AdminDashboardData";
+import type { AdminClinic } from "@/redux/service/admin/cliniciansApi";
 
 interface ClinicianDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  clinician: ClinicianItemData | null;
+  clinician: AdminClinic | null;
 }
 
 export default function ClinicianDetailsModal({
@@ -65,7 +65,7 @@ export default function ClinicianDetailsModal({
         <div className="space-y-4 text-[15px] sm:text-base text-[#0F2E4A] font-sans mt-6">
           <div className="flex items-start gap-1.5">
             <span className="font-extrabold whitespace-nowrap">Name :</span>
-            <span className="font-semibold text-slate-500">{clinician.clinicianName}</span>
+            <span className="font-semibold text-slate-500">{clinician.fullName}</span>
           </div>
 
           <div className="flex items-start sm:items-center gap-1.5">
@@ -75,17 +75,29 @@ export default function ClinicianDetailsModal({
 
           <div className="flex items-start sm:items-center gap-1.5">
             <span className="font-extrabold whitespace-nowrap">Phone Number:</span>
-            <span className="font-semibold text-slate-500">{clinician.phone || "07700 900456"}</span>
+            <span className="font-semibold text-slate-500">{clinician.phoneNumber || "N/A"}</span>
           </div>
 
           <div className="flex items-start sm:items-center gap-1.5">
             <span className="font-extrabold whitespace-nowrap">GMC Number :</span>
-            <span className="font-semibold text-slate-500">{clinician.gmcNumber || "e.g., 1234567"}</span>
+            <span className="font-semibold text-slate-500">{clinician.clinicGmcNumber || "N/A"}</span>
           </div>
 
           <div className="flex items-start sm:items-center gap-1.5">
             <span className="font-extrabold whitespace-nowrap">Assigned Location :</span>
-            <span className="font-semibold text-slate-500">{clinician.locations}</span>
+            <span className="font-semibold text-slate-500">{clinician.location?.locationName || "N/A"}</span>
+          </div>
+
+          <div className="flex items-start sm:items-center gap-1.5">
+            <span className="font-extrabold whitespace-nowrap">Services :</span>
+            <span className="font-semibold text-slate-500">
+              {clinician.services?.map((service) => service.title).join(", ") || "N/A"}
+            </span>
+          </div>
+
+          <div className="flex items-start sm:items-center gap-1.5">
+            <span className="font-extrabold whitespace-nowrap">Parking :</span>
+            <span className="font-semibold text-slate-500">{clinician.isParking ? "Available" : "Not available"}</span>
           </div>
         </div>
 
