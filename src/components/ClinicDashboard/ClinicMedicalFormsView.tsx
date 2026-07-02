@@ -1,204 +1,291 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Search, Eye, Download, X } from "lucide-react";
-import { clinicMedicalFormsData, ClinicMedicalForm } from "@/app/data/ClinicDashboardData";
-import { toast } from "sonner";
+import { ChevronLeft, ChevronRight, Download, Eye, Search, X } from "lucide-react";
+import {
+  type ClinicMedicalFormRecord,
+  useGetClinicMedicalFormsQuery,
+} from "@/redux/service/clinic/clinicMedicalFormsApi";
+
+const PAGE_LIMIT = 10;
+
+const formatDate = (value?: string | null, includeTime = false) => {
+  if (!value) return "N/A";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "N/A";
+
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    ...(includeTime
+      ? { hour: "numeric", minute: "2-digit", hour12: true }
+      : {}),
+  }).format(date);
+};
+
+const formatStatus = (status?: string) => {
+  if (!status) return "N/A";
+  return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+};
+
+const getStatusClassName = (status?: string) =>
+  status?.toLowerCase() === "submitted"
+    ? "border-emerald-100 bg-emerald-50 text-emerald-600"
+    : "border-amber-100 bg-amber-50 text-amber-600";
+
+const shortenId = (id?: string | null) => {
+  if (!id) return "N/A";
+  return id.length > 12 ? `${id.slice(0, 6)}...${id.slice(-4)}` : id;
+};
+
+const MedicalFormsSkeleton = () => (
+  <tbody className="divide-y divide-slate-100/80" aria-label="Loading medical forms">
+    {Array.from({ length: 6 }, (_, rowIndex) => (
+      <tr key={rowIndex} className="animate-pulse">
+        {[24, 30, 32, 32, 28].map((width, index) => (
+          <td key={index} className="px-6 py-5">
+            <div
+              className="h-2.5 rounded-full bg-slate-200"
+              style={{ width: `${width + (rowIndex % 3) * 5}%` }}
+            />
+          </td>
+        ))}
+        <td className="px-6 py-5 text-center">
+          <div className="mx-auto h-6 w-20 rounded-full bg-slate-200" />
+        </td>
+        <td className="px-6 py-5 text-center">
+          <div className="mx-auto h-5 w-14 rounded-full bg-slate-200" />
+        </td>
+      </tr>
+    ))}
+  </tbody>
+);
 
 export default function ClinicMedicalFormsView() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [medicalForms] = useState<ClinicMedicalForm[]>(clinicMedicalFormsData);
-  const [viewingForm, setViewingForm] = useState<ClinicMedicalForm | null>(null);
+  const [page, setPage] = useState(1);
+  const [viewingForm, setViewingForm] =
+    useState<ClinicMedicalFormRecord | null>(null);
   const [mounted, setMounted] = useState(false);
+
+  const {
+    data: formsResponse,
+    isLoading,
+    isFetching,
+    isError,
+    refetch,
+  } = useGetClinicMedicalFormsQuery({ page, limit: PAGE_LIMIT });
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const filteredForms = medicalForms.filter(
-    (f) =>
-      f.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      f.serviceType.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      f.clinicianName.toLowerCase().includes(searchQuery.toLowerCase())
+  const forms = formsResponse?.data || [];
+  const filteredForms = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return forms;
+
+    return forms.filter((form) =>
+      [
+        form.id,
+        form.driverId,
+        form.bookingId,
+        form.organizerRequestId,
+        form.result,
+        form.notes,
+        form.clinic?.email,
+      ].some((value) => value?.toLowerCase().includes(query)),
+    );
+  }, [forms, searchQuery]);
+
+  const total = formsResponse?.meta.total || 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_LIMIT));
+  const firstVisiblePage = Math.max(1, Math.min(page - 2, totalPages - 4));
+  const visiblePages = Array.from(
+    { length: Math.min(5, totalPages) },
+    (_, index) => firstVisiblePage + index,
   );
 
-  const handleDownload = (form: ClinicMedicalForm) => {
-    toast.success(`Downloading medical form pdf for ${form.clientName}...`);
-  };
-
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6 w-full">
-      {/* Title */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0F2E4A] font-poppins tracking-tight">
-          Medical Forms
-        </h1>
-      </div>
+    <div className="w-full space-y-6 p-4 md:p-6 lg:p-8">
+      <h1 className="font-poppins text-2xl font-extrabold tracking-tight text-[#0F2E4A] sm:text-3xl">
+        Medical Forms
+      </h1>
 
-      {/* Search Bar */}
       <div className="relative w-full">
         <span className="absolute inset-y-0 left-4 flex items-center text-slate-400">
           <Search size={18} />
         </span>
         <input
-          type="text"
+          type="search"
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search Patient Name"
-          className="w-full pl-12 pr-4 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200/80 rounded-2xl focus:outline-none focus:border-[#00B2D6] focus:ring-1 focus:ring-[#00B2D6] text-xs sm:text-sm text-[#0F2E4A] placeholder-slate-400 font-semibold transition-all shadow-[0_2px_10px_rgba(0,0,0,0.005)]"
+          onChange={(event) => setSearchQuery(event.target.value)}
+          placeholder="Search Medical Records"
+          className="w-full rounded-2xl border border-slate-200/80 bg-slate-50/50 py-3.5 pl-12 pr-4 text-xs font-semibold text-[#0F2E4A] placeholder:text-slate-400 focus:border-[#00B2D6] focus:outline-none focus:ring-1 focus:ring-[#00B2D6] sm:text-sm"
         />
       </div>
 
-      {/* Medical Forms Log List */}
       <div className="space-y-4 pt-2">
-        <div className="bg-white rounded-[24px] border border-slate-100/90 shadow-[0_4px_25px_rgba(0,0,0,0.01)] overflow-hidden">
-          <div className="overflow-x-auto w-full">
-            <table className="w-full min-w-[1000px] border-collapse text-left">
+        <div className="flex items-end justify-between gap-4">
+          <h2 className="font-poppins text-xl font-extrabold tracking-tight text-[#0F2E4A] sm:text-2xl">
+            Medical Records
+          </h2>
+          {!isLoading && !isError && (
+            <span className="text-xs font-semibold text-slate-400">
+              {total} {total === 1 ? "record" : "records"}
+            </span>
+          )}
+        </div>
+
+        <div className="overflow-hidden rounded-[24px] border border-slate-100/90 bg-white shadow-[0_4px_25px_rgba(0,0,0,0.01)]">
+          <div className="w-full overflow-x-auto">
+            <table className="w-full min-w-[1080px] border-collapse text-left">
               <thead>
                 <tr className="border-b border-[#00B2D6] bg-white">
-                  <th className="py-4 px-6 text-xs sm:text-sm font-bold text-[#0F2E4A] font-poppins w-[20%]">
-                    Client Name
-                  </th>
-                  <th className="py-4 px-6 text-xs sm:text-sm font-bold text-[#0F2E4A] font-poppins w-[20%]">
-                    Service Type
-                  </th>
-                  <th className="py-4 px-6 text-xs sm:text-sm font-bold text-[#0F2E4A] font-poppins w-[20%]">
-                    Appointment Date
-                  </th>
-                  <th className="py-4 px-6 text-xs sm:text-sm font-bold text-[#0F2E4A] font-poppins w-[20%]">
-                    Clinician Name
-                  </th>
-                  <th className="py-4 px-6 text-xs sm:text-sm font-bold text-[#0F2E4A] font-poppins w-[12%]">
-                    Form Status
-                  </th>
-                  <th className="py-4 px-6 text-xs sm:text-sm font-bold text-[#0F2E4A] font-poppins text-center w-[8%]">
-                    Actions
-                  </th>
+                  <th className="w-[13%] px-6 py-4 text-xs font-bold text-[#0F2E4A] sm:text-sm">Record ID</th>
+                  <th className="w-[16%] px-6 py-4 text-xs font-bold text-[#0F2E4A] sm:text-sm">Driver ID</th>
+                  <th className="w-[15%] px-6 py-4 text-xs font-bold text-[#0F2E4A] sm:text-sm">Booking ID</th>
+                  <th className="w-[17%] px-6 py-4 text-xs font-bold text-[#0F2E4A] sm:text-sm">Created On</th>
+                  <th className="w-[15%] px-6 py-4 text-xs font-bold text-[#0F2E4A] sm:text-sm">Expiry Date</th>
+                  <th className="w-[12%] px-6 py-4 text-center text-xs font-bold text-[#0F2E4A] sm:text-sm">Status</th>
+                  <th className="w-[12%] px-6 py-4 text-center text-xs font-bold text-[#0F2E4A] sm:text-sm">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100/80">
-                {filteredForms.map((form) => {
-                  let badgeStyle = "";
-                  if (form.formStatus === "Submited") {
-                    badgeStyle = "bg-[#E8F8F5] text-[#10B981]";
-                  } else {
-                    badgeStyle = "bg-[#FEF9E7] text-[#D9A700]";
-                  }
 
-                  return (
-                    <tr
-                      key={form.id}
-                      className="hover:bg-slate-50/40 transition-colors"
-                    >
-                      <td className="py-3.5 px-6 text-xs sm:text-sm text-[#0F2E4A] font-bold font-sans">
-                        {form.clientName}
-                      </td>
-                      <td className="py-3.5 px-6 text-xs sm:text-sm text-slate-500 font-semibold font-sans">
-                        {form.serviceType}
-                      </td>
-                      <td className="py-3.5 px-6 text-xs sm:text-sm text-slate-500 font-semibold font-sans">
-                        {form.appointmentDate}
-                      </td>
-                      <td className="py-3.5 px-6 text-xs sm:text-sm text-slate-500 font-semibold font-sans">
-                        {form.clinicianName}
-                      </td>
-                      <td className="py-3.5 px-6">
-                        <span className={`inline-flex items-center justify-center px-4 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider ${badgeStyle}`}>
-                          {form.formStatus}
+              {isLoading || isFetching ? (
+                <MedicalFormsSkeleton />
+              ) : (
+                <tbody className="divide-y divide-slate-100/80">
+                  {filteredForms.map((form) => (
+                    <tr key={form.id} className="transition-colors hover:bg-slate-50/40">
+                      <td className="px-6 py-3.5 text-xs font-bold text-[#0F2E4A] sm:text-sm" title={form.id}>{shortenId(form.id)}</td>
+                      <td className="px-6 py-3.5 text-xs font-semibold text-slate-500 sm:text-sm" title={form.driverId}>{shortenId(form.driverId)}</td>
+                      <td className="px-6 py-3.5 text-xs font-semibold text-slate-500 sm:text-sm" title={form.bookingId || undefined}>{shortenId(form.bookingId)}</td>
+                      <td className="px-6 py-3.5 text-xs font-semibold text-slate-500 sm:text-sm">{formatDate(form.createdAt, true)}</td>
+                      <td className="px-6 py-3.5 text-xs font-semibold text-slate-500 sm:text-sm">{formatDate(form.expiryDate)}</td>
+                      <td className="px-6 py-3.5 text-center">
+                        <span className={`inline-flex rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-wider sm:text-xs ${getStatusClassName(form.result)}`}>
+                          {formatStatus(form.result)}
                         </span>
                       </td>
-                      <td className="py-3.5 px-6">
+                      <td className="px-6 py-3.5">
                         <div className="flex items-center justify-center gap-4">
                           <button
                             type="button"
                             onClick={() => setViewingForm(form)}
-                            className="text-[#00B2D6] hover:text-[#009cb9] hover:scale-110 active:scale-95 transition-all outline-none border-none bg-transparent cursor-pointer"
-                            title="View Form details"
+                            aria-label="View medical record"
+                            title="View details"
+                            className="text-[#00B2D6] transition-colors hover:text-[#009cb9]"
                           >
                             <Eye size={18} />
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDownload(form)}
-                            className="text-[#00B2D6] hover:text-[#009cb9] hover:scale-110 active:scale-95 transition-all outline-none border-none bg-transparent cursor-pointer"
-                            title="Download Form PDF"
-                          >
-                            <Download size={18} />
-                          </button>
+                          {form.files ? (
+                            <a
+                              href={form.files}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              download
+                              aria-label="Download medical document"
+                              title="Download document"
+                              className="text-[#00B2D6] transition-colors hover:text-[#009cb9]"
+                            >
+                              <Download size={18} />
+                            </a>
+                          ) : (
+                            <span className="cursor-not-allowed text-slate-300" title="No document available">
+                              <Download size={18} />
+                            </span>
+                          )}
                         </div>
                       </td>
                     </tr>
-                  );
-                })}
-              </tbody>
+                  ))}
+                </tbody>
+              )}
             </table>
+
+            {!isLoading && !isFetching && isError && (
+              <div className="flex min-h-[260px] flex-col items-center justify-center gap-3 border-t border-slate-100 text-center">
+                <p className="text-sm font-bold text-red-500">Failed to load medical records.</p>
+                <button type="button" onClick={() => refetch()} className="rounded-full bg-[#00B2D6] px-5 py-2 text-xs font-bold text-white hover:bg-[#009cb9]">Try Again</button>
+              </div>
+            )}
+
+            {!isLoading && !isFetching && !isError && filteredForms.length === 0 && (
+              <div className="flex min-h-[260px] items-center justify-center border-t border-slate-100 px-6 text-center">
+                <p className="text-sm font-semibold text-slate-400">
+                  {searchQuery.trim() ? "No medical records match your search." : "No medical records found."}
+                </p>
+              </div>
+            )}
           </div>
         </div>
+
+        {!isLoading && !isError && totalPages > 1 && (
+          <div className="flex flex-wrap items-center justify-end gap-2 pt-4">
+            <button
+              type="button"
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
+              disabled={page === 1 || isFetching}
+              className="flex items-center gap-1 rounded-lg border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:text-sm"
+            >
+              <ChevronLeft size={14} /><span>Previous</span>
+            </button>
+            {visiblePages.map((pageNumber) => (
+              <button
+                key={pageNumber}
+                type="button"
+                onClick={() => setPage(pageNumber)}
+                disabled={isFetching}
+                aria-label={`Page ${pageNumber}`}
+                aria-current={pageNumber === page ? "page" : undefined}
+                className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-bold ${pageNumber === page ? "border-[#00B2D6] bg-[#00B2D6] text-white" : "border-slate-200 text-slate-500 hover:bg-slate-50"}`}
+              >
+                {pageNumber}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+              disabled={page === totalPages || isFetching}
+              className="flex items-center gap-1 rounded-lg border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:text-sm"
+            >
+              <span>Next</span><ChevronRight size={14} />
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Form Details Viewer Modal Overlay */}
       {viewingForm && mounted && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
-            onClick={() => setViewingForm(null)}
-          />
-
-          <div className="bg-white w-full max-w-[480px] rounded-[32px] border border-slate-100 shadow-[0_20px_50px_rgba(0,0,0,0.12)] p-6 sm:p-8 relative z-10 animate-in fade-in zoom-in-95 duration-200">
-            {/* Header */}
-            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
-              <h2 className="text-xl sm:text-2xl font-extrabold text-[#0F2E4A] font-poppins">
-                Medical Form Details
-              </h2>
-              <button
-                onClick={() => setViewingForm(null)}
-                className="w-9 h-9 rounded-full bg-[#E6FAFF] text-[#00B2D6] hover:bg-[#D0F3FC] hover:scale-105 active:scale-95 transition-all flex items-center justify-center cursor-pointer border-none outline-none"
-              >
-                <X size={18} className="stroke-[2.5]" />
+          <button type="button" aria-label="Close medical record details" className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setViewingForm(null)} />
+          <div className="relative z-10 w-full max-w-[520px] rounded-[32px] border border-slate-100 bg-white p-6 shadow-[0_20px_50px_rgba(0,0,0,0.12)] animate-in fade-in zoom-in-95 sm:p-8">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3.5">
+              <h2 className="font-poppins text-xl font-extrabold text-[#0F2E4A] sm:text-2xl">Medical Record Details</h2>
+              <button type="button" onClick={() => setViewingForm(null)} aria-label="Close medical record details" title="Close" className="flex h-9 w-9 items-center justify-center rounded-full bg-cyan-50 text-[#00B2D6] hover:bg-cyan-100">
+                <X size={18} />
               </button>
             </div>
 
-            {/* Details Fields */}
-            <div className="space-y-4 text-sm sm:text-base text-[#0F2E4A] font-sans mt-6">
-              <div className="flex items-start gap-1.5">
-                <span className="font-extrabold whitespace-nowrap">Patient Name:</span>
-                <span className="font-semibold text-slate-500">{viewingForm.clientName}</span>
-              </div>
-              <div className="flex items-start gap-1.5">
-                <span className="font-extrabold whitespace-nowrap">Service Type:</span>
-                <span className="font-semibold text-slate-500">{viewingForm.serviceType}</span>
-              </div>
-              <div className="flex items-start gap-1.5">
-                <span className="font-extrabold whitespace-nowrap">Appointment Date:</span>
-                <span className="font-semibold text-slate-500">{viewingForm.appointmentDate}</span>
-              </div>
-              <div className="flex items-start gap-1.5">
-                <span className="font-extrabold whitespace-nowrap">Clinician Name:</span>
-                <span className="font-semibold text-slate-500">{viewingForm.clinicianName}</span>
-              </div>
-              <div className="flex items-start gap-1.5">
-                <span className="font-extrabold whitespace-nowrap">Form Status:</span>
-                <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${
-                  viewingForm.formStatus === "Submited" ? "bg-[#E8F8F5] text-[#10B981]" : "bg-[#FEF9E7] text-[#D9A700]"
-                }`}>
-                  {viewingForm.formStatus}
-                </span>
-              </div>
+            <div className="mt-6 grid grid-cols-1 gap-4 text-sm text-[#0F2E4A] sm:grid-cols-2 sm:text-base">
+              <div><span className="block text-xs font-bold text-slate-400">Record ID</span><span className="break-all font-semibold">{viewingForm.id}</span></div>
+              <div><span className="block text-xs font-bold text-slate-400">Driver ID</span><span className="break-all font-semibold">{viewingForm.driverId}</span></div>
+              <div><span className="block text-xs font-bold text-slate-400">Booking ID</span><span className="break-all font-semibold">{viewingForm.bookingId || "N/A"}</span></div>
+              <div><span className="block text-xs font-bold text-slate-400">Clinic Email</span><span className="break-all font-semibold">{viewingForm.clinic?.email || "N/A"}</span></div>
+              <div><span className="block text-xs font-bold text-slate-400">Created On</span><span className="font-semibold">{formatDate(viewingForm.createdAt, true)}</span></div>
+              <div><span className="block text-xs font-bold text-slate-400">Expiry Date</span><span className="font-semibold">{formatDate(viewingForm.expiryDate)}</span></div>
+              <div className="sm:col-span-2"><span className="block text-xs font-bold text-slate-400">Notes</span><span className="font-semibold">{viewingForm.notes || "N/A"}</span></div>
+              <div><span className="block text-xs font-bold text-slate-400">Result</span><span className={`mt-1 inline-flex rounded-full border px-2.5 py-0.5 text-xs font-bold uppercase ${getStatusClassName(viewingForm.result)}`}>{formatStatus(viewingForm.result)}</span></div>
+              <div><span className="block text-xs font-bold text-slate-400">Document</span>{viewingForm.files ? <a href={viewingForm.files} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1.5 font-bold text-[#00B2D6] hover:text-[#009cb9]"><Download size={15} />Download</a> : <span className="font-semibold">N/A</span>}</div>
             </div>
 
-            {/* Action Footer */}
-            <div className="mt-8">
-              <button
-                onClick={() => setViewingForm(null)}
-                className="w-full py-3 bg-[#00B2D6] hover:bg-[#009cb9] rounded-2xl text-white font-bold text-sm tracking-wide transition-all active:scale-[0.99] shadow-md shadow-cyan-100"
-              >
-                Close Form
-              </button>
-            </div>
+            <button type="button" onClick={() => setViewingForm(null)} className="mt-8 w-full rounded-2xl bg-[#00B2D6] py-3 text-sm font-bold text-white shadow-md shadow-cyan-100 hover:bg-[#009cb9]">Close Record</button>
           </div>
         </div>,
-        document.body
+        document.body,
       )}
     </div>
   );

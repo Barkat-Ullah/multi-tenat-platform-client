@@ -15,15 +15,6 @@ export interface ClinicTimeSlot {
   status: "Active" | "Booked" | "Inactive";
 }
 
-export interface ClinicMedicalForm {
-  id: string;
-  clientName: string;
-  serviceType: string;
-  appointmentDate: string;
-  clinicianName: string;
-  formStatus: "Pending" | "Submited";
-}
-
 export interface ClinicDocument {
   id: string;
   docTitle: string;
@@ -81,18 +72,6 @@ export const clinicTimeSlotsData: ClinicTimeSlot[] = [
   { id: "slot-3", timeRange: "10.00 AM - 10.30 AM", status: "Active" },
   { id: "slot-4", timeRange: "10.00 AM - 10.30 AM", status: "Booked" },
   { id: "slot-5", timeRange: "10.30 AM - 11.00 AM", status: "Inactive" },
-];
-
-export const clinicMedicalFormsData: ClinicMedicalForm[] = [
-  { id: "form-1", clientName: "Sarah Gomez", serviceType: "Taxi Medicals", appointmentDate: "Today, 9:00 AM", clinicianName: "St Thomas' Hospital", formStatus: "Pending" },
-  { id: "form-2", clientName: "Sarah Gomez", serviceType: "Taxi Medicals", appointmentDate: "Today, 9:00 AM", clinicianName: "St Thomas' Hospital", formStatus: "Submited" },
-  { id: "form-3", clientName: "Sarah Gomez", serviceType: "Taxi Medicals", appointmentDate: "Today, 9:00 AM", clinicianName: "St Thomas' Hospital", formStatus: "Pending" },
-  { id: "form-4", clientName: "Sarah Gomez", serviceType: "Taxi Medicals", appointmentDate: "Today, 9:00 AM", clinicianName: "St Thomas' Hospital", formStatus: "Submited" },
-  { id: "form-5", clientName: "Sarah Gomez", serviceType: "Taxi Medicals", appointmentDate: "Today, 9:00 AM", clinicianName: "St Thomas' Hospital", formStatus: "Submited" },
-  { id: "form-6", clientName: "Sarah Gomez", serviceType: "Taxi Medicals", appointmentDate: "Today, 9:00 AM", clinicianName: "St Thomas' Hospital", formStatus: "Pending" },
-  { id: "form-7", clientName: "Sarah Gomez", serviceType: "Taxi Medicals", appointmentDate: "Today, 9:00 AM", clinicianName: "St Thomas' Hospital", formStatus: "Submited" },
-  { id: "form-8", clientName: "Sarah Gomez", serviceType: "Taxi Medicals", appointmentDate: "Today, 9:00 AM", clinicianName: "St Thomas' Hospital", formStatus: "Pending" },
-  { id: "form-9", clientName: "Sarah Gomez", serviceType: "Taxi Medicals", appointmentDate: "Today, 9:00 AM", clinicianName: "St Thomas' Hospital", formStatus: "Submited" },
 ];
 
 export const clinicDocumentsData: ClinicDocument[] = [
