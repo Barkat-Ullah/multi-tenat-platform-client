@@ -1,91 +1,80 @@
-// src/redux/api/endpoints/adminEndpoints.ts (recommended new file)
-
 import baseApi from "@/redux/api/baseApi";
 
-// Admin Statistics Data Interface
-export interface AdminStatisticsData {
-  customerCount: number;
-  agencyCount: number;
-  investorCount: number;
-  propertyCount: number;
-  subscriptionCount: number;
-  totalIncome: number;
+export type AdminAnalyticsPeriod = "daily" | "weekly" | "monthly";
+
+export interface AdminAnalyticsOverview {
+  bookings: number;
+  pendingBookings: number;
+  revenue: number;
+  activeLocations: number;
+  totalServices: number;
 }
 
-// Admin Statistics Response Interface
-export interface AdminStatisticsResponse {
+export interface AdminAnalyticsTrend {
+  month: string;
+  bookings: number;
+  revenue: number;
+}
+
+export interface AdminRecentBooking {
+  id: string;
+  driverName: string;
+  service: string;
+  scheduledAt: string;
+  status: string;
+}
+
+export interface AdminRecentMedicalRecord {
+  id: string;
+  result: string;
+  files?: string | null;
+  createdAt: string;
+  driverName: string;
+  clinicName: string;
+  bookingId?: string | null;
+  service: string;
+  organizerRequestId?: string | null;
+  companyName?: string | null;
+}
+
+export interface AdminTopService {
+  serviceId: string;
+  title: string;
+  count: number;
+}
+
+export interface AdminAnalyticsData {
+  period: AdminAnalyticsPeriod | string;
+  rangeStart: string;
+  rangeEnd: string;
+  overview: AdminAnalyticsOverview;
+  trend: AdminAnalyticsTrend[];
+  recentBookings: AdminRecentBooking[];
+  recentMedicalRecords: AdminRecentMedicalRecord[];
+  topServices: AdminTopService[];
+}
+
+export interface AdminAnalyticsResponse {
   success: boolean;
   statusCode: number;
   message: string;
-  data: AdminStatisticsData;
+  data: AdminAnalyticsData;
 }
 
-
-// ===== Agency sell Breakdown item =====
-export interface AgencySellStatisticBreakdown {
-  type:
-  | "RESIDENTIAL"
-  | "BUILDINGS"
-  | "FLAT"
-  | "SHOPS"
-  | "GARAGE"
-  | "OFFICES"
-  | "LAND"
-  | "WAREHOUSES"
-  | "OTHERS"
-  | "COMMERCIAL"
-  | "HOSPITALITY"
-  | string;
-
-  total: number;
-  sell: number;
-  rent: number;
-}
-
-// ===== Data wrapper =====
-export interface AgencySellStatisticsData {
-  totalProperties: number;
-  breakdown: AgencySellStatisticBreakdown[];
-}
-
-// ===== API response =====
-export interface AgencySellStatisticsResponse {
-  success: boolean;
-  statusCode: number;
-  message: string;
-  data: AgencySellStatisticsData;
-}
-
-
-
-// Create API slice
-const adminApi = baseApi.injectEndpoints({
+const adminDashboardApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    // Use query for GET
-    getAdminStatistics: builder.query<AdminStatisticsResponse, void>({
-      query: () => ({
-        url: "/admin/statistics",
+    getAdminAnalytics: builder.query<
+      AdminAnalyticsResponse,
+      AdminAnalyticsPeriod
+    >({
+      query: (period) => ({
+        url: "/analytics/admin",
         method: "GET",
-        // No body for GET
+        params: { period },
       }),
-      providesTags: ["dashboard"], // Fixed typo
+      providesTags: ["dashboard"],
     }),
-
-
-    getAgencySellStatistics: builder.query<AgencySellStatisticsResponse, void>({
-      query: () => ({
-        url: "/agency/sellStatistics",
-        method: "GET",
-        // No body for GET
-      }),
-      providesTags: ["dashboard"], // Fixed typo
-    }),
-
-
   }),
-
-
 });
 
-export const { useGetAdminStatisticsQuery, useGetAgencySellStatisticsQuery } = adminApi;
-
+export const { useGetAdminAnalyticsQuery } = adminDashboardApi;

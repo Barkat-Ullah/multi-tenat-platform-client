@@ -2,79 +2,135 @@
 
 import React from "react";
 import { Eye } from "lucide-react";
-import { AllBookingItemData } from "@/app/data/AdminDashboardData";
+import type { AdminBooking } from "@/redux/service/admin/bookingsApi";
 
 interface BookingsTableProps {
-  bookings: AllBookingItemData[];
-  onViewDetails?: (booking: AllBookingItemData) => void;
+  bookings: AdminBooking[];
+  isLoading: boolean;
+  isError: boolean;
+  onRetry: () => void;
+  onViewDetails: (booking: AdminBooking) => void;
 }
 
-export default function BookingsTable({ bookings, onViewDetails }: BookingsTableProps) {
+const formatDateTime = (value?: string) => {
+  if (!value) return "N/A";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "N/A";
+
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).format(date);
+};
+
+const getStatusClassName = (status: string) => {
+  switch (status.toUpperCase()) {
+    case "COMPLETED":
+      return "bg-emerald-50 text-emerald-600";
+    case "CONFIRMED":
+      return "bg-cyan-50 text-[#00A5C7]";
+    case "CANCELLED":
+    case "CANCELED":
+      return "bg-red-50 text-red-500";
+    default:
+      return "bg-amber-50 text-amber-600";
+  }
+};
+
+const BookingsTableSkeleton = () => (
+  <tbody className="divide-y divide-slate-100/80" aria-label="Loading bookings">
+    {Array.from({ length: 7 }, (_, rowIndex) => (
+      <tr key={rowIndex} className="animate-pulse">
+        {[48, 58, 44, 42, 38, 52].map((width, index) => (
+          <td key={index} className="px-4 py-5">
+            <div
+              className="h-2.5 rounded-full bg-slate-200"
+              style={{ width: `${width - (rowIndex % 3) * 4}%` }}
+            />
+          </td>
+        ))}
+        <td className="px-4 py-5 text-center"><div className="mx-auto h-6 w-20 rounded-full bg-slate-200" /></td>
+        <td className="px-4 py-5 text-center"><div className="mx-auto h-8 w-8 rounded-full bg-slate-200" /></td>
+      </tr>
+    ))}
+  </tbody>
+);
+
+export default function BookingsTable({
+  bookings,
+  isLoading,
+  isError,
+  onRetry,
+  onViewDetails,
+}: BookingsTableProps) {
   return (
-    <div className="w-full overflow-x-auto">
-      <table className="w-full min-w-[900px] border-collapse text-left">
-        <thead>
-          <tr className="border-b border-[#00B2D6] border-t-0">
-            <th className="py-3.5 px-4 text-xs sm:text-sm font-bold text-gray-500 font-sans tracking-wide">
-              Client Name
-            </th>
-            <th className="py-3.5 px-4 text-xs sm:text-sm font-bold text-gray-500 font-sans tracking-wide">
-              Email
-            </th>
-            <th className="py-3.5 px-4 text-xs sm:text-sm font-bold text-gray-500 font-sans tracking-wide">
-              Service
-            </th>
-            <th className="py-3.5 px-4 text-xs sm:text-sm font-bold text-gray-500 font-sans tracking-wide">
-              Council
-            </th>
-            <th className="py-3.5 px-4 text-xs sm:text-sm font-bold text-gray-500 font-sans tracking-wide">
-              Clinician
-            </th>
-            <th className="py-3.5 px-4 text-xs sm:text-sm font-bold text-gray-500 font-sans tracking-wide">
-              Date & Time
-            </th>
-            <th className="py-3.5 px-4 text-xs sm:text-sm font-bold text-gray-500 font-sans tracking-wide text-center">
-              Action
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {bookings.map((booking) => (
-            <tr
-              key={booking.id}
-              className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors"
-            >
-              <td className="py-4 px-4 text-xs sm:text-sm font-semibold text-slate-500 font-sans">
-                {booking.name}
-              </td>
-              <td className="py-4 px-4 text-xs sm:text-sm font-medium text-slate-400 font-sans">
-                {booking.email}
-              </td>
-              <td className="py-4 px-4 text-xs sm:text-sm font-semibold text-slate-500 font-sans">
-                {booking.service}
-              </td>
-              <td className="py-4 px-4 text-xs sm:text-sm font-medium text-slate-400 font-sans">
-                {booking.council}
-              </td>
-              <td className="py-4 px-4 text-xs sm:text-sm font-medium text-slate-400 font-sans">
-                {booking.clinician}
-              </td>
-              <td className="py-4 px-4 text-xs sm:text-sm font-semibold text-slate-400 font-sans">
-                {booking.dateTime}
-              </td>
-              <td className="py-4 px-4 text-center">
-                <button
-                  onClick={() => onViewDetails?.(booking)}
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors cursor-pointer border-none bg-transparent mx-auto"
-                  aria-label="View booking details"
-                >
-                  <Eye size={18} />
-                </button>
-              </td>
+    <div className="w-full overflow-hidden rounded-2xl border border-slate-100 bg-white">
+      <div className="w-full overflow-x-auto">
+        <table className="w-full min-w-[1150px] border-collapse text-left">
+          <thead>
+            <tr className="border-b border-[#00B2D6]">
+              <th className="px-4 py-3.5 text-xs font-bold tracking-wide text-gray-500 sm:text-sm">Driver</th>
+              <th className="px-4 py-3.5 text-xs font-bold tracking-wide text-gray-500 sm:text-sm">Email</th>
+              <th className="px-4 py-3.5 text-xs font-bold tracking-wide text-gray-500 sm:text-sm">Service</th>
+              <th className="px-4 py-3.5 text-xs font-bold tracking-wide text-gray-500 sm:text-sm">Clinic</th>
+              <th className="px-4 py-3.5 text-xs font-bold tracking-wide text-gray-500 sm:text-sm">Location</th>
+              <th className="px-4 py-3.5 text-xs font-bold tracking-wide text-gray-500 sm:text-sm">Appointment</th>
+              <th className="px-4 py-3.5 text-center text-xs font-bold tracking-wide text-gray-500 sm:text-sm">Status</th>
+              <th className="px-4 py-3.5 text-center text-xs font-bold tracking-wide text-gray-500 sm:text-sm">Action</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+
+          {isLoading ? (
+            <BookingsTableSkeleton />
+          ) : (
+            <tbody className="divide-y divide-slate-100/80">
+              {bookings.map((booking) => (
+                <tr key={booking.id} className="transition-colors hover:bg-slate-50/50">
+                  <td className="px-4 py-4 text-xs font-semibold text-slate-600 sm:text-sm">{booking.driver?.fullName || "N/A"}</td>
+                  <td className="px-4 py-4 text-xs font-medium text-slate-400 sm:text-sm">{booking.driver?.email || "N/A"}</td>
+                  <td className="px-4 py-4 text-xs font-semibold text-slate-500 sm:text-sm">{booking.service?.title || "N/A"}</td>
+                  <td className="px-4 py-4 text-xs font-medium text-slate-400 sm:text-sm">{booking.clinic?.fullName || "N/A"}</td>
+                  <td className="px-4 py-4 text-xs font-medium text-slate-400 sm:text-sm">{booking.clinic?.location?.locationName || "N/A"}</td>
+                  <td className="px-4 py-4 text-xs font-semibold text-slate-400 sm:text-sm">{formatDateTime(booking.scheduledAt)}</td>
+                  <td className="px-4 py-4 text-center">
+                    <span className={`inline-flex rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wide ${getStatusClassName(booking.status)}`}>
+                      {booking.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4 text-center">
+                    <button
+                      type="button"
+                      onClick={() => onViewDetails(booking)}
+                      className="mx-auto flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                      aria-label="View booking details"
+                      title="View details"
+                    >
+                      <Eye size={18} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          )}
+        </table>
+
+        {!isLoading && isError && (
+          <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 border-t border-slate-100 text-center">
+            <p className="text-sm font-bold text-red-500">Failed to load bookings.</p>
+            <button type="button" onClick={onRetry} className="rounded-full bg-[#00B2D6] px-5 py-2 text-xs font-bold text-white hover:bg-[#009cb9]">Try Again</button>
+          </div>
+        )}
+
+        {!isLoading && !isError && bookings.length === 0 && (
+          <div className="flex min-h-[280px] items-center justify-center border-t border-slate-100 px-6 text-center text-sm font-semibold text-slate-400">
+            No bookings found.
+          </div>
+        )}
+      </div>
     </div>
   );
 }
