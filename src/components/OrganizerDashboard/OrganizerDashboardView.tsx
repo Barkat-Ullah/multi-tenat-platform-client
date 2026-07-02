@@ -11,10 +11,8 @@ import {
   CartesianGrid,
   Tooltip,
 } from "recharts";
-import {
-  organizerStatsData,
-  bookingsChartData,
-} from "@/app/data/OrganizerDashboardData";
+import { useGetCorporateAnalyticsQuery } from "@/redux/service/corporate/corporateDashboardApi";
+
 
 // Custom Tooltip component to match the premium tooltip card style in the mockup
 const CustomTooltip = ({ active, payload }: any) => {
@@ -31,6 +29,10 @@ const CustomTooltip = ({ active, payload }: any) => {
 };
 
 export default function OrganizerDashboardView() {
+
+    const { data, isLoading, isError, refetch } = useGetCorporateAnalyticsQuery();
+    const overview = data?.data?.overview;
+    console.log(overview);
   const [timeFilter, setTimeFilter] = useState("Yearly");
   const [mounted, setMounted] = useState(false);
 
@@ -59,7 +61,7 @@ export default function OrganizerDashboardView() {
             </span>
           </div>
           <span className="text-2xl sm:text-3xl font-extrabold text-[#0F2E4A] font-poppins pl-1">
-            {organizerStatsData.totalDrivers}
+            {overview?.totalDrivers}
           </span>
         </div>
 
@@ -74,7 +76,7 @@ export default function OrganizerDashboardView() {
             </span>
           </div>
           <span className="text-2xl sm:text-3xl font-extrabold text-[#0F2E4A] font-poppins pl-1">
-            {organizerStatsData.upcomingBookings}
+            {overview?.upcomingBookings}
           </span>
         </div>
 
@@ -90,7 +92,7 @@ export default function OrganizerDashboardView() {
           </div>
           <div className="flex items-baseline gap-1.5 pl-1">
             <span className="text-2xl sm:text-3xl font-extrabold text-[#0F2E4A] font-poppins">
-              {organizerStatsData.expiringTime}
+              {overview?.expiringTimeMonths}
             </span>
             <span className="text-[10px] sm:text-xs font-bold text-slate-400">
               Month
@@ -106,7 +108,7 @@ export default function OrganizerDashboardView() {
           <h2 className="text-[#0F2E4A] text-sm sm:text-base font-extrabold font-poppins">
             Booking History
           </h2>
-          <select
+          {/* <select
             value={timeFilter}
             onChange={(e) => setTimeFilter(e.target.value)}
             className="px-3.5 py-1.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-500 bg-white outline-none cursor-pointer hover:border-slate-300 transition-colors"
@@ -114,7 +116,7 @@ export default function OrganizerDashboardView() {
             <option value="Yearly">Yearly</option>
             <option value="Monthly">Monthly</option>
             <option value="Weekly">Weekly</option>
-          </select>
+          </select> */}
         </div>
 
         {/* Responsive Recharts Line Chart */}
@@ -122,7 +124,7 @@ export default function OrganizerDashboardView() {
           {mounted ? (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
-                data={bookingsChartData}
+                data={data?.data?.bookingHistory}
                 margin={{ top: 20, right: 10, left: -25, bottom: 0 }}
               >
                 <CartesianGrid
@@ -132,7 +134,7 @@ export default function OrganizerDashboardView() {
                   stroke="#F1F5F9"
                 />
                 <XAxis
-                  dataKey="name"
+                  dataKey="month"
                   axisLine={false}
                   tickLine={false}
                   tick={{
