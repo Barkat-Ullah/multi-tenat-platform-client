@@ -3,34 +3,74 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Search, FileText, Eye, Download, X } from "lucide-react";
-import { organizerReportsData, OrganizerReport } from "@/app/data/OrganizerDashboardData";
+import { useGetCorporateReportsQuery, CorporateReport } from "@/redux/service/corporate/corporateDashboardApi";
 import { toast } from "sonner";
 
 export default function OrganizerReportsView() {
-  const [reports] = useState<OrganizerReport[]>(organizerReportsData);
+  const { data: reportsData, isLoading } = useGetCorporateReportsQuery();
+  const reports = reportsData?.data || [];
   const [searchTerm, setSearchTerm] = useState("");
-  const [viewingReport, setViewingReport] = useState<OrganizerReport | null>(null);
+  const [viewingReport, setViewingReport] = useState<CorporateReport | null>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return "";
+    try {
+      return new Date(dateStr).toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+    } catch (e) {
+      return dateStr;
+    }
+  };
+
   // Filter list
   const filteredReports = useMemo(() => {
     return reports.filter((r) => {
       const search = searchTerm.toLowerCase();
       return (
-        r.title.toLowerCase().includes(search) ||
-        r.driverName.toLowerCase().includes(search) ||
-        r.hospitalName.toLowerCase().includes(search)
+        (r.title || "").toLowerCase().includes(search) ||
+        (r.driverName || "").toLowerCase().includes(search) ||
+        (r.hospitalName || "").toLowerCase().includes(search)
       );
     });
   }, [reports, searchTerm]);
 
-  // Download simulation handler
-  const handleDownload = (report: OrganizerReport) => {
-    toast.success(`Downloading report certificate "${report.title}" for ${report.driverName}...`);
+  // Download handler
+  const handleDownload = async (report: CorporateReport) => {
+    if (!report.fileUrl) {
+      toast.error(`Download URL not available for "${report.title}".`);
+      return;
+    }
+
+    try {
+      toast.info(`Downloading report file for ${report.driverName}...`);
+      const response = await fetch(report.fileUrl);
+      if (!response.ok) throw new Error("Network response was not ok");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      
+      const extension = report.fileUrl.split(".").pop()?.split(/[?#]/)[0] || "pdf";
+      link.setAttribute("download", `${report.title.replace(/\s+/g, "_")}_${report.driverName.replace(/\s+/g, "_")}.${extension}`);
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success("Download completed successfully.");
+    } catch (error) {
+      console.warn("Blob download failed, falling back to opening in new tab:", error);
+      window.open(report.fileUrl, "_blank");
+      toast.success(`Opening report file for ${report.driverName}...`);
+    }
   };
 
   return (
@@ -58,54 +98,76 @@ export default function OrganizerReportsView() {
 
       {/* Reports vertical cards wrapper */}
       <div className="space-y-4">
-        {filteredReports.map((report) => (
-          <div
-            key={report.id}
-            className="flex items-center justify-between p-4 sm:p-5 bg-white border border-slate-100 rounded-[20px] shadow-[0_4px_25px_rgba(0,0,0,0.01)] hover:shadow-[0_4px_25px_rgba(0,0,0,0.02)] transition-shadow duration-200 gap-4"
-          >
-            {/* Left Content Column */}
-            <div className="flex items-center gap-4 min-w-0">
-              {/* Document Icon Badge */}
-              <div className="w-12 h-12 rounded-[16px] bg-[#EAF8FC] text-[#00B2D6] flex items-center justify-center shrink-0">
-                <FileText size={22} className="stroke-[2]" />
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, index) => (
+            <div
+              key={index}
+              className="flex items-center justify-between p-4 sm:p-5 bg-white border border-slate-100 rounded-[20px] shadow-[0_4px_25px_rgba(0,0,0,0.01)] gap-4"
+            >
+              <div className="flex items-center gap-4 min-w-0 flex-1">
+                <div className="w-12 h-12 rounded-[16px] bg-slate-100 animate-pulse shrink-0" />
+                <div className="min-w-0 font-sans space-y-2 flex-1 max-w-md">
+                  <div className="h-4 bg-slate-200 animate-pulse rounded w-3/4" />
+                  <div className="h-3 bg-slate-100 animate-pulse rounded w-1/2" />
+                  <div className="h-3 bg-slate-100 animate-pulse rounded w-5/6" />
+                </div>
               </div>
-
-              {/* Text metadata */}
-              <div className="min-w-0 font-sans">
-                <h3 className="text-sm sm:text-base font-extrabold text-[#0F2E4A] font-poppins truncate">
-                  {report.title}
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-400 font-semibold mt-0.5 truncate">
-                  {report.driverName}
-                </p>
-                <p className="text-[11px] sm:text-xs text-slate-500 font-medium mt-1 truncate">
-                  Generated: {report.dateGenerated} | <span className="font-bold text-[#0F2E4A]">{report.hospitalName}</span>
-                </p>
+              <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+                <div className="w-10 h-10 rounded-full bg-slate-100 animate-pulse" />
+                <div className="w-10 h-10 rounded-full bg-slate-100 animate-pulse" />
               </div>
             </div>
+          ))
+        ) : (
+          filteredReports.map((report) => (
+            <div
+              key={report.id}
+              className="flex items-center justify-between p-4 sm:p-5 bg-white border border-slate-100 rounded-[20px] shadow-[0_4px_25px_rgba(0,0,0,0.01)] hover:shadow-[0_4px_25px_rgba(0,0,0,0.02)] transition-shadow duration-200 gap-4"
+            >
+              {/* Left Content Column */}
+              <div className="flex items-center gap-4 min-w-0">
+                {/* Document Icon Badge */}
+                <div className="w-12 h-12 rounded-[16px] bg-[#EAF8FC] text-[#00B2D6] flex items-center justify-center shrink-0">
+                  <FileText size={22} className="stroke-[2]" />
+                </div>
 
-            {/* Right Action Icons Column */}
-            <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-              {/* View details */}
-              <button
-                onClick={() => setViewingReport(report)}
-                className="w-10 h-10 rounded-full bg-slate-50 hover:bg-[#EAF8FC] hover:text-[#00B2D6] text-slate-400 transition-all flex items-center justify-center cursor-pointer border-none outline-none active:scale-95"
-              >
-                <Eye size={18} className="stroke-[2.5]" />
-              </button>
+                {/* Text metadata */}
+                <div className="min-w-0 font-sans">
+                  <h3 className="text-sm sm:text-base font-extrabold text-[#0F2E4A] font-poppins truncate">
+                    {report.title}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-400 font-semibold mt-0.5 truncate">
+                    {report.driverName}
+                  </p>
+                  <p className="text-[11px] sm:text-xs text-slate-500 font-medium mt-1 truncate">
+                    Generated: {formatDate(report.generatedDate)} | <span className="font-bold text-[#0F2E4A]">{report.hospitalName}</span>
+                  </p>
+                </div>
+              </div>
 
-              {/* Download mock */}
-              <button
-                onClick={() => handleDownload(report)}
-                className="w-10 h-10 rounded-full bg-slate-50 hover:bg-[#EAF8FC] hover:text-[#00B2D6] text-slate-400 transition-all flex items-center justify-center cursor-pointer border-none outline-none active:scale-95"
-              >
-                <Download size={18} className="stroke-[2.5]" />
-              </button>
+              {/* Right Action Icons Column */}
+              <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+                {/* View details */}
+                <button
+                  onClick={() => setViewingReport(report)}
+                  className="w-10 h-10 rounded-full bg-slate-50 hover:bg-[#EAF8FC] hover:text-[#00B2D6] text-slate-400 transition-all flex items-center justify-center cursor-pointer border-none outline-none active:scale-95"
+                >
+                  <Eye size={18} className="stroke-[2.5]" />
+                </button>
+
+                {/* Download */}
+                <button
+                  onClick={() => handleDownload(report)}
+                  className="w-10 h-10 rounded-full bg-slate-50 hover:bg-[#EAF8FC] hover:text-[#00B2D6] text-slate-400 transition-all flex items-center justify-center cursor-pointer border-none outline-none active:scale-95"
+                >
+                  <Download size={18} className="stroke-[2.5]" />
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
 
-        {filteredReports.length === 0 && (
+        {!isLoading && filteredReports.length === 0 && (
           <div className="py-12 text-center text-sm font-bold text-slate-400 font-sans">
             No report files matching search criteria.
           </div>
@@ -150,7 +212,7 @@ export default function OrganizerReportsView() {
               </div>
               <div className="flex items-start gap-1.5">
                 <span className="font-extrabold whitespace-nowrap">Generated:</span>
-                <span className="font-semibold text-slate-500">{viewingReport.dateGenerated}</span>
+                <span className="font-semibold text-slate-500">{formatDate(viewingReport.generatedDate)}</span>
               </div>
               <div className="flex items-start gap-1.5">
                 <span className="font-extrabold whitespace-nowrap">Format:</span>
