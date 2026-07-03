@@ -1,32 +1,61 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { useGetAllServicesQuery, useCreateOrganizerRequestMutation } from "@/redux/service/corporate/corporateDashboardApi";
 
 export default function OrganizerServicesRequestView() {
+  const { data: servicesData, isLoading: isLoadingServices } = useGetAllServicesQuery();
+  const [createOrganizerRequest, { isLoading: isSubmitting }] = useCreateOrganizerRequestMutation();
+
   const [companyName, setCompanyName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [location, setLocation] = useState("");
   const [numberOfDriver, setNumberOfDriver] = useState("");
-  const [servicesName, setServicesName] = useState("HGV bus Services");
+  const [selectedServiceId, setSelectedServiceId] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (servicesData?.data && servicesData.data.length > 0 && !selectedServiceId) {
+      setSelectedServiceId(servicesData.data[0].id);
+    }
+  }, [servicesData, selectedServiceId]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!companyName.trim() || !email.trim() || !phone.trim() || !location.trim() || !numberOfDriver.trim()) {
+    if (!companyName.trim() || !email.trim() || !phone.trim() || !location.trim() || !numberOfDriver.trim() || !selectedServiceId) {
       toast.error("Please fill in all details before submitting.");
       return;
     }
 
-    toast.success(`Service request submitted successfully for ${companyName}!`);
-    
-    // Reset Form
-    setCompanyName("");
-    setEmail("");
-    setPhone("");
-    setLocation("");
-    setNumberOfDriver("");
-    setServicesName("HGV bus Services");
+    try {
+      const response = await createOrganizerRequest({
+        companyName,
+        email,
+        phone,
+        location,
+        totalDriver: numberOfDriver,
+        serviceId: selectedServiceId,
+      }).unwrap();
+
+      if (response?.success) {
+        toast.success(`Service request submitted successfully for ${companyName}!`);
+        // Reset Form
+        setCompanyName("");
+        setEmail("");
+        setPhone("");
+        setLocation("");
+        setNumberOfDriver("");
+        if (servicesData?.data && servicesData.data.length > 0) {
+          setSelectedServiceId(servicesData.data[0].id);
+        } else {
+          setSelectedServiceId("");
+        }
+      }
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error?.data?.message || "Failed to submit service request.");
+    }
   };
 
   return (
@@ -118,14 +147,19 @@ export default function OrganizerServicesRequestView() {
               Services Name
             </label>
             <select
-              value={servicesName}
-              onChange={(e) => setServicesName(e.target.value)}
+              value={selectedServiceId}
+              onChange={(e) => setSelectedServiceId(e.target.value)}
               className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#00B2D6] text-xs sm:text-sm font-semibold text-[#0F2E4A] select-arrow"
             >
-              <option>HGV bus Services</option>
-              <option>Taxi Medicals</option>
-              <option>HGV D4 Medicals</option>
-              <option>Vision Assessment</option>
+              {isLoadingServices ? (
+                <option value="">Loading services...</option>
+              ) : (
+                servicesData?.data?.map((service: any) => (
+                  <option key={service.id} value={service.id}>
+                    {service.title}
+                  </option>
+                ))
+              )}
             </select>
           </div>
         </div>
@@ -134,9 +168,10 @@ export default function OrganizerServicesRequestView() {
         <div className="pt-2">
           <button
             type="submit"
-            className="px-8 py-2.5 bg-[#00B2D6] hover:bg-[#009cb9] rounded-full text-white font-extrabold text-xs sm:text-sm tracking-wide transition-all active:scale-[0.98] shadow-md shadow-cyan-100/50 border-none outline-none cursor-pointer"
+            disabled={isSubmitting}
+            className="px-8 py-2.5 bg-[#00B2D6] hover:bg-[#009cb9] rounded-full text-white font-extrabold text-xs sm:text-sm tracking-wide transition-all active:scale-[0.98] shadow-md shadow-cyan-100/50 border-none outline-none cursor-pointer disabled:opacity-50"
           >
-            Submit
+            {isSubmitting ? "Submitting..." : "Submit"}
           </button>
         </div>
       </form>
