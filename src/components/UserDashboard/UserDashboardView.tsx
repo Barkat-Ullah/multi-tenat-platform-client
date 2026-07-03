@@ -11,7 +11,6 @@ import {
   AlertCircle,
   CalendarDays,
 } from "lucide-react";
-import Spinner from "@/components/ui/Spinner";
 import {
   DriverAnalyticsAppointment,
   useGetDriverAnalyticsQuery,
@@ -53,18 +52,71 @@ const getAppointmentType = (status: string) => {
   return "Upcoming Appointment";
 };
 
+const SummaryCardSkeleton = () => (
+  <div className="h-[130px] rounded-[24px] border border-slate-100/90 bg-white p-5 shadow-[0_4px_20px_rgba(0,0,0,0.015)]">
+    <div className="flex items-center gap-3.5">
+      <div className="h-10 w-10 shrink-0 animate-pulse rounded-xl bg-slate-100" />
+      <div className="h-3 w-32 animate-pulse rounded-full bg-slate-100" />
+    </div>
+    <div className="mt-9 h-8 w-16 animate-pulse rounded-lg bg-slate-100" />
+  </div>
+);
+
+const AppointmentCardSkeleton = () => (
+  <div className="space-y-4 rounded-[24px] border border-slate-100/90 bg-white p-6 shadow-[0_4px_20px_rgba(0,0,0,0.01)] sm:p-8">
+    <div className="space-y-2">
+      <div className="h-3 w-32 animate-pulse rounded-full bg-slate-100" />
+      <div className="h-4 w-48 animate-pulse rounded-full bg-slate-100" />
+    </div>
+
+    <div className="space-y-3">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <div key={index} className="flex items-center gap-2.5">
+          <div className="h-4 w-4 shrink-0 animate-pulse rounded bg-slate-100" />
+          <div
+            className="h-3 animate-pulse rounded-full bg-slate-100"
+            style={{ width: `${70 - index * 9}%` }}
+          />
+        </div>
+      ))}
+    </div>
+
+    <div className="pt-2">
+      <div className="h-6 w-24 animate-pulse rounded-full bg-slate-100" />
+    </div>
+  </div>
+);
+
+const UserDashboardSkeleton = () => (
+  <div className="p-4 md:p-6 lg:p-8 space-y-8 w-full">
+    <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0F2E4A] font-poppins tracking-tight">
+      Dashboard
+    </h1>
+
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <SummaryCardSkeleton key={index} />
+      ))}
+    </div>
+
+    <div className="space-y-5">
+      <div className="h-7 w-48 animate-pulse rounded-full bg-slate-100" />
+      <div className="space-y-6">
+        {Array.from({ length: 2 }).map((_, index) => (
+          <AppointmentCardSkeleton key={index} />
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
 export default function UserDashboardView() {
-  const { data, isLoading, isError, refetch } = useGetDriverAnalyticsQuery();
+  const { data, isLoading, isFetching, isError, refetch } = useGetDriverAnalyticsQuery();
   const overview = data?.data?.overview;
   const appointments = data?.data?.appointments || [];
+  const isBusy = isLoading || isFetching;
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <Spinner />
-      </div>
-    );
-  }
+  if (isBusy) return <UserDashboardSkeleton />;
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-8 w-full">

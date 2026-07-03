@@ -4,7 +4,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Search, Eye, Download, FileText, X } from "lucide-react";
 import { toast } from "sonner";
-import Spinner from "@/components/ui/Spinner";
 import {
   MedicalRecordItem,
   useGetMyMedicalRecordsQuery,
@@ -91,11 +90,37 @@ const getStatusClassName = (status: string) => {
   return "bg-amber-50 text-amber-600";
 };
 
+const ReportsListSkeleton = () => (
+  <div className="space-y-4">
+    {Array.from({ length: 5 }).map((_, index) => (
+      <div
+        key={index}
+        className="animate-pulse bg-white rounded-[24px] border border-slate-100/90 p-5 shadow-[0_4px_25px_rgba(0,0,0,0.01)] flex items-center justify-between gap-4"
+      >
+        <div className="flex items-center gap-4 min-w-0 flex-1">
+          <div className="w-11 h-11 rounded-full bg-slate-200 shrink-0" />
+          <div className="space-y-2.5 min-w-0 flex-1">
+            <div className="h-3.5 w-44 max-w-full rounded-full bg-slate-200" />
+            <div className="h-2.5 w-32 rounded-full bg-slate-100" />
+            <div className="h-2.5 w-64 max-w-full rounded-full bg-slate-100" />
+          </div>
+        </div>
+        <div className="flex items-center gap-3.5 shrink-0">
+          <div className="h-8 w-8 rounded-full bg-slate-100" />
+          <div className="h-8 w-8 rounded-full bg-slate-100" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
 export default function UserReportsView() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedReport, setSelectedReport] = useState<ReportRow | null>(null);
   const [isMounted, setIsMounted] = useState(false);
-  const { data, isLoading, isError, refetch } = useGetMyMedicalRecordsQuery();
+  const { data, isLoading, isFetching, isError, refetch } =
+    useGetMyMedicalRecordsQuery();
+  const isReportsLoading = isLoading || isFetching;
 
   useEffect(() => {
     setIsMounted(true);
@@ -152,13 +177,9 @@ export default function UserReportsView() {
       </div>
 
       <div className="space-y-4">
-        {isLoading && (
-          <div className="flex justify-center py-12">
-            <Spinner />
-          </div>
-        )}
+        {isReportsLoading && <ReportsListSkeleton />}
 
-        {isError && !isLoading && (
+        {isError && !isReportsLoading && (
           <div className="text-center py-10">
             <p className="text-sm font-bold text-red-500">
               Failed to load reports.
@@ -173,7 +194,7 @@ export default function UserReportsView() {
           </div>
         )}
 
-        {!isLoading &&
+        {!isReportsLoading &&
           !isError &&
           filteredReports.map((report) => (
             <div
@@ -219,7 +240,7 @@ export default function UserReportsView() {
             </div>
           ))}
 
-        {!isLoading && !isError && filteredReports.length === 0 && (
+        {!isReportsLoading && !isError && filteredReports.length === 0 && (
           <div className="text-center py-10 text-sm font-bold text-slate-450 font-sans">
             No matching reports found.
           </div>

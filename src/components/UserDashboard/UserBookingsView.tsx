@@ -2,11 +2,8 @@
 
 import React, { useState, useMemo } from "react";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
-import { toast } from "sonner";
-import Spinner from "@/components/ui/Spinner";
 import {
   UserBookingItem,
-  useCancelMyBookingMutation,
   useGetMyBookingsQuery,
 } from "@/redux/service/user/userDashboardApi";
 
@@ -59,44 +56,55 @@ const mapBookingToRow = (booking: UserBookingItem): BookingRow => {
   };
 };
 
-const canCancelBooking = (status: string) =>
-  status === "PENDING" || status === "CONFIRMED";
+const getStatusClassName = (status: string) => {
+  if (status === "CANCELLED" || status === "CANCELED") {
+    return "bg-red-50 text-red-600 border-red-100";
+  }
+
+  if (status === "COMPLETED") {
+    return "bg-emerald-50 text-emerald-600 border-emerald-100";
+  }
+
+  return "bg-[#FEF9E7] text-[#D9A700] border-[#F9E79F]/30";
+};
+
+const BookingsTableSkeleton = () => (
+  <>
+    {Array.from({ length: 7 }).map((_, rowIndex) => (
+      <tr key={rowIndex} className="animate-pulse">
+        {[58, 64, 46, 62, 42].map((width, columnIndex) => (
+          <td key={columnIndex} className="px-8 py-5">
+            <div
+              className="h-2.5 rounded-full bg-slate-200"
+              style={{ width: `${width - (rowIndex % 3) * 5}%` }}
+            />
+            {columnIndex === 1 && (
+              <div className="mt-2 h-1.5 w-1/3 rounded-full bg-slate-100" />
+            )}
+          </td>
+        ))}
+        <td className="px-6 py-5 text-center">
+          <div className="mx-auto h-6 w-24 rounded-full bg-slate-200" />
+        </td>
+      </tr>
+    ))}
+  </>
+);
 
 export default function UserBookingsView() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [cancellingBookingId, setCancellingBookingId] = useState<string | null>(
-    null,
-  );
   const itemsPerPage = 9;
 
-  const { data, isLoading, isError, refetch } = useGetMyBookingsQuery({
+  const { data, isLoading, isFetching, isError, refetch } = useGetMyBookingsQuery({
     page: currentPage,
     limit: itemsPerPage,
   });
-  const [cancelBooking, { isLoading: isCancelling }] = useCancelMyBookingMutation();
 
   const bookings = useMemo(
     () => (data?.data || []).map(mapBookingToRow),
     [data?.data],
   );
-
-  const handleCancelBooking = async (bookingId: string, name: string) => {
-    try {
-      setCancellingBookingId(bookingId);
-      const res = await cancelBooking(bookingId).unwrap();
-      toast.success(res?.message || `Booking at ${name} cancelled successfully.`);
-    } catch (error: any) {
-      toast.error(
-        error?.data?.message ||
-          error?.error ||
-          error?.message ||
-          "Failed to cancel booking.",
-      );
-    } finally {
-      setCancellingBookingId(null);
-    }
-  };
 
   const filteredBookings = useMemo(() => {
     return bookings.filter((b) => {
@@ -122,6 +130,7 @@ export default function UserBookingsView() {
     const startIdx = (currentPage - 1) * itemsPerPage;
     return filteredBookings.slice(startIdx, startIdx + itemsPerPage);
   }, [currentPage, filteredBookings, searchTerm]);
+  const isBookingsLoading = isLoading || isFetching;
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -186,16 +195,8 @@ export default function UserBookingsView() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100/80">
-                {isLoading && (
-                  <tr>
-                    <td colSpan={6} className="py-10">
-                      <div className="flex justify-center">
-                        <Spinner />
-                      </div>
-                    </td>
-                  </tr>
-                )}
-                {isError && !isLoading && (
+                {isBookingsLoading && <BookingsTableSkeleton />}
+                {isError && !isBookingsLoading && (
                   <tr>
                     <td colSpan={6} className="py-8 text-center">
                       <p className="text-sm font-bold text-red-500">
@@ -211,7 +212,7 @@ export default function UserBookingsView() {
                     </td>
                   </tr>
                 )}
-                {!isLoading && !isError && paginatedBookings.map((b) => (
+                {!isBookingsLoading && !isError && paginatedBookings.map((b) => (
                   <tr key={b.id} className="hover:bg-slate-50/40 transition-colors">
                     <td className="py-3.5 px-8 text-xs sm:text-sm text-slate-500 font-semibold font-sans">
                       {b.clinicianName}
@@ -229,29 +230,13 @@ export default function UserBookingsView() {
                       {b.location}
                     </td>
                     <td className="py-3.5 px-6 text-center">
-                      {canCancelBooking(b.status) ? (
-                        <button
-                          onClick={() => handleCancelBooking(b.id, b.clinicianName)}
-                          disabled={isCancelling}
-                          className="inline-flex items-center justify-center px-4 py-1.5 rounded-full text-[10px] sm:text-xs font-bold bg-[#FEF9E7] hover:bg-[#FDF3D0] text-[#D9A700] border border-[#F9E79F]/30 uppercase tracking-wider cursor-pointer outline-none transition-all active:scale-[0.97]"
-                        >
-                          {cancellingBookingId === b.id
-                            ? "Cancelling..."
-                            : formatStatus(b.status)}
-                        </button>
-                      ) : b.status === "CANCELLED" ? (
-                        <span className="inline-flex items-center justify-center px-4 py-1.5 rounded-full text-[10px] sm:text-xs font-bold bg-red-50 text-red-600 border border-red-100 uppercase tracking-wider">
-                          {formatStatus(b.status)}
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center justify-center px-4 py-1.5 rounded-full text-[10px] sm:text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 uppercase tracking-wider">
-                          {formatStatus(b.status)}
-                        </span>
-                      )}
+                      <span className={`inline-flex items-center justify-center px-4 py-1.5 rounded-full text-[10px] sm:text-xs font-bold border uppercase tracking-wider ${getStatusClassName(b.status)}`}>
+                        {formatStatus(b.status)}
+                      </span>
                     </td>
                   </tr>
                 ))}
-                {!isLoading && !isError && paginatedBookings.length === 0 && (
+                {!isBookingsLoading && !isError && paginatedBookings.length === 0 && (
                   <tr>
                     <td colSpan={6} className="py-8 text-center text-sm font-bold text-slate-400 font-sans">
                       No matching bookings found.
