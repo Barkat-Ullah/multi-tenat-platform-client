@@ -6,22 +6,31 @@ import { ChevronRight, Save, Eye, EyeOff } from "lucide-react";
 import Spinner from "@/components/ui/Spinner";
 import { getImageUrl } from "@/utils/getImageUrl";
 import { toast } from "sonner";
+import { useChangePasswordMutation } from "@/redux/service/auth/authApi";
+import { useGetProfileDataQuery, useUpdateProfileDataMutation } from "@/redux/service/profile/profileApi";
 
 export default function OrganizerSettingsView() {
   // Tab State: "profile" | "password"
   const [activeTab, setActiveTab] = useState<"profile" | "password">("profile");
 
   // Profile Form States
-  const [name, setName] = useState("Leeds City Council Organizer");
-  const [email, setEmail] = useState("leeds.organizer@compliancemed.co.uk");
-  const [phone, setPhone] = useState("07700 900123");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
-  // Simulation loading states
-  const [isProfileLoading, setIsProfileLoading] = useState(false);
-  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  // API Hooks
+  const {
+    data: profileResponse,
+    isLoading: isProfileLoading,
+    isError: isProfileError,
+    refetch: refetchProfile,
+  } = useGetProfileDataQuery();
+  const [updateProfileData, { isLoading: isUpdatingProfile }] =
+    useUpdateProfileDataMutation();
+  const [changePassword, { isLoading: isChangingPassword }] =
+    useChangePasswordMutation();
 
   // Password Form States
   const [oldPassword, setOldPassword] = useState("");
@@ -33,6 +42,18 @@ export default function OrganizerSettingsView() {
 
   // Hidden File Input Ref
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Load profile data
+  useEffect(() => {
+    const profile = profileResponse?.data;
+    if (!profile) return;
+
+    setName(profile.fullName || (profile as any).companyName || profile.profile?.name || "");
+    setEmail(profile.email || "");
+    setPhone(profile.phoneNumber || profile.profile?.phone || "");
+    setImagePreview(profile.image || profile.profile?.avatar || null);
+    setAvatarFile(null);
+  }, [profileResponse]);
 
   // Handle Photo selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,11 +85,37 @@ export default function OrganizerSettingsView() {
   // Save profile changes
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsUpdatingProfile(true);
-    setTimeout(() => {
-      setIsUpdatingProfile(false);
-      toast.success("Profile updated successfully!");
-    }, 600);
+    if (!name.trim()) {
+      toast.error("Name is required.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append(
+      "data",
+      JSON.stringify({
+        fullName: name.trim(),
+        phoneNumber: phone.trim(),
+      })
+    );
+
+    if (avatarFile) {
+      formData.append("image", avatarFile);
+    }
+
+    try {
+      const response = await updateProfileData(formData).unwrap();
+      toast.success(response.message || "Profile updated successfully!");
+      setAvatarFile(null);
+      refetchProfile();
+    } catch (error: any) {
+      toast.error(
+        error?.data?.message ||
+          error?.error ||
+          error?.message ||
+          "Failed to update profile."
+      );
+    }
   };
 
   // Save password changes
@@ -87,20 +134,43 @@ export default function OrganizerSettingsView() {
       return;
     }
 
-    setIsChangingPassword(true);
-    setTimeout(() => {
-      setIsChangingPassword(false);
-      toast.success("Password changed successfully!");
+    try {
+      const response = await changePassword({
+        oldPassword: oldPassword.trim(),
+        newPassword: newPassword.trim(),
+      }).unwrap();
+      toast.success(response.message || "Password changed successfully!");
       setOldPassword("");
       setNewPassword("");
       setConfirmPassword("");
-    }, 600);
+    } catch (error: any) {
+      toast.error(
+        error?.data?.message ||
+          error?.error ||
+          error?.message ||
+          "Failed to change password."
+      );
+    }
   };
 
   if (isProfileLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Spinner />
+      </div>
+    );
+  }
+
+  if (isProfileError) {
+    return (
+      <div className="flex min-h-[400px] flex-col items-center justify-center gap-3">
+        <p className="font-semibold text-slate-500">Failed to load profile settings.</p>
+        <button
+          onClick={() => refetchProfile()}
+          className="bg-[#00B2D6] hover:bg-[#009cb9] text-white px-4 py-2 rounded-full font-bold text-xs transition-all cursor-pointer border-none outline-none"
+        >
+          Try Again
+        </button>
       </div>
     );
   }
@@ -212,7 +282,7 @@ export default function OrganizerSettingsView() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-xs font-bold text-[#0F2E4A] mb-1.5 font-sans">
-                    First Name
+                    Company Name
                   </label>
                   <input
                     type="text"
