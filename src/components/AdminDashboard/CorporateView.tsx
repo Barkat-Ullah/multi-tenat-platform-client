@@ -1,187 +1,264 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Users, Check, Calendar, FileText } from "lucide-react";
-import { adminCorporateRequests, CorporateRequestItem } from "@/app/data/AdminDashboardData";
 import Pagination from "./Pagination";
+import {
+  AdminCorporateRequest,
+  useGetAdminCorporateRequestsQuery,
+  useUpdateCorporateRequestStatusMutation,
+} from "@/redux/service/admin/corporateApi";
 import { toast } from "sonner";
 
+const PAGE_LIMIT = 10;
+
+const MetricCard = ({
+  icon,
+  label,
+  value,
+  accent = "cyan",
+  isLoading,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  accent?: "cyan" | "green";
+  isLoading: boolean;
+}) => (
+  <div className="flex min-h-[140px] flex-col justify-between rounded-[24px] border border-slate-100/80 bg-white p-6 shadow-[0_4px_20px_rgba(0,0,0,0.015)]">
+    <div className="flex items-center gap-3">
+      <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${
+        accent === "green"
+          ? "bg-[#E6FDF5] text-[#10B981]"
+          : "bg-[#E6FAFF] text-[#00B2D6]"
+      }`}>
+        {icon}
+      </div>
+      <span className="font-sans text-[13px] font-bold text-[#0F2E4A] sm:text-[14px]">
+        {label}
+      </span>
+    </div>
+    {isLoading ? (
+      <div className="mt-4 h-9 w-16 animate-pulse rounded bg-slate-100" />
+    ) : (
+      <span className="font-poppins mt-4 text-2xl font-extrabold text-[#0F2E4A] sm:text-3xl">
+        {value}
+      </span>
+    )}
+  </div>
+);
+
+const CorporateTableSkeleton = () => (
+  <>
+    {Array.from({ length: 5 }).map((_, index) => (
+      <tr key={index} className="border-b border-slate-100 last:border-b-0">
+        {Array.from({ length: 5 }).map((__, cellIndex) => (
+          <td key={cellIndex} className="px-6 py-4">
+            <div className="h-4 w-full max-w-[150px] animate-pulse rounded bg-slate-100" />
+          </td>
+        ))}
+      </tr>
+    ))}
+  </>
+);
+
+const isCompletedStatus = (status: string) => {
+  const normalized = status.toLowerCase();
+  return ["confirmed", "approved", "canceled", "cancelled", "rejected"].includes(normalized);
+};
+
+const getStatusClassName = (status: string) => {
+  const normalized = status.toLowerCase();
+  if (normalized === "confirmed" || normalized === "approved") {
+    return "bg-[#E6FDF5] text-[#10B981]";
+  }
+  if (normalized === "canceled" || normalized === "cancelled" || normalized === "rejected") {
+    return "bg-[#FFEBEB] text-[#FF4D4F]";
+  }
+  return "bg-[#FFF8E6] text-[#F59E0B]";
+};
+
 export default function CorporateView() {
-  const [requests, setRequests] = useState<CorporateRequestItem[]>(adminCorporateRequests);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 7; // Display 7 items per page to perfectly match the mockup
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const {
+    data,
+    isLoading,
+    isFetching,
+    isError,
+    refetch,
+  } = useGetAdminCorporateRequestsQuery({
+    page: currentPage,
+    limit: PAGE_LIMIT,
+  });
+  const [updateCorporateRequestStatus] = useUpdateCorporateRequestStatusMutation();
 
-  // Only display Pending corporate requests in the queue
-  const pendingRequests = useMemo(() => {
-    return requests.filter((r) => r.status === "Pending");
-  }, [requests]);
-
+  const requests = data?.data || [];
+  const meta = data?.meta;
   const totalPages = useMemo(() => {
-    return Math.max(1, Math.ceil(pendingRequests.length / itemsPerPage));
-  }, [pendingRequests]);
+    return Math.max(1, Math.ceil((meta?.total || 0) / PAGE_LIMIT));
+  }, [meta?.total]);
+  const isBusy = isLoading || isFetching;
 
-  // Paginated slice
-  const paginatedRequests = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return pendingRequests.slice(start, start + itemsPerPage);
-  }, [pendingRequests, currentPage]);
+  const handleStatusUpdate = async (
+    request: AdminCorporateRequest,
+    status: "Confirmed" | "Canceled",
+  ) => {
+    if (status === "Confirmed" && !request.clinicId) {
+      toast.error("This request does not have an assigned clinic.");
+      return;
+    }
 
-  const handleApprove = (id: string, name: string) => {
-    setRequests((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status: "Approved" } : r))
-    );
-    toast.success(`Approved corporate request for "${name}" successfully!`);
-  };
-
-  const handleReject = (id: string, name: string) => {
-    setRequests((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status: "Rejected" } : r))
-    );
-    toast.error(`Rejected corporate request for "${name}".`);
+    try {
+      setUpdatingId(request.id);
+      const response = await updateCorporateRequestStatus({
+        id: request.id,
+        clinicId: status === "Confirmed" ? request.clinicId as string : null,
+        status,
+      }).unwrap();
+      toast.success(response.message || `Corporate request ${status.toLowerCase()} successfully.`);
+    } catch (error) {
+      const message =
+        (error as { data?: { message?: string } })?.data?.message ||
+        `Failed to ${status === "Confirmed" ? "approve" : "reject"} corporate request.`;
+      toast.error(message);
+    } finally {
+      setUpdatingId(null);
+    }
   };
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-8 bg-[#F8FAFC]/30 min-h-screen">
-      {/* Top Header */}
-      <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0F2E4A] font-poppins tracking-tight">
+    <div className="min-h-screen space-y-8 bg-[#F8FAFC]/30 p-4 md:p-6 lg:p-8">
+      <h1 className="font-poppins text-2xl font-extrabold tracking-tight text-[#0F2E4A] sm:text-3xl">
         Corporate
       </h1>
 
-      {/* Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {/* Metric 1 */}
-        <div className="bg-white rounded-[24px] border border-slate-100/80 p-6 flex flex-col justify-between min-h-[140px] shadow-[0_4px_20px_rgba(0,0,0,0.015)]">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#E6FAFF] text-[#00B2D6] flex items-center justify-center">
-              <Users size={20} className="stroke-[2.5]" />
-            </div>
-            <span className="text-[13px] sm:text-[14px] font-bold text-[#0F2E4A] font-sans">
-              Corporate Clients
-            </span>
-          </div>
-          <span className="text-2xl sm:text-3xl font-extrabold text-[#0F2E4A] font-poppins mt-4">
-            12
-          </span>
-        </div>
-
-        {/* Metric 2 */}
-        <div className="bg-white rounded-[24px] border border-slate-100/80 p-6 flex flex-col justify-between min-h-[140px] shadow-[0_4px_20px_rgba(0,0,0,0.015)]">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#E6FDF5] text-[#10B981] flex items-center justify-center">
-              <Check size={20} className="stroke-[3]" />
-            </div>
-            <span className="text-[13px] sm:text-[14px] font-bold text-[#0F2E4A] font-sans">
-              Active Users
-            </span>
-          </div>
-          <span className="text-2xl sm:text-3xl font-extrabold text-[#0F2E4A] font-poppins mt-4">
-            180
-          </span>
-        </div>
-
-        {/* Metric 3 */}
-        <div className="bg-white rounded-[24px] border border-slate-100/80 p-6 flex flex-col justify-between min-h-[140px] shadow-[0_4px_20px_rgba(0,0,0,0.015)]">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#E6FAFF] text-[#00B2D6] flex items-center justify-center">
-              <Calendar size={20} className="stroke-[2.5]" />
-            </div>
-            <span className="text-[13px] sm:text-[14px] font-bold text-[#0F2E4A] font-sans">
-              Monthly Bookings
-            </span>
-          </div>
-          <span className="text-2xl sm:text-3xl font-extrabold text-[#0F2E4A] font-poppins mt-4">
-            342
-          </span>
-        </div>
-
-        {/* Metric 4 */}
-        <div className="bg-white rounded-[24px] border border-slate-100/80 p-6 flex flex-col justify-between min-h-[140px] shadow-[0_4px_20px_rgba(0,0,0,0.015)]">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#E6FAFF] text-[#00B2D6] flex items-center justify-center">
-              <FileText size={20} className="stroke-[2.5]" />
-            </div>
-            <span className="text-[13px] sm:text-[14px] font-bold text-[#0F2E4A] font-sans">
-              Request Corporate
-            </span>
-          </div>
-          <span className="text-2xl sm:text-3xl font-extrabold text-[#0F2E4A] font-poppins mt-4">
-            {pendingRequests.length}
-          </span>
-        </div>
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <MetricCard
+          icon={<Users size={20} className="stroke-[2.5]" />}
+          label="Corporate Clients"
+          value={meta?.corporateClients || 0}
+          isLoading={isBusy}
+        />
+        <MetricCard
+          icon={<Check size={20} className="stroke-[3]" />}
+          label="Active Corporate"
+          value={meta?.activeCorporate || 0}
+          accent="green"
+          isLoading={isBusy}
+        />
+        <MetricCard
+          icon={<Calendar size={20} className="stroke-[2.5]" />}
+          label="Monthly Bookings"
+          value={meta?.monthlyBookings || 0}
+          isLoading={isBusy}
+        />
+        <MetricCard
+          icon={<FileText size={20} className="stroke-[2.5]" />}
+          label="Request Corporate"
+          value={meta?.reqCorporates || 0}
+          isLoading={isBusy}
+        />
       </div>
 
-      {/* Corporate Request Table Section */}
       <div className="space-y-4 pt-4">
-        <h2 className="text-xl font-bold text-[#0F2E4A] font-poppins">
+        <h2 className="font-poppins text-xl font-bold text-[#0F2E4A]">
           Corporate Request
         </h2>
 
-        {/* Data Table */}
-        <div className="overflow-x-auto bg-white rounded-3xl border border-slate-100 shadow-[0_4px_25px_rgba(0,0,0,0.01)]">
-          <table className="w-full border-collapse min-w-[800px]">
+        <div className="overflow-x-auto rounded-3xl border border-slate-100 bg-white shadow-[0_4px_25px_rgba(0,0,0,0.01)]">
+          <table className="w-full min-w-[800px] border-collapse">
             <thead>
-              {/* Thin solid cyan border separator bottom border */}
               <tr className="border-b-2 border-[#00B2D6] text-left">
-                <th className="py-4 px-6 text-sm font-bold text-[#0F2E4A] font-sans">
+                <th className="px-6 py-4 font-sans text-sm font-bold text-[#0F2E4A]">
                   Company name
                 </th>
-                <th className="py-4 px-6 text-sm font-bold text-[#0F2E4A] font-sans">
+                <th className="px-6 py-4 font-sans text-sm font-bold text-[#0F2E4A]">
                   Company email
                 </th>
-                <th className="py-4 px-6 text-sm font-bold text-[#0F2E4A] font-sans">
+                <th className="px-6 py-4 font-sans text-sm font-bold text-[#0F2E4A]">
                   Number of driver
                 </th>
-                <th className="py-4 px-6 text-sm font-bold text-[#0F2E4A] font-sans">
+                <th className="px-6 py-4 font-sans text-sm font-bold text-[#0F2E4A]">
                   Services
                 </th>
-                <th className="py-4 px-6 text-sm font-bold text-[#0F2E4A] font-sans text-center">
+                <th className="px-6 py-4 text-center font-sans text-sm font-bold text-[#0F2E4A]">
                   Action
                 </th>
               </tr>
             </thead>
             <tbody>
-              {paginatedRequests.length > 0 ? (
-                paginatedRequests.map((req) => (
-                  <tr
-                    key={req.id}
-                    className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors last:border-b-0"
-                  >
-                    <td className="py-4 px-6 text-sm font-semibold text-slate-500">
-                      {req.companyName}
-                    </td>
-                    <td className="py-4 px-6 text-sm font-semibold text-slate-500">
-                      {req.companyEmail}
-                    </td>
-                    <td className="py-4 px-6 text-sm font-semibold text-slate-500">
-                      {req.driverCount}
-                    </td>
-                    <td className="py-4 px-6 text-sm font-semibold text-slate-500">
-                      {req.services}
-                    </td>
-                    <td className="py-4 px-6 text-center">
-                      <div className="flex items-center justify-center gap-3">
-                        {/* Reject button - light red pill */}
-                        <button
-                          onClick={() => handleReject(req.id, req.companyName)}
-                          className="bg-[#FFEBEB] text-[#FF4D4F] hover:bg-[#FFD6D6] px-5 py-1.5 rounded-full text-xs font-bold transition-all border-none outline-none cursor-pointer active:scale-95"
-                        >
-                          Reject
-                        </button>
-                        {/* Approved button - light green pill */}
-                        <button
-                          onClick={() => handleApprove(req.id, req.companyName)}
-                          className="bg-[#E6FDF5] text-[#10B981] hover:bg-[#D1FAE5] px-5 py-1.5 rounded-full text-xs font-bold transition-all border-none outline-none cursor-pointer active:scale-95"
-                        >
-                          Approved
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+              {isBusy ? (
+                <CorporateTableSkeleton />
+              ) : isError ? (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center">
+                    <p className="text-sm font-semibold text-red-500">
+                      Failed to load corporate requests.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => refetch()}
+                      className="mt-4 rounded-full bg-[#00B2D6] px-5 py-2 text-xs font-bold text-white hover:bg-[#009cb9]"
+                    >
+                      Try Again
+                    </button>
+                  </td>
+                </tr>
+              ) : requests.length > 0 ? (
+                requests.map((request) => {
+                  const isCompleted = isCompletedStatus(request.status);
+
+                  return (
+                    <tr
+                      key={request.id}
+                      className="border-b border-slate-100 transition-colors last:border-b-0 hover:bg-slate-50/50"
+                    >
+                      <td className="px-6 py-4 text-sm font-semibold text-slate-500">
+                        {request.companyName}
+                      </td>
+                      <td className="px-6 py-4 text-sm font-semibold text-slate-500">
+                        {request.email}
+                      </td>
+                      <td className="px-6 py-4 text-sm font-semibold text-slate-500">
+                        {request.totalDriver}
+                      </td>
+                      <td className="px-6 py-4 text-sm font-semibold text-slate-500">
+                        {request.service?.title || "N/A"}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        {isCompleted ? (
+                          <span className={`inline-block rounded-full px-4 py-1.5 text-xs font-bold ${getStatusClassName(request.status)}`}>
+                            {request.status}
+                          </span>
+                        ) : (
+                          <div className="flex items-center justify-center gap-3">
+                            <button
+                              type="button"
+                              disabled={updatingId === request.id}
+                              onClick={() => handleStatusUpdate(request, "Canceled")}
+                              className="rounded-full bg-[#FFEBEB] px-5 py-1.5 text-xs font-bold text-[#FF4D4F] transition-all hover:bg-[#FFD6D6] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              Reject
+                            </button>
+                            <button
+                              type="button"
+                              disabled={updatingId === request.id}
+                              onClick={() => handleStatusUpdate(request, "Confirmed")}
+                              className="rounded-full bg-[#E6FDF5] px-5 py-1.5 text-xs font-bold text-[#10B981] transition-all hover:bg-[#D1FAE5] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              Accept
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
-                  <td colSpan={5} className="py-12 text-center text-slate-500 font-semibold">
-                    No pending corporate requests in the queue.
+                  <td colSpan={5} className="py-12 text-center font-semibold text-slate-500">
+                    No corporate requests found.
                   </td>
                 </tr>
               )}
@@ -190,8 +267,7 @@ export default function CorporateView() {
         </div>
       </div>
 
-      {/* Pagination panel */}
-      {totalPages > 1 && (
+      {!isBusy && !isError && totalPages > 1 && (
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}
