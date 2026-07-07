@@ -2,13 +2,41 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Search, Plus, MoreVertical, X, Check, Trash2, Eye } from "lucide-react";
+import { Search, Plus, MoreVertical, X, Trash2, Eye } from "lucide-react";
 import { toast } from "sonner";
-import { useGetCorporateAllDriversQuery, CorporateDriver, useCreateCorporateDriverMutation } from "@/redux/service/corporate/corporateDashboardApi";
+import { useGetCorporateAllDriversQuery, CorporateDriver, useCreateCorporateDriverMutation, useDeleteCorporateDriverMutation } from "@/redux/service/corporate/corporateDashboardApi";
+
+// Convert UTC ISO string → user's local timezone + system locale (dynamic for all countries)
+function formatLocalDate(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+// Skeleton row — mirrors all 7 table columns with pulsing blocks
+function DriverRowSkeleton() {
+  return (
+    <tr className="border-b border-slate-100 animate-pulse">
+      <td className="py-3.5 px-6"><div className="h-3.5 bg-slate-200 rounded-lg w-32" /></td>
+      <td className="py-3.5 px-6"><div className="h-3 bg-slate-200 rounded-lg w-40" /></td>
+      <td className="py-3.5 px-6"><div className="h-3 bg-slate-200 rounded-lg w-24" /></td>
+      <td className="py-3.5 px-6"><div className="h-3 bg-slate-200 rounded-lg w-28" /></td>
+      <td className="py-3.5 px-6"><div className="h-3 bg-slate-200 rounded-lg w-28" /></td>
+      <td className="py-3.5 px-6 text-center"><div className="h-6 bg-slate-200 rounded-full w-20 mx-auto" /></td>
+      <td className="py-3.5 px-6 text-center"><div className="h-7 w-7 bg-slate-200 rounded-full mx-auto" /></td>
+    </tr>
+  );
+}
 
 export default function OrganizerDriversView() {
   const { data, isLoading } = useGetCorporateAllDriversQuery();
   const [createCorporateDriver, { isLoading: isCreating }] = useCreateCorporateDriverMutation();
+  const [deleteCorporateDriver] = useDeleteCorporateDriverMutation();
   const [drivers, setDrivers] = useState<CorporateDriver[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -93,9 +121,18 @@ export default function OrganizerDriversView() {
   };
 
   // Delete driver handler
-  const handleDeleteDriver = (id: string, name: string) => {
-    setDrivers((prev) => prev.filter((d) => d.id !== id));
-    toast.info(`Driver ${name} removed from list.`);
+  const handleDeleteDriver = async (id: string, name: string) => {
+    try {
+      const promise = deleteCorporateDriver(id).unwrap();
+      toast.promise(promise, {
+        loading: `Deleting driver ${name}...`,
+        success: `Driver ${name} deleted successfully!`,
+        error: (err: any) => err?.data?.message || `Failed to delete driver ${name}.`,
+      });
+      await promise;
+    } catch (error) {
+      console.error(error);
+    }
     setActiveDropdownId(null);
   };
 
@@ -161,7 +198,11 @@ export default function OrganizerDriversView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100/80">
-              {filteredDrivers?.map((driver) => (
+              {isLoading ? (
+                <>{[...Array(6)].map((_, i) => <DriverRowSkeleton key={i} />)}</>
+              ) : (
+                <>
+                  {filteredDrivers?.map((driver) => (
                 <tr key={driver.id} className="hover:bg-slate-50/40 transition-colors">
                   {/* Driver Name */}
                   <td className="py-3.5 px-6 text-xs sm:text-sm text-[#0F2E4A] font-bold font-sans">
@@ -177,11 +218,11 @@ export default function OrganizerDriversView() {
                   </td>
                   {/* Last Medical */}
                   <td className="py-3.5 px-6 text-xs sm:text-sm text-slate-500 font-semibold font-sans">
-                    {driver.lastMedical}
+                    {formatLocalDate(driver.lastMedical)}
                   </td>
                   {/* Expiry Date */}
                   <td className="py-3.5 px-6 text-xs sm:text-sm text-slate-500 font-semibold font-sans">
-                    {driver.expiryDate}
+                    {formatLocalDate(driver.expiryDate)}
                   </td>
                   {/* Medical Status */}
                   <td className="py-3.5 px-6 text-center">
@@ -231,13 +272,15 @@ export default function OrganizerDriversView() {
                     )}
                   </td>
                 </tr>
-              ))}
-              {filteredDrivers.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="py-8 text-center text-sm font-bold text-slate-400 font-sans">
-                    No registered drivers found.
-                  </td>
-                </tr>
+                  ))}
+                  {filteredDrivers.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-sm font-bold text-slate-400 font-sans">
+                        No registered drivers found.
+                      </td>
+                    </tr>
+                  )}
+                </>
               )}
             </tbody>
           </table>
@@ -370,11 +413,11 @@ export default function OrganizerDriversView() {
               </div>
               <div className="flex items-start gap-1.5">
                 <span className="font-extrabold whitespace-nowrap">Last Medical:</span>
-                <span className="font-semibold text-slate-500">{viewingDriver.lastMedical}</span>
+                <span className="font-semibold text-slate-500">{formatLocalDate(viewingDriver.lastMedical)}</span>
               </div>
               <div className="flex items-start gap-1.5">
                 <span className="font-extrabold whitespace-nowrap">Expiry Date:</span>
-                <span className="font-semibold text-slate-500">{viewingDriver.expiryDate}</span>
+                <span className="font-semibold text-slate-500">{formatLocalDate(viewingDriver.expiryDate)}</span>
               </div>
               <div className="flex items-start gap-1.5">
                 <span className="font-extrabold whitespace-nowrap">Medical Status:</span>

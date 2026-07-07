@@ -104,6 +104,48 @@ export interface CreateOrganizerRequestResponse {
   };
 }
 
+export interface OrganizerRequestDriver {
+  id: string;
+  organizerRequestId: string;
+  driverId: string;
+  createdAt: string;
+  driver: {
+    id: string;
+    fullName: string;
+    email: string;
+    phoneNumber: string;
+  };
+}
+
+export interface OrganizerRequest {
+  id: string;
+  userId: string;
+  serviceId: string;
+  clinicId: string | null;
+  companyName: string;
+  email: string;
+  phone: string;
+  location: string;
+  totalDriver: string;
+  status: "Pending" | "Confirmed" | "Cancelled" | string;
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+  service: ServiceItem | null;
+  clinic: { id: string; fullName: string; email: string } | null;
+  organizer: { id: string; fullName: string };
+  drivers: OrganizerRequestDriver[];
+  rosterStatus?: string;
+}
+
+export interface MyOrganizerRequestsResponse {
+  success: boolean;
+  statusCode: number;
+  message: string;
+  meta: Meta;
+  data: OrganizerRequest[];
+}
+
 export interface CorporateReport {
   id: string;
   title: string;
@@ -161,6 +203,27 @@ const corporateDashboardApi = baseApi.injectEndpoints({
         method: "POST",
         body,
       }),
+      invalidatesTags: ["organizerRequests"],
+    }),
+
+    getMyOrganizerRequests: builder.query<MyOrganizerRequestsResponse, void>({
+      query: () => ({
+        url: "/organizer-requests/my",
+        method: "GET",
+      }),
+      providesTags: ["organizerRequests"],
+    }),
+
+    assignDriversToRequest: builder.mutation<
+      { success: boolean; statusCode: number; message: string; data: unknown },
+      { requestId: string; driverIds: string[] }
+    >({
+      query: ({ requestId, driverIds }) => ({
+        url: `/organizer-requests/${requestId}/drivers`,
+        method: "POST",
+        body: { driverIds },
+      }),
+      invalidatesTags: ["organizerRequests"],
     }),
 
     getCorporateReports: builder.query<CorporateReportsResponse, void>({
@@ -169,6 +232,14 @@ const corporateDashboardApi = baseApi.injectEndpoints({
         method: "GET",
       }),
       providesTags: ["dashboard"],
+    }),
+
+    deleteCorporateDriver: builder.mutation<{ success: boolean; message: string }, string>({
+      query: (id) => ({
+        url: `/user/soft-delete/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["dashboard"],
     }),
   }),
 });
@@ -179,5 +250,8 @@ export const {
   useCreateCorporateDriverMutation,
   useGetAllServicesQuery,
   useCreateOrganizerRequestMutation,
+  useGetMyOrganizerRequestsQuery,
+  useAssignDriversToRequestMutation,
   useGetCorporateReportsQuery,
+  useDeleteCorporateDriverMutation,
 } = corporateDashboardApi;
