@@ -6,6 +6,7 @@ export type ProfileData = {
   email: string;
   fullName?: string;
   phoneNumber?: string | null;
+  dob?: string | null;
   image?: string | null;
   role: BackendRole | string;
   status?: string;

@@ -1,38 +1,85 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, Suspense } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { medicalTypesData, otherMedicalsData } from "@/app/data/LandingPageData";
-import { clinicLocations } from "@/app/data/LocationsData";
 import { toast } from "sonner";
+import { useAppSelector } from "@/redux/store";
+import { useGetProfileDataQuery } from "@/redux/service/profile/profileApi";
+import {
+  type DriverBooking,
+  useCreateDriverBookingMutation,
+  useGetBookingServiceDetailsQuery,
+  useGetBookingServicesQuery,
+  useGetBookingSlotsQuery,
+} from "@/redux/service/user/userBookingFlowApi";
 
-// Import modular step components
 import Step1MedicalType from "@/components/booking/Step1MedicalType";
-import Step2YourLocation from "@/components/booking/Step2YourLocation";
+import Step2YourLocation, {
+  type BookingClinicDisplay,
+} from "@/components/booking/Step2YourLocation";
 import Step3SelectTimeSlot from "@/components/booking/Step3SelectTimeSlot";
 import Step4YourDetails from "@/components/booking/Step4YourDetails";
 import Step5Success from "@/components/booking/Step5Success";
 
-// Helper to convert title to query slug
-const getTypeSlug = (title: string) => {
-  const t = title.toLowerCase();
-  if (t.includes("hgv") || t.includes("bus")) return "hgv-bus";
-  if (t.includes("taxi") || t.includes("pco")) return "taxi-pco";
-  if (t.includes("ambulance")) return "ambulance";
-  if (t.includes("forklift") || t.includes("crane")) return "forklift-crane";
-  if (t.includes("motorsport")) return "motorsport";
-  if (t.includes("pre-employment")) return "pre-employment";
-  return t.replace(/[^a-z0-9]+/g, "-");
+const DEFAULT_BOOKING_PRICE = 49.99;
+
+const getTypeSlug = (title: string) =>
+  title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+const formatDateParam = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+    date.getDate(),
+  ).padStart(2, "0")}`;
+
+const parseSlotStartToIso = (date: Date, startTime: string) => {
+  const match = startTime.trim().match(/^(\d{1,2}):(\d{2})(?:\s*(AM|PM))?$/i);
+  const scheduled = new Date(date);
+
+  if (!match) {
+    scheduled.setHours(0, 0, 0, 0);
+    return scheduled.toISOString();
+  }
+
+  let hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  const meridiem = match[3]?.toUpperCase();
+
+  if (meridiem === "PM" && hours < 12) hours += 12;
+  if (meridiem === "AM" && hours === 12) hours = 0;
+
+  scheduled.setHours(hours, minutes, 0, 0);
+  return scheduled.toISOString();
+};
+
+const getDistanceInMiles = (
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number,
+) => {
+  const earthRadiusMiles = 3958.8;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return earthRadiusMiles * c;
 };
 
 export default function BookingPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-[#FCFDFE]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#00B2D6]"></div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-[#FCFDFE]">
+          <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-[#00B2D6]" />
+        </div>
+      }
+    >
       <BookingFlowCoordinator />
     </Suspense>
   );
@@ -40,105 +87,147 @@ export default function BookingPage() {
 
 function BookingFlowCoordinator() {
   const searchParams = useSearchParams();
+  const accessToken = useAppSelector((state) => state.auth.accessToken);
 
-  // Booking Flow Steps: 1 = Medical Type, 2 = Your Location, 3 = Select Time Slot, 4 = Details Form, 5 = Success
   const [step, setStep] = useState(1);
-  const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
   const [selectedClinicId, setSelectedClinicId] = useState<string | null>(null);
-  const [isAccordionOpen, setIsAccordionOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [visibleCount, setVisibleCount] = useState(3);
+  const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
+  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
+  const [calendarMonth, setCalendarMonth] = useState<Date>(() => {
+    const today = new Date();
+    return new Date(today.getFullYear(), today.getMonth(), 1);
+  });
+  const [paymentMethod, setPaymentMethod] = useState<"Stripe" | "Paypal">("Stripe");
+  const [createdBooking, setCreatedBooking] = useState<DriverBooking | null>(null);
+  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
-  // Calendar states defaulting to May 28, 2026 04:20 PM
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date(2026, 4, 28));
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>("04:20 PM");
-  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date(2026, 4, 1));
-  const [paymentMethod, setPaymentMethod] = useState<"stripe" | "paypal">("stripe");
+  const {
+    data: servicesResponse,
+    isLoading: isServicesLoading,
+    isFetching: isServicesFetching,
+    isError: isServicesError,
+    refetch: refetchServices,
+  } = useGetBookingServicesQuery({ page: 1, limit: 100 });
 
-  // Details Form state
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    dob: "",
-    phone: "",
-    postcode: "",
-    date: "2026-05-28",
-    timeSlot: "04:20 PM",
-    notes: ""
+  const services = servicesResponse?.data || [];
+  const selectedService = services.find((service) => service.id === selectedServiceId) || null;
+
+  const {
+    data: serviceDetailsResponse,
+    isLoading: isServiceDetailsLoading,
+    isFetching: isServiceDetailsFetching,
+    isError: isServiceDetailsError,
+    refetch: refetchServiceDetails,
+  } = useGetBookingServiceDetailsQuery(selectedServiceId || "", {
+    skip: !selectedServiceId,
   });
 
-  // URL Pre-selection
+  const {
+    data: slotsResponse,
+    isLoading: isSlotsLoading,
+    isFetching: isSlotsFetching,
+    isError: isSlotsError,
+    refetch: refetchSlots,
+  } = useGetBookingSlotsQuery(
+    {
+      serviceId: selectedServiceId || "",
+      clinicId: selectedClinicId || "",
+      date: formatDateParam(selectedDate),
+    },
+    {
+      skip: !selectedServiceId || !selectedClinicId || step !== 3,
+    },
+  );
+
+  const {
+    data: profileResponse,
+    isLoading: isProfileLoading,
+    isFetching: isProfileFetching,
+  } = useGetProfileDataQuery(undefined, {
+    skip: !accessToken || step < 4,
+  });
+
+  const [createBooking, { isLoading: isCreatingBooking }] =
+    useCreateDriverBookingMutation();
+
   useEffect(() => {
     const typeParam = searchParams.get("type");
-    if (typeParam) {
-      const matchedPrimary = medicalTypesData.find(
-        (m) => getTypeSlug(m.title) === typeParam || m.title.toLowerCase().includes(typeParam)
-      );
-      if (matchedPrimary) {
-        setSelectedType(matchedPrimary.title);
-      } else {
-        const matchedOther = otherMedicalsData.find(
-          (o) => getTypeSlug(o.name) === typeParam
-        );
-        if (matchedOther) {
-          setSelectedType(matchedOther.name);
-        }
-      }
+    if (!typeParam || selectedServiceId || services.length === 0) return;
+
+    const normalizedTypeParam = typeParam.toLowerCase();
+    const matched = services.find((service) => {
+      const slug = getTypeSlug(service.title);
+      return slug === normalizedTypeParam || service.title.toLowerCase().includes(normalizedTypeParam);
+    });
+
+    if (matched) {
+      setSelectedServiceId(matched.id);
     }
-  }, [searchParams]);
+  }, [searchParams, selectedServiceId, services]);
 
-  // Process clinic location listings based on search text
-  const filteredClinics = useMemo(() => {
-    return clinicLocations.filter((clinic) => {
-      const query = searchQuery.toLowerCase().trim();
-      if (!query) return true;
-      return (
-        clinic.name.toLowerCase().includes(query) ||
-        clinic.city.toLowerCase().includes(query) ||
-        clinic.address.toLowerCase().includes(query)
-      );
-    });
-  }, [searchQuery]);
+  const clinics = useMemo<BookingClinicDisplay[]>(() => {
+    const query = searchQuery.toLowerCase().trim();
+    const serviceClinics = serviceDetailsResponse?.data?.clinics || [];
 
-  // Enrich clinic locations with mockup-specific stats (distance, date, parking)
-  const enrichedClinics = useMemo(() => {
-    return filteredClinics.map((clinic, index) => {
-      let distanceStr = `${(index * 1.5 + 0.5).toFixed(1)} mile${index === 0 ? "" : "s"}`;
-      let earliestDate = "6 Jun";
-      let parkingStr = index % 2 === 0 ? "Yes (Free)" : "No";
+    const mappedClinics = serviceClinics
+      .filter((clinic) => {
+        const locationName = clinic.location?.locationName || "";
+        if (!query) return true;
+        return (
+          clinic.fullName.toLowerCase().includes(query) ||
+          locationName.toLowerCase().includes(query) ||
+          (clinic.email || "").toLowerCase().includes(query)
+        );
+      })
+      .map((clinic) => {
+        const locationName = clinic.location?.locationName || "N/A";
+        const lat = clinic.location?.lat ?? 0;
+        const lng = clinic.location?.lng ?? 0;
+        const distance =
+          userCoords && lat && lng
+            ? getDistanceInMiles(userCoords.lat, userCoords.lng, lat, lng)
+            : null;
 
-      if (clinic.id === "derby-mckeever") {
-        distanceStr = "0.5 mile";
-        earliestDate = "6 Jun";
-        parkingStr = "Yes (Free)";
-      } else if (clinic.id === "royal-london") {
-        distanceStr = "2 mile";
-        earliestDate = "6 Jun";
-        parkingStr = "No";
-      } else if (clinic.id === "hca-healthcare") {
-        distanceStr = "11.5 mile";
-        earliestDate = "6 Jun";
-        parkingStr = "Yes (Free)";
-      }
+        return {
+          ...clinic,
+          name: clinic.fullName,
+          address: locationName,
+          lat,
+          lng,
+          distance,
+          distanceStr: distance === null ? "N/A" : `${distance.toFixed(1)} mi`,
+          earliestDate: "Select date",
+          parkingStr: clinic.isParking ? "Yes" : "No",
+        };
+      });
 
-      return {
-        ...clinic,
-        distanceStr,
-        earliestDate,
-        parkingStr
-      };
-    });
-  }, [filteredClinics]);
+    if (userCoords) {
+      mappedClinics.sort((a, b) => (a.distance ?? Number.MAX_VALUE) - (b.distance ?? Number.MAX_VALUE));
+    }
 
-  const selectedClinic = clinicLocations.find((c) => c.id === selectedClinicId);
+    return mappedClinics;
+  }, [searchQuery, serviceDetailsResponse?.data?.clinics, userCoords]);
 
-  const handleCardBookNow = (title: string) => {
-    setSelectedType(title);
-    setStep(2);
+  const selectedClinic =
+    clinics.find((clinic) => clinic.id === selectedClinicId) || null;
+  const slots = slotsResponse?.data?.slots || [];
+  const selectedSlot = slots.find((slot) => slot.id === selectedSlotId) || null;
+
+  const handleSelectService = (id: string | null) => {
+    setSelectedServiceId(id);
+    setSelectedClinicId(null);
+    setSelectedSlotId(null);
+    setSearchQuery("");
+    setVisibleCount(3);
   };
 
   const handleContinueToLocation = () => {
-    if (!selectedType) {
+    if (!selectedServiceId) {
       toast.error("Please select a medical type to continue.");
       return;
     }
@@ -147,29 +236,106 @@ function BookingFlowCoordinator() {
 
   const handleBookClinic = (clinicId: string) => {
     setSelectedClinicId(clinicId);
+    setSelectedSlotId(null);
     setStep(3);
   };
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmitBooking = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name || !formData.email || !formData.dob || !formData.phone || !formData.postcode || !formData.date) {
-      toast.error("Please fill in all required fields.");
+  const handleUseMyLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation is not supported by your browser.");
       return;
     }
-    setStep(5);
-    toast.success("Booking request sent successfully!");
+
+    setIsLocating(true);
+    setLocationError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserCoords({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+        setVisibleCount((count) => Math.max(count, 5));
+        setIsLocating(false);
+        toast.success("Showing nearest clinics around your current location.");
+      },
+      () => {
+        setLocationError("Unable to retrieve your location. Please check browser permissions.");
+        setIsLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 8000 },
+    );
+  };
+
+  const handleResetLocation = () => {
+    setUserCoords(null);
+    setLocationError(null);
+  };
+
+  const handleContinueToDetails = () => {
+    if (!selectedSlotId) {
+      toast.error("Please select a time slot to continue.");
+      return;
+    }
+    setStep(4);
+  };
+
+  const handleSubmitBooking = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!accessToken) {
+      toast.error("Please log in as a driver before booking.");
+      window.location.href = `/login?redirect=${encodeURIComponent("/booking")}`;
+      return;
+    }
+
+    if (!selectedServiceId || !selectedClinicId || !selectedSlot) {
+      toast.error("Please complete service, clinic, and slot selection.");
+      return;
+    }
+
+    try {
+      const response = await createBooking({
+        clinicId: selectedClinicId,
+        serviceId: selectedServiceId,
+        timeSlotId: selectedSlot.id,
+        scheduledAt: parseSlotStartToIso(selectedDate, selectedSlot.startTime),
+        paymentType: paymentMethod,
+        price: DEFAULT_BOOKING_PRICE,
+      }).unwrap();
+
+      setCreatedBooking(response.data.booking);
+      toast.success(response.message || "Booking created successfully.");
+
+      if (response.data.paymentUrl) {
+        try {
+          sessionStorage.setItem(
+            "latestBooking",
+            JSON.stringify({
+              booking: response.data.booking,
+              payment: response.data.payment,
+            }),
+          );
+        } catch {
+          // Ignore storage failures and continue to payment.
+        }
+        window.location.href = response.data.paymentUrl;
+        return;
+      }
+
+      setStep(5);
+    } catch (error) {
+      const message =
+        (error as { data?: { message?: string }; message?: string })?.data?.message ||
+        (error as { message?: string })?.message ||
+        "Failed to create booking.";
+      toast.error(message);
+    }
   };
 
   return (
-    <div className="bg-[#FCFDFE] min-h-screen poppins py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-[1200px] mx-auto">
+    <div className="min-h-screen bg-[#FCFDFE] px-4 py-12 poppins sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1200px]">
         <AnimatePresence mode="wait">
           {step === 1 && (
             <motion.div
@@ -179,13 +345,14 @@ function BookingFlowCoordinator() {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.25 }}
             >
-              <Step1MedicalType 
-                selectedType={selectedType}
-                setSelectedType={setSelectedType}
-                isAccordionOpen={isAccordionOpen}
-                setIsAccordionOpen={setIsAccordionOpen}
+              <Step1MedicalType
+                services={services}
+                selectedServiceId={selectedServiceId}
+                isLoading={isServicesLoading || isServicesFetching}
+                isError={isServicesError}
+                setSelectedServiceId={handleSelectService}
                 onNext={handleContinueToLocation}
-                onCardBookNow={handleCardBookNow}
+                onRetry={refetchServices}
               />
             </motion.div>
           )}
@@ -198,14 +365,22 @@ function BookingFlowCoordinator() {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.25 }}
             >
-              <Step2YourLocation 
+              <Step2YourLocation
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
                 selectedClinicId={selectedClinicId}
                 setSelectedClinicId={setSelectedClinicId}
                 visibleCount={visibleCount}
                 setVisibleCount={setVisibleCount}
-                enrichedClinics={enrichedClinics}
+                clinics={clinics}
+                hasUserLocation={Boolean(userCoords)}
+                isLocating={isLocating}
+                locationError={locationError}
+                isLoading={isServiceDetailsLoading || isServiceDetailsFetching}
+                isError={isServiceDetailsError}
+                onUseMyLocation={handleUseMyLocation}
+                onResetLocation={handleResetLocation}
+                onRetry={refetchServiceDetails}
                 onBookClinic={handleBookClinic}
               />
             </motion.div>
@@ -219,23 +394,20 @@ function BookingFlowCoordinator() {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.25 }}
             >
-              <Step3SelectTimeSlot 
+              <Step3SelectTimeSlot
                 selectedDate={selectedDate}
                 setSelectedDate={setSelectedDate}
-                selectedTimeSlot={selectedTimeSlot}
-                setSelectedTimeSlot={setSelectedTimeSlot}
+                selectedSlotId={selectedSlotId}
+                setSelectedSlotId={setSelectedSlotId}
+                slots={slots}
+                isAvailable={Boolean(slotsResponse?.data?.isAvailable)}
+                isLoading={isSlotsLoading || isSlotsFetching}
+                isError={isSlotsError}
                 calendarMonth={calendarMonth}
                 setCalendarMonth={setCalendarMonth}
                 onBack={() => setStep(2)}
-                onContinue={() => {
-                  const formattedDate = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
-                  setFormData(prev => ({
-                    ...prev,
-                    date: formattedDate,
-                    timeSlot: selectedTimeSlot
-                  }));
-                  setStep(4);
-                }}
+                onContinue={handleContinueToDetails}
+                onRetry={refetchSlots}
               />
             </motion.div>
           )}
@@ -248,14 +420,17 @@ function BookingFlowCoordinator() {
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
             >
-              <Step4YourDetails 
-                selectedType={selectedType}
+              <Step4YourDetails
+                selectedService={selectedService}
                 selectedClinic={selectedClinic}
                 selectedDate={selectedDate}
-                formData={formData}
-                handleInputChange={handleInputChange}
+                selectedSlot={selectedSlot}
+                profile={profileResponse?.data || null}
+                isProfileLoading={isProfileLoading || isProfileFetching}
                 paymentMethod={paymentMethod}
                 setPaymentMethod={setPaymentMethod}
+                price={DEFAULT_BOOKING_PRICE}
+                isSubmitting={isCreatingBooking}
                 onBack={() => setStep(3)}
                 onSubmit={handleSubmitBooking}
               />
@@ -269,11 +444,7 @@ function BookingFlowCoordinator() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.35, ease: "easeOut" }}
             >
-              <Step5Success 
-                selectedType={selectedType}
-                selectedClinic={selectedClinic}
-                formData={formData}
-              />
+              <Step5Success booking={createdBooking} />
             </motion.div>
           )}
         </AnimatePresence>

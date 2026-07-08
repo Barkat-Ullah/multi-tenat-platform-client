@@ -11,6 +11,7 @@ export interface AdminLocation {
   locationName: string;
   lat: number;
   lng: number;
+  image: string | null;
   totalBookings: number;
   totalClinicsAdded: number;
   isDeleted: boolean;
@@ -33,6 +34,7 @@ export interface CreateAdminLocationRequest {
   locationName: string;
   lat: number;
   lng: number;
+  image?: File | null;
 }
 
 export interface LocationMutationResponse {
@@ -57,7 +59,7 @@ const adminLocationsApi = baseApi.injectEndpoints({
     }),
     createAdminLocation: builder.mutation<
       LocationMutationResponse,
-      CreateAdminLocationRequest
+      FormData
     >({
       query: (body) => ({
         url: "/locations",

@@ -2,21 +2,38 @@
 
 import React from "react";
 import dynamic from "next/dynamic";
-import { Search, MapPin, Calendar, Car, ArrowRight } from "lucide-react";
-import { clinicLocations } from "@/app/data/LocationsData";
+import {
+  Search,
+  MapPin,
+  Calendar,
+  Car,
+  ArrowRight,
+  RefreshCw,
+  Navigation,
+  Loader2,
+  X,
+} from "lucide-react";
+import type { BookingServiceClinic } from "@/redux/service/user/userBookingFlowApi";
 
-// Dynamically import BookingMap with SSR disabled
-const BookingMap = dynamic(
-  () => import("./BookingMap"),
-  { 
-    ssr: false, 
-    loading: () => (
-      <div className="h-[350px] md:h-[500px] bg-slate-100 animate-pulse rounded-2xl flex items-center justify-center text-slate-400">
-        Loading interactive map...
-      </div>
-    ) 
-  }
-);
+const BookingMap = dynamic(() => import("./BookingMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[350px] items-center justify-center rounded-2xl bg-slate-100 text-slate-400 md:h-[500px]">
+      Loading interactive map...
+    </div>
+  ),
+});
+
+export type BookingClinicDisplay = BookingServiceClinic & {
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
+  distance?: number | null;
+  distanceStr: string;
+  earliestDate: string;
+  parkingStr: string;
+};
 
 interface Step2YourLocationProps {
   searchQuery: string;
@@ -25,9 +42,37 @@ interface Step2YourLocationProps {
   setSelectedClinicId: (id: string | null) => void;
   visibleCount: number;
   setVisibleCount: React.Dispatch<React.SetStateAction<number>>;
-  enrichedClinics: any[];
+  clinics: BookingClinicDisplay[];
+  hasUserLocation: boolean;
+  isLocating: boolean;
+  locationError: string | null;
+  isLoading: boolean;
+  isError: boolean;
+  onUseMyLocation: () => void;
+  onResetLocation: () => void;
+  onRetry: () => void;
   onBookClinic: (clinicId: string) => void;
 }
+
+const ClinicsSkeleton = () => (
+  <div className="space-y-4" role="status" aria-label="Loading clinics">
+    {Array.from({ length: 4 }).map((_, index) => (
+      <div key={index} className="flex animate-pulse flex-col gap-4 rounded-2xl border border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex-1 space-y-3">
+          <div className="h-3 w-20 rounded bg-slate-100" />
+          <div className="h-5 w-2/3 rounded bg-slate-100" />
+          <div className="grid grid-cols-3 gap-3">
+            <div className="h-9 rounded bg-slate-100" />
+            <div className="h-9 rounded bg-slate-100" />
+            <div className="h-9 rounded bg-slate-100" />
+          </div>
+        </div>
+        <div className="h-10 w-32 rounded-full bg-slate-100" />
+      </div>
+    ))}
+    <span className="sr-only">Loading clinics...</span>
+  </div>
+);
 
 export default function Step2YourLocation({
   searchQuery,
@@ -36,141 +81,195 @@ export default function Step2YourLocation({
   setSelectedClinicId,
   visibleCount,
   setVisibleCount,
-  enrichedClinics,
-  onBookClinic
+  clinics,
+  hasUserLocation,
+  isLocating,
+  locationError,
+  isLoading,
+  isError,
+  onUseMyLocation,
+  onResetLocation,
+  onRetry,
+  onBookClinic,
 }: Step2YourLocationProps) {
   return (
     <div className="w-full">
-      <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0F2E4A] tracking-tight leading-tight mb-4">
+      <h2 className="mb-4 text-2xl font-extrabold leading-tight tracking-tight text-[#0F2E4A] sm:text-3xl">
         Your Location
       </h2>
 
-      {/* Postcode Search Input */}
-      <div className="relative w-full mb-8 shadow-sm">
-        <Search className="absolute left-4 top-4 h-5 w-5 text-slate-400" />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Enter Town & Postcode"
-          className="w-full pl-12 pr-4 py-3.5 border border-slate-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#00B2D6]/40 focus:border-[#00B2D6] font-semibold text-sm sm:text-base text-[#0F2E4A] placeholder-slate-400 bg-white"
-        />
-      </div>
+      <div className="mb-8">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center">
+          <div className="relative w-full flex-1 shadow-sm">
+            <Search className="absolute left-4 top-4 h-5 w-5 text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Enter Town & Postcode"
+              className="w-full rounded-full border border-slate-200 bg-white py-3.5 pl-12 pr-4 text-sm font-semibold text-[#0F2E4A] placeholder-slate-400 focus:border-[#00B2D6] focus:outline-none focus:ring-2 focus:ring-[#00B2D6]/40 sm:text-base"
+            />
+          </div>
 
-      {/* Split map & list pane */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-        
-        {/* Left Pane - Interactive map */}
-        <div className="lg:col-span-4 h-[400px] lg:h-[520px]">
-          <BookingMap 
-            clinics={clinicLocations}
-            selectedClinicId={selectedClinicId}
-            onSelectClinic={(id) => setSelectedClinicId(id)}
-          />
+          <button
+            type="button"
+            onClick={onUseMyLocation}
+            disabled={isLocating || isLoading}
+            className="flex shrink-0 items-center justify-center gap-2 rounded-full bg-[#E6F8FC] px-5 py-3.5 text-sm font-extrabold text-[#00B2D6] transition-colors hover:bg-[#D5F3FA] disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {isLocating ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Navigation className="h-4 w-4" />
+            )}
+            <span>{isLocating ? "Locating..." : "Use My Location"}</span>
+          </button>
         </div>
 
-        {/* Right Pane - Clinic listing */}
-        <div className="lg:col-span-8 h-[400px] lg:h-[520px] flex flex-col">
-          <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm h-full flex flex-col justify-between overflow-hidden">
-            
-            <div className="divide-y divide-slate-100 flex-1 overflow-y-auto overflow-x-hidden pr-1">
-              {enrichedClinics.slice(0, visibleCount).map((clinic, index) => {
-                const isSelected = selectedClinicId === clinic.id;
-                return (
-                  <div 
-                    key={clinic.id} 
-                    onClick={() => setSelectedClinicId(clinic.id)}
-                    className={`py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6 cursor-pointer transition-all duration-200 ${
-                      index === 0 ? "pt-0" : ""
-                    } ${
-                      isSelected ? "bg-[#E6FAFF]/10 px-2 rounded-2xl" : "hover:bg-slate-50/50 px-2 rounded-2xl"
-                    }`}
+        {hasUserLocation && (
+          <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
+            <span>Showing nearest clinics first</span>
+            <button
+              type="button"
+              onClick={onResetLocation}
+              className="rounded-full p-0.5 text-emerald-600 hover:bg-emerald-100"
+              aria-label="Reset current location sorting"
+              title="Reset current location sorting"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        )}
+
+        {locationError && (
+          <p className="mt-2 text-xs font-bold text-red-500">{locationError}</p>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 items-stretch gap-8 lg:grid-cols-12">
+        <div className="h-[400px] lg:col-span-4 lg:h-[520px]">
+          {isLoading ? (
+            <div className="h-full animate-pulse rounded-2xl bg-slate-100" />
+          ) : (
+            <BookingMap
+              clinics={clinics}
+              selectedClinicId={selectedClinicId}
+              onSelectClinic={(id) => setSelectedClinicId(id)}
+            />
+          )}
+        </div>
+
+        <div className="flex h-[400px] flex-col lg:col-span-8 lg:h-[520px]">
+          <div className="flex h-full flex-col justify-between overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
+            <div className="flex-1 divide-y divide-slate-100 overflow-y-auto overflow-x-hidden pr-1">
+              {isLoading ? (
+                <ClinicsSkeleton />
+              ) : isError ? (
+                <div className="flex h-full flex-col items-center justify-center text-center">
+                  <MapPin className="mb-3 h-10 w-10 text-red-200" />
+                  <h4 className="text-sm font-extrabold text-[#0F2E4A] sm:text-base">Failed to load clinics</h4>
+                  <p className="mt-1 text-xs font-medium text-[#55697A]">
+                    Please try again to see clinics for this service.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={onRetry}
+                    className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#00B2D6] px-5 py-2 text-xs font-bold text-white hover:bg-[#0092B3]"
                   >
-                    <div className="flex-1 min-w-0 space-y-2">
-                      {/* Green Dot Online Tag */}
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-[#00B2D6] uppercase tracking-wider">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
-                        <span>Online</span>
-                      </div>
-
-                      {/* Clinic Name */}
-                      <h4 className="text-base sm:text-lg font-extrabold text-[#0F2E4A] leading-tight pr-2">
-                        {clinic.name}
-                      </h4>
-
-                      {/* Card Details stats */}
-                      <div className="grid grid-cols-3 gap-2 sm:gap-4 pt-2">
-                        {/* Distance */}
-                        <div className="flex items-center gap-2">
-                          <MapPin size={16} className="text-[#A3B3C2] shrink-0" />
-                          <div className="flex flex-col min-w-0">
-                            <span className="text-[10px] sm:text-[11px] font-semibold text-slate-400 leading-tight">Distance</span>
-                            <span className="text-xs sm:text-sm font-extrabold text-[#0F2E4A] leading-tight truncate">{clinic.distanceStr}</span>
-                          </div>
-                        </div>
-                        {/* Earliest Appointment */}
-                        <div className="flex items-center gap-2">
-                          <Calendar size={16} className="text-[#A3B3C2] shrink-0" />
-                          <div className="flex flex-col min-w-0">
-                            <span className="text-[10px] sm:text-[11px] font-semibold text-slate-400 leading-tight">Earliest Appointment</span>
-                            <span className="text-xs sm:text-sm font-extrabold text-[#0F2E4A] leading-tight truncate">{clinic.earliestDate}</span>
-                          </div>
-                        </div>
-                        {/* Car Parking */}
-                        <div className="flex items-center gap-2">
-                          <Car size={16} className="text-[#A3B3C2] shrink-0" />
-                          <div className="flex flex-col min-w-0">
-                            <span className="text-[10px] sm:text-[11px] font-semibold text-slate-400 leading-tight">Car Parking</span>
-                            <span className="text-xs sm:text-sm font-extrabold text-[#0F2E4A] leading-tight truncate">{clinic.parkingStr}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Book Now Button inside card */}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onBookClinic(clinic.id);
-                      }}
-                      className="bg-[#00B2D6] hover:bg-[#0092B3] text-white rounded-full pl-6 pr-2 py-2.5 font-poppins font-extrabold text-sm transition-all duration-300 flex items-center justify-between gap-3 shadow-md shadow-[#00B2D6]/10 shrink-0 hover:scale-[1.02]"
-                    >
-                      <span>Book Now</span>
-                      <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center text-[#00B2D6] shrink-0">
-                        <ArrowRight size={12} strokeWidth={3} />
-                      </div>
-                    </button>
-                  </div>
-                );
-              })}
-
-              {/* Empty state clinic fallbacks */}
-              {enrichedClinics.length === 0 && (
-                <div className="text-center py-10">
-                  <MapPin className="h-10 w-10 text-slate-300 mx-auto mb-2" />
-                  <h4 className="text-[#0F2E4A] font-extrabold text-sm sm:text-base">No clinics found</h4>
-                  <p className="text-[#55697A] text-xs font-medium mt-1">Try another town or postcode search.</p>
+                    <RefreshCw size={14} />
+                    Retry
+                  </button>
                 </div>
+              ) : clinics.length === 0 ? (
+                <div className="py-10 text-center">
+                  <MapPin className="mx-auto mb-2 h-10 w-10 text-slate-300" />
+                  <h4 className="text-sm font-extrabold text-[#0F2E4A] sm:text-base">No clinics found</h4>
+                  <p className="mt-1 text-xs font-medium text-[#55697A]">
+                    Try another town or postcode search.
+                  </p>
+                </div>
+              ) : (
+                clinics.slice(0, visibleCount).map((clinic, index) => {
+                  const isSelected = selectedClinicId === clinic.id;
+                  return (
+                    <div
+                      key={clinic.id}
+                      onClick={() => setSelectedClinicId(clinic.id)}
+                      className={`flex cursor-pointer flex-col justify-between gap-6 rounded-2xl py-6 transition-all duration-200 sm:flex-row sm:items-center ${
+                        index === 0 ? "pt-0" : ""
+                      } ${isSelected ? "bg-[#E6FAFF]/10 px-2" : "px-2 hover:bg-slate-50/50"}`}
+                    >
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#00B2D6]">
+                          <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
+                          <span>{clinic.status || "Available"}</span>
+                        </div>
+
+                        <h4 className="pr-2 text-base font-extrabold leading-tight text-[#0F2E4A] sm:text-lg">
+                          {clinic.fullName}
+                        </h4>
+
+                        <p className="text-xs font-semibold text-slate-500">
+                          {clinic.address}
+                        </p>
+
+                        <div className="grid grid-cols-3 gap-2 pt-2 sm:gap-4">
+                          <div className="flex items-center gap-2">
+                            <MapPin size={16} className="shrink-0 text-[#A3B3C2]" />
+                            <div className="flex min-w-0 flex-col">
+                              <span className="text-[10px] font-semibold leading-tight text-slate-400 sm:text-[11px]">Distance</span>
+                              <span className="truncate text-xs font-extrabold leading-tight text-[#0F2E4A] sm:text-sm">{clinic.distanceStr}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Calendar size={16} className="shrink-0 text-[#A3B3C2]" />
+                            <div className="flex min-w-0 flex-col">
+                              <span className="text-[10px] font-semibold leading-tight text-slate-400 sm:text-[11px]">Earliest Appointment</span>
+                              <span className="truncate text-xs font-extrabold leading-tight text-[#0F2E4A] sm:text-sm">{clinic.earliestDate}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Car size={16} className="shrink-0 text-[#A3B3C2]" />
+                            <div className="flex min-w-0 flex-col">
+                              <span className="text-[10px] font-semibold leading-tight text-slate-400 sm:text-[11px]">Car Parking</span>
+                              <span className="truncate text-xs font-extrabold leading-tight text-[#0F2E4A] sm:text-sm">{clinic.parkingStr}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onBookClinic(clinic.id);
+                        }}
+                        className="flex shrink-0 items-center justify-between gap-3 rounded-full bg-[#00B2D6] py-2.5 pl-6 pr-2 font-poppins text-sm font-extrabold text-white shadow-md shadow-[#00B2D6]/10 transition-all duration-300 hover:scale-[1.02] hover:bg-[#0092B3]"
+                      >
+                        <span>Book Now</span>
+                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white text-[#00B2D6]">
+                          <ArrowRight size={12} strokeWidth={3} />
+                        </div>
+                      </button>
+                    </div>
+                  );
+                })
               )}
             </div>
 
-            {/* Show More link button */}
-            {enrichedClinics.length > visibleCount && (
-              <div className="flex justify-end pt-4 border-t border-slate-100 mt-4">
+            {clinics.length > visibleCount && !isLoading && !isError && (
+              <div className="mt-4 flex justify-end border-t border-slate-100 pt-4">
                 <button
                   type="button"
                   onClick={() => setVisibleCount((prev) => prev + 3)}
-                  className="text-[#00B2D6] hover:text-[#0092B3] text-xs sm:text-sm font-extrabold transition-all hover:underline"
+                  className="text-xs font-extrabold text-[#00B2D6] transition-all hover:text-[#0092B3] hover:underline sm:text-sm"
                 >
                   Show More
                 </button>
               </div>
             )}
-
           </div>
         </div>
-
       </div>
     </div>
   );

@@ -14,9 +14,8 @@ export default function ClinicSearchFilter() {
       toast.warning("Please enter a town or postcode first.");
       return;
     }
-    // Simulate redirection to location page
     toast.success(`Searching for clinics near: "${searchQuery}"`);
-    window.location.href = `/location?search=${encodeURIComponent(searchQuery.trim())}`;
+    window.location.href = `/locations?search=${encodeURIComponent(searchQuery.trim())}`;
   };
 
   const handleGetLocation = () => {
@@ -33,8 +32,7 @@ export default function ClinicSearchFilter() {
         const { latitude, longitude } = position.coords;
         toast.success("Location resolved successfully!", { id: "geolocation-toast" });
         setIsLocating(false);
-        // Redirect to map/location listing page with coords
-        window.location.href = `/location?lat=${latitude}&lng=${longitude}`;
+        window.location.href = `/locations?lat=${latitude}&lng=${longitude}`;
       },
       (error) => {
         console.error("Geolocation error:", error);

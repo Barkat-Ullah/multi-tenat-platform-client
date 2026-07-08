@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
-import { X } from "lucide-react";
+import { MapPin, UploadCloud, X } from "lucide-react";
 import type { CreateAdminLocationRequest } from "@/redux/service/admin/locationsApi";
 
 interface AddLocationModalProps {
@@ -30,7 +30,10 @@ export default function AddLocationModal({
   const [locationName, setLocationName] = useState("");
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -44,12 +47,20 @@ export default function AddLocationModal({
     setLocationName("");
     setLatitude("");
     setLongitude("");
+    setImageFile(null);
+    setImagePreview(null);
     setErrors({});
 
     return () => {
       document.body.style.overflow = previousOverflow;
     };
   }, [isOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+    };
+  }, [imagePreview]);
 
   const selectedLatitude = useMemo(() => {
     const value = Number(latitude.trim());
@@ -60,6 +71,41 @@ export default function AddLocationModal({
     const value = Number(longitude.trim());
     return longitude.trim() && Number.isFinite(value) ? value : null;
   }, [longitude]);
+
+  const setSelectedFile = (file?: File) => {
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setErrors((current) => ({ ...current, image: "Upload a valid image file." }));
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors((current) => ({ ...current, image: "Image must be 5MB or less." }));
+      return;
+    }
+
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+    setErrors((current) => ({ ...current, image: "" }));
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSelectedFile(event.target.files?.[0]);
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    setSelectedFile(event.dataTransfer.files?.[0]);
+  };
+
+  const handleRemoveImage = () => {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImageFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    setErrors((current) => ({ ...current, image: "" }));
+  };
 
   if (!isOpen || !mounted) return null;
 
@@ -87,6 +133,7 @@ export default function AddLocationModal({
       locationName: locationName.trim(),
       lat,
       lng,
+      image: imageFile,
     });
     if (saved) onClose();
   };
@@ -142,6 +189,69 @@ export default function AddLocationModal({
               className="w-full rounded-2xl border border-slate-200 px-4 py-3.5 text-sm font-semibold text-[#0F2E4A] placeholder:text-slate-400 focus:border-[#00B2D6] focus:outline-none focus:ring-1 focus:ring-[#00B2D6]"
             />
             {errors.locationName && <p className="mt-1.5 text-xs font-bold text-red-500">{errors.locationName}</p>}
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-bold text-[#0F2E4A]">
+              Location Image
+            </label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={handleDrop}
+              className={`relative flex h-[170px] w-full flex-col items-center justify-center overflow-hidden rounded-3xl border-2 border-dashed bg-[#F8FAFC]/70 transition-all hover:border-[#00B2D6] hover:bg-[#F1F5F9]/70 ${
+                imagePreview ? "border-[#00B2D6]" : "border-[#CBD5E1]"
+              }`}
+            >
+              {imagePreview ? (
+                <>
+                  <img
+                    src={imagePreview}
+                    alt="Location preview"
+                    className="h-full w-full object-cover"
+                  />
+                  <span className="absolute inset-0 flex items-center justify-center bg-black/40 text-xs font-bold text-white opacity-0 transition-opacity hover:opacity-100">
+                    Change Image
+                  </span>
+                </>
+              ) : (
+                <span className="flex flex-col items-center p-4 text-center">
+                  <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-[#E6FAFF] text-[#00B2D6]">
+                    <UploadCloud size={22} />
+                  </span>
+                  <span className="font-poppins text-sm font-extrabold text-[#0F2E4A]">
+                    Upload location image
+                  </span>
+                  <span className="mt-1 text-xs font-semibold text-slate-400">
+                    JPG, PNG, JPEG - Max 5MB
+                  </span>
+                </span>
+              )}
+            </button>
+            <div className="mt-2 flex items-center justify-between gap-3">
+              <p className="flex items-center gap-1.5 text-xs font-semibold text-slate-400">
+                <MapPin size={13} className="text-[#00B2D6]" />
+                Optional image for public location cards.
+              </p>
+              {imagePreview && (
+                <button
+                  type="button"
+                  onClick={handleRemoveImage}
+                  className="text-xs font-bold text-red-500 hover:text-red-600"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+            {errors.image && <p className="mt-1.5 text-xs font-bold text-red-500">{errors.image}</p>}
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Image from "next/image";
 import { createPortal } from "react-dom";
 import {
   AlertTriangle,
   Calendar,
+  ImageIcon,
   Map,
   Plus,
   Search,
@@ -39,6 +41,7 @@ const LocationsSkeleton = () => (
   <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3" role="status" aria-label="Loading locations">
     {Array.from({ length: 6 }, (_, index) => (
       <div key={index} className="min-h-[230px] animate-pulse rounded-3xl border border-slate-100 bg-white p-6">
+        <div className="mb-4 h-32 rounded-2xl bg-slate-100" />
         <div className="flex items-center justify-between">
           <div className="h-4 w-32 rounded-full bg-slate-200" />
           <div className="h-8 w-8 rounded-full bg-slate-200" />
@@ -99,8 +102,21 @@ export default function LocationsView() {
   const handleCreateLocation = async (
     payload: CreateAdminLocationRequest,
   ): Promise<boolean> => {
+    const formData = new FormData();
+    formData.append(
+      "data",
+      JSON.stringify({
+        locationName: payload.locationName,
+        lat: payload.lat,
+        lng: payload.lng,
+      }),
+    );
+    if (payload.image) {
+      formData.append("image", payload.image);
+    }
+
     try {
-      const response = await createLocation(payload).unwrap();
+      const response = await createLocation(formData).unwrap();
       toast.success(response.message || "Location created successfully.");
       setCurrentPage(1);
       return true;
@@ -176,9 +192,28 @@ export default function LocationsView() {
           {locations.map((location) => (
             <div
               key={location.id}
-              className="flex min-h-[230px] flex-col justify-between rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_4px_25px_rgba(0,0,0,0.015)] transition-shadow hover:shadow-[0_10px_35px_rgba(0,0,0,0.03)]"
+              className="flex min-h-[300px] flex-col justify-between rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_4px_25px_rgba(0,0,0,0.015)] transition-shadow hover:shadow-[0_10px_35px_rgba(0,0,0,0.03)]"
             >
               <div>
+                <div className="relative mb-4 h-32 overflow-hidden rounded-2xl bg-[#E6FAFF]">
+                  {location.image ? (
+                    <Image
+                      src={location.image}
+                      alt={location.locationName}
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      className="object-cover transition-transform duration-500 hover:scale-105"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-[#00B2D6]">
+                      <ImageIcon size={28} />
+                      <span className="text-xs font-extrabold uppercase tracking-wide">
+                        No image
+                      </span>
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex items-start justify-between gap-3">
                   <h3 className="font-poppins text-lg font-bold tracking-tight text-[#0F2E4A]">
                     {location.locationName}

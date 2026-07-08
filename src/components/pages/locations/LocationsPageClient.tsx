@@ -1,12 +1,57 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, MapPin, Phone, Sparkles, Navigation, X, ArrowRight } from "lucide-react";
-import { clinicLocations, ClinicLocation } from "@/app/data/LocationsData";
+import { Search, MapPin, Sparkles, Navigation, X, ArrowRight } from "lucide-react";
 import BookingCTASection from "@/components/pages/home/BookingCTASection/BookingCTASection";
+import {
+  type PublicLocation,
+  useGetPublicLocationsQuery,
+} from "@/redux/service/locations/locationsApi";
+
+const PAGE_LIMIT = 10;
+
+type DisplayLocation = PublicLocation & {
+  distance?: number;
+};
+
+const getGoogleMapsLink = (location: PublicLocation) =>
+  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+    `${location.locationName} ${location.lat},${location.lng}`
+  )}`;
+
+const LocationsGridSkeleton = () => (
+  <div
+    className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8"
+    role="status"
+    aria-label="Loading locations"
+  >
+    {Array.from({ length: 6 }).map((_, index) => (
+      <div
+        key={index}
+        className="flex flex-row bg-white border border-slate-200/70 shadow-[0_4px_20px_rgba(0,0,0,0.015)] rounded-2xl overflow-hidden items-stretch"
+      >
+        <div className="p-3.5 pr-0 w-2/5 max-w-[170px] sm:max-w-[200px] flex-shrink-0">
+          <div className="h-full min-h-[140px] sm:min-h-[170px] rounded-xl bg-slate-100 animate-pulse" />
+        </div>
+        <div className="p-4 sm:p-5 flex flex-col justify-between flex-1 min-w-0">
+          <div>
+            <div className="h-5 w-2/3 rounded bg-slate-100 animate-pulse" />
+            <div className="mt-3 h-4 w-full rounded bg-slate-100 animate-pulse" />
+            <div className="mt-2 h-4 w-3/4 rounded bg-slate-100 animate-pulse" />
+          </div>
+          <div className="mt-6 border-t border-slate-100 pt-3 space-y-2.5">
+            <div className="h-8 w-32 rounded-lg bg-slate-100 animate-pulse" />
+            <div className="h-8 w-28 rounded-lg bg-slate-100 animate-pulse" />
+          </div>
+        </div>
+      </div>
+    ))}
+    <span className="sr-only">Loading locations...</span>
+  </div>
+);
 
 // Haversine formula to calculate distance in miles
 function getDistanceInMiles(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -25,9 +70,47 @@ function getDistanceInMiles(lat1: number, lon1: number, lat2: number, lon2: numb
 
 export default function LocationsPageClient() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const {
+    data: locationsResponse,
+    isLoading,
+    isFetching,
+    isError,
+    refetch,
+  } = useGetPublicLocationsQuery({
+    page: currentPage,
+    limit: PAGE_LIMIT,
+  });
+
+  const locations = locationsResponse?.data || [];
+  const totalPages = Math.max(
+    1,
+    Math.ceil((locationsResponse?.meta.total || 0) / PAGE_LIMIT)
+  );
+  const isLocationsLoading = isLoading || isFetching;
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const search = params.get("search");
+    const latParam = params.get("lat");
+    const lngParam = params.get("lng");
+
+    if (search) {
+      setSearchQuery(search);
+    }
+
+    if (latParam && lngParam) {
+      const lat = Number(latParam);
+      const lng = Number(lngParam);
+      if (Number.isFinite(lat) && Number.isFinite(lng)) {
+        setUserCoords({ lat, lng });
+        setLocationError(null);
+      }
+    }
+  }, []);
 
   // Use browser geolocation to sort clinics
   const handleUseMyLocation = () => {
@@ -63,18 +146,14 @@ export default function LocationsPageClient() {
   // Process and sort clinics
   const displayedClinics = useMemo(() => {
     // 1. Filter clinics by searchQuery
-    const filtered = clinicLocations.filter((clinic) => {
+    const filtered = locations.filter((clinic) => {
       const query = searchQuery.toLowerCase().trim();
       if (!query) return true;
-      return (
-        clinic.name.toLowerCase().includes(query) ||
-        clinic.city.toLowerCase().includes(query) ||
-        clinic.address.toLowerCase().includes(query)
-      );
+      return clinic.locationName.toLowerCase().includes(query);
     });
 
     // 2. Add distance calculations if user location is available
-    let mapped = filtered.map((clinic) => {
+    const mapped: DisplayLocation[] = filtered.map((clinic) => {
       if (userCoords) {
         const distance = getDistanceInMiles(
           userCoords.lat,
@@ -89,13 +168,13 @@ export default function LocationsPageClient() {
 
     // 3. Sort by distance if location available, otherwise alphabetical
     if (userCoords) {
-      mapped.sort((a, b) => ((a as any).distance || 0) - ((b as any).distance || 0));
+      mapped.sort((a, b) => (a.distance || 0) - (b.distance || 0));
     } else {
-      mapped.sort((a, b) => a.city.localeCompare(b.city));
+      mapped.sort((a, b) => a.locationName.localeCompare(b.locationName));
     }
 
     return mapped;
-  }, [searchQuery, userCoords]);
+  }, [locations, searchQuery, userCoords]);
 
   return (
     <div className="bg-[#FCFDFE] poppins min-h-screen">
@@ -230,121 +309,175 @@ export default function LocationsPageClient() {
       <section className="py-12 md:py-16 lg:py-20 max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="sr-only">Clinics List</h2>
         
-        <motion.div 
-          layout 
-          className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8"
-        >
-          <AnimatePresence mode="popLayout">
-            {displayedClinics.map((clinic) => (
-              <motion.div
-                layout
-                key={clinic.id}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -15 }}
-                transition={{ duration: 0.35 }}
-                whileHover={{ 
-                  y: -5, 
-                  borderColor: "rgba(0, 178, 214, 0.25)",
-                  boxShadow: "0 12px 35px rgba(15,46,74,0.06)" 
-                }}
-                className="flex flex-row bg-white border border-slate-200/70 shadow-[0_4px_20px_rgba(0,0,0,0.015)] rounded-2xl overflow-hidden transition-all duration-300 items-stretch"
-              >
-                
-                {/* Image Section */}
-                <div className="p-3.5 pr-0 w-2/5 max-w-[170px] sm:max-w-[200px] flex-shrink-0 flex items-stretch">
-                  <div className="relative w-full h-full min-h-[140px] sm:min-h-[170px] rounded-xl overflow-hidden shadow-sm bg-slate-100">
-                    <Image
-                      src={clinic.image}
-                      alt={`${clinic.name} City View`}
-                      fill
-                      sizes="(max-w-768px) 140px, 200px"
-                      className="object-cover transition-transform duration-500 hover:scale-105"
-                      unoptimized
-                    />
-                  </div>
-                </div>
-
-                {/* Info & Content Section */}
-                <div className="p-4 sm:p-5 flex flex-col justify-between flex-1 min-w-0">
-                  <div>
-                    {/* Header Row */}
-                    <div className="flex flex-wrap items-baseline justify-between gap-1.5 mb-1.5">
-                      <h3 className="text-[#0F2E4A] font-extrabold text-base sm:text-lg leading-snug truncate">
-                        {clinic.name}
-                      </h3>
-                      
-                      {/* Distance Badge */}
-                      {(clinic as any).distance !== undefined && (
-                        <span className="text-[10px] sm:text-[11px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">
-                          {((clinic as any).distance as number).toFixed(1)} mi away
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Address Text */}
-                    <p className="text-[#55697A] text-xs sm:text-sm font-semibold leading-relaxed line-clamp-3 mb-4 pr-1">
-                      {clinic.address}
-                    </p>
-                  </div>
-
-                  {/* Actions Column matching mockup */}
-                  <div className="flex flex-col gap-2.5 mt-auto pt-3 border-t border-slate-100">
-                    <a
-                      href={`tel:${clinic.phone}`}
-                      className="flex items-center gap-2 text-[#00B2D6] hover:text-[#0092B3] text-xs sm:text-sm font-bold tracking-wide transition-colors group w-fit"
-                    >
-                      <div className="p-1.5 bg-[#EBF7FC] group-hover:bg-[#00B2D6]/10 rounded-lg transition-colors">
-                        <Phone className="h-3.5 w-3.5 shrink-0" />
-                      </div>
-                      <span className="underline underline-offset-4 decoration-2 decoration-[#00B2D6]/20 group-hover:decoration-[#0092B3] transition-all">
-                        {clinic.phone}
-                      </span>
-                    </a>
-                    
-                    <a
-                      href={clinic.googleMapsLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-[#00B2D6] hover:text-[#0092B3] text-xs sm:text-sm font-bold tracking-wide transition-colors group w-fit"
-                    >
-                      <div className="p-1.5 bg-[#EBF7FC] group-hover:bg-[#00B2D6]/10 rounded-lg transition-colors">
-                        <MapPin className="h-3.5 w-3.5 shrink-0" />
-                      </div>
-                      <span className="underline underline-offset-4 decoration-2 decoration-[#00B2D6]/20 group-hover:decoration-[#0092B3] transition-all">
-                        Direction
-                      </span>
-                    </a>
-                  </div>
-
-                </div>
-
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </motion.div>
-
-        {/* Empty state fallbacks */}
-        {displayedClinics.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-16 bg-white rounded-3xl border border-slate-200/60 shadow-[0_4px_30px_rgba(0,0,0,0.01)] max-w-lg mx-auto"
-          >
-            <MapPin className="h-14 w-14 text-slate-300 mx-auto mb-4" />
+        {isLocationsLoading ? (
+          <LocationsGridSkeleton />
+        ) : isError ? (
+          <div className="text-center py-16 bg-white rounded-3xl border border-red-100 shadow-[0_4px_30px_rgba(0,0,0,0.01)] max-w-lg mx-auto">
+            <MapPin className="h-14 w-14 text-red-200 mx-auto mb-4" />
             <h3 className="text-[#0F2E4A] font-extrabold text-lg sm:text-xl">
-              No Clinics Found
+              Failed to Load Locations
             </h3>
             <p className="text-[#55697A] text-sm font-medium mt-2 px-6">
-              We couldn&apos;t find any clinics matching &quot;{searchQuery}&quot;. Try searching for another city, town, or postcode.
+              We could not load clinic locations right now. Please try again.
             </p>
             <button
-              onClick={() => setSearchQuery("")}
+              onClick={() => refetch()}
               className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#00B2D6] hover:bg-[#0092B3] text-white font-extrabold text-xs sm:text-sm transition-all"
             >
-              Clear Search Query
+              Retry
             </button>
-          </motion.div>
+          </div>
+        ) : (
+          <>
+            <motion.div 
+              layout 
+              className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8"
+            >
+              <AnimatePresence mode="popLayout">
+                {displayedClinics.map((clinic) => (
+                  <motion.div
+                    layout
+                    key={clinic.id}
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -15 }}
+                    transition={{ duration: 0.35 }}
+                    whileHover={{ 
+                      y: -5, 
+                      borderColor: "rgba(0, 178, 214, 0.25)",
+                      boxShadow: "0 12px 35px rgba(15,46,74,0.06)" 
+                    }}
+                    className="flex flex-row bg-white border border-slate-200/70 shadow-[0_4px_20px_rgba(0,0,0,0.015)] rounded-2xl overflow-hidden transition-all duration-300 items-stretch"
+                  >
+                    
+                    {/* Image Section */}
+                    <div className="p-3.5 pr-0 w-2/5 max-w-[170px] sm:max-w-[200px] flex-shrink-0 flex items-stretch">
+                      <div className="relative w-full h-full min-h-[140px] sm:min-h-[170px] rounded-xl overflow-hidden shadow-sm bg-slate-100">
+                        {clinic.image ? (
+                          <Image
+                            src={clinic.image}
+                            alt={`${clinic.locationName} clinic location`}
+                            fill
+                            sizes="(max-width: 768px) 140px, 200px"
+                            className="object-cover transition-transform duration-500 hover:scale-105"
+                            unoptimized
+                          />
+                        ) : (
+                          <div className="flex h-full min-h-[140px] sm:min-h-[170px] flex-col items-center justify-center gap-2 bg-[#EBF7FC] text-[#00B2D6]">
+                            <MapPin className="h-8 w-8" />
+                            <span className="text-xs font-extrabold uppercase tracking-wide">
+                              No image
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Info & Content Section */}
+                    <div className="p-4 sm:p-5 flex flex-col justify-between flex-1 min-w-0">
+                      <div>
+                        {/* Header Row */}
+                        <div className="flex flex-wrap items-baseline justify-between gap-1.5 mb-1.5">
+                          <h3 className="text-[#0F2E4A] font-extrabold text-base sm:text-lg leading-snug truncate">
+                            {clinic.locationName}
+                          </h3>
+                          
+                          {/* Distance Badge */}
+                          {clinic.distance !== undefined && (
+                            <span className="text-[10px] sm:text-[11px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">
+                              {clinic.distance.toFixed(1)} mi away
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Location Text */}
+                        <p className="text-[#55697A] text-xs sm:text-sm font-semibold leading-relaxed line-clamp-3 mb-4 pr-1">
+                          {clinic.totalClinicsAdded} clinic{clinic.totalClinicsAdded === 1 ? "" : "s"} available at this location.
+                        </p>
+                      </div>
+
+                      {/* Actions Column matching mockup */}
+                      <div className="flex flex-col gap-2.5 mt-auto pt-3 border-t border-slate-100">
+                        <div className="flex items-center gap-2 text-[#55697A] text-xs sm:text-sm font-bold tracking-wide">
+                          <div className="p-1.5 bg-[#EBF7FC] rounded-lg text-[#00B2D6]">
+                            <ArrowRight className="h-3.5 w-3.5 shrink-0" />
+                          </div>
+                          <span>{clinic.totalBookings} booking{clinic.totalBookings === 1 ? "" : "s"}</span>
+                        </div>
+                        
+                        <a
+                          href={getGoogleMapsLink(clinic)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-[#00B2D6] hover:text-[#0092B3] text-xs sm:text-sm font-bold tracking-wide transition-colors group w-fit"
+                        >
+                          <div className="p-1.5 bg-[#EBF7FC] group-hover:bg-[#00B2D6]/10 rounded-lg transition-colors">
+                            <MapPin className="h-3.5 w-3.5 shrink-0" />
+                          </div>
+                          <span className="underline underline-offset-4 decoration-2 decoration-[#00B2D6]/20 group-hover:decoration-[#0092B3] transition-all">
+                            Direction
+                          </span>
+                        </a>
+                      </div>
+
+                    </div>
+
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </motion.div>
+
+            {/* Empty state fallbacks */}
+            {displayedClinics.length === 0 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-center py-16 bg-white rounded-3xl border border-slate-200/60 shadow-[0_4px_30px_rgba(0,0,0,0.01)] max-w-lg mx-auto"
+              >
+                <MapPin className="h-14 w-14 text-slate-300 mx-auto mb-4" />
+                <h3 className="text-[#0F2E4A] font-extrabold text-lg sm:text-xl">
+                  No Clinics Found
+                </h3>
+                <p className="text-[#55697A] text-sm font-medium mt-2 px-6">
+                  {searchQuery
+                    ? `We couldn't find any clinics matching "${searchQuery}". Try searching for another location.`
+                    : "No clinic locations are available right now."}
+                </p>
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#00B2D6] hover:bg-[#0092B3] text-white font-extrabold text-xs sm:text-sm transition-all"
+                  >
+                    Clear Search Query
+                  </button>
+                )}
+              </motion.div>
+            )}
+
+            {displayedClinics.length > 0 && totalPages > 1 && (
+              <div className="mt-10 flex items-center justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                  disabled={currentPage === 1}
+                  className="rounded-full border border-slate-200 px-4 py-2 text-sm font-bold text-[#0F2E4A] transition-colors hover:border-[#00B2D6] hover:text-[#00B2D6] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Previous
+                </button>
+                <span className="text-sm font-bold text-[#55697A]">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                  disabled={currentPage >= totalPages}
+                  className="rounded-full border border-slate-200 px-4 py-2 text-sm font-bold text-[#0F2E4A] transition-colors hover:border-[#00B2D6] hover:text-[#00B2D6] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </>
         )}
       </section>
 
