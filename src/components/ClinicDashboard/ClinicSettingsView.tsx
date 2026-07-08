@@ -178,6 +178,7 @@ export default function ClinicSettingsView() {
         <aside className="w-full lg:w-[280px] shrink-0 bg-white border border-slate-100/90 rounded-3xl p-5 shadow-[0_4px_25px_rgba(0,0,0,0.01)]">
           <h2 className="text-[#0F2E4A] text-sm sm:text-base font-extrabold font-poppins mb-4 px-2">
             Settings
+            
           </h2>
           <nav className="flex flex-col gap-2">
             <button
