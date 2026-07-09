@@ -1,314 +1,466 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import {
-  Users,
-  Check,
-  XSquare,
-  XCircle,
-  Search,
-  MoreVertical,
-  ChevronLeft,
-  ChevronRight,
-  Eye,
-  Trash2,
-  ShieldAlert
-} from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { Dropdown } from "antd";
-import { superAdminUsersData, SuperAdminUserItem } from "@/app/data/SuperAdminDashboardData";
+import {
+  Check,
+  MoreVertical,
+  Search,
+  Users,
+  XCircle,
+  XSquare,
+} from "lucide-react";
 import { toast } from "sonner";
+import Pagination from "@/components/AdminDashboard/Pagination";
+import {
+  type User,
+  useDeleteUserMutation,
+  useGetAllUsersQuery,
+  useUpdateUserStatusMutation,
+} from "@/redux/service/admin/userApi";
+import type { UserStatus } from "@/utils/types";
+
+const PAGE_LIMIT = 10;
+
+const getUserName = (user: User) => user.fullName || "N/A";
+
+const getMeta = (response?: {
+  pagination?: { limit?: number; total?: number; totalPages?: number };
+  meta?: { limit?: number; total?: number; totalPages?: number };
+  data?: User[];
+}) => {
+  const total = response?.pagination?.total ?? response?.meta?.total ?? 0;
+  const limit =
+    response?.pagination?.limit ?? response?.meta?.limit ?? PAGE_LIMIT;
+  const totalPages =
+    response?.pagination?.totalPages ??
+    response?.meta?.totalPages ??
+    Math.max(1, Math.ceil(total / limit));
+
+  return { total, totalPages };
+};
+
+const formatDate = (value?: string) => {
+  if (!value) return "N/A";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "N/A";
+
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+};
+
+const normalizeStatus = (status?: string) =>
+  status?.toUpperCase() === "ACTIVE" ? "Active" : "Suspended";
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (typeof error !== "object" || error === null) return fallback;
+  const apiError = error as {
+    data?: { message?: string };
+    error?: string;
+    message?: string;
+  };
+
+  return apiError.data?.message || apiError.error || apiError.message || fallback;
+};
+
+const StatsSkeleton = () => (
+  <div className="h-9 w-20 animate-pulse rounded-lg bg-slate-200" />
+);
+
+const TableSkeleton = () => (
+  <tbody className="divide-y divide-slate-100/80" aria-label="Loading users">
+    {Array.from({ length: 7 }, (_, rowIndex) => (
+      <tr key={rowIndex} className="animate-pulse">
+        {[42, 54, 38, 30, 28, 24].map((width, index) => (
+          <td key={index} className="px-6 py-5">
+            <div
+              className="h-2.5 rounded-full bg-slate-200"
+              style={{ width: `${width - (rowIndex % 3) * 3}%` }}
+            />
+          </td>
+        ))}
+      </tr>
+    ))}
+  </tbody>
+);
 
 export default function SuperAdminManageUsersView() {
-  const [users, setUsers] = useState<SuperAdminUserItem[]>(superAdminUsersData);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 9;
+  const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const trimmedSearch = searchTerm.trim().toLowerCase();
+  const isSearching = trimmedSearch.length > 0;
 
-  // Filter users based on search term (name or email)
+  const {
+    data: usersResponse,
+    isLoading,
+    isFetching,
+    isError,
+    refetch,
+  } = useGetAllUsersQuery({
+    page: isSearching ? 1 : currentPage,
+    limit: isSearching ? 1000 : PAGE_LIMIT,
+  });
+  const [updateUserStatus, { isLoading: isUpdatingStatus }] =
+    useUpdateUserStatusMutation();
+  const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
+
+  const users = usersResponse?.data || [];
   const filteredUsers = useMemo(() => {
-    return users.filter((u) => {
-      const term = searchTerm.toLowerCase();
-      return (
-        u.userName.toLowerCase().includes(term) ||
-        u.email.toLowerCase().includes(term)
-      );
-    });
-  }, [users, searchTerm]);
+    if (!trimmedSearch) return users;
 
-  // Reset page when search term changes
-  React.useEffect(() => {
+    return users.filter((user) =>
+      [
+        user.fullName,
+        user.email,
+        user.phoneNumber,
+        user.role,
+        normalizeStatus(user.status),
+        user.status,
+      ].some((value) => value?.toLowerCase().includes(trimmedSearch)),
+    );
+  }, [trimmedSearch, users]);
+  const paginatedUsers = useMemo(() => {
+    if (!isSearching) return filteredUsers;
+    const start = (currentPage - 1) * PAGE_LIMIT;
+    return filteredUsers.slice(start, start + PAGE_LIMIT);
+  }, [currentPage, filteredUsers, isSearching]);
+  const { total: apiTotal, totalPages: apiTotalPages } = getMeta(usersResponse);
+  const total = isSearching ? filteredUsers.length : apiTotal;
+  const totalPages = isSearching
+    ? Math.max(1, Math.ceil(filteredUsers.length / PAGE_LIMIT))
+    : apiTotalPages;
+  const isUsersLoading = isLoading || isFetching;
+
+  const activeCount = useMemo(
+    () => filteredUsers.filter((user) => user.status === "ACTIVE").length,
+    [filteredUsers],
+  );
+  const suspendedCount = useMemo(
+    () => filteredUsers.filter((user) => user.status === "SUSPENDED").length,
+    [filteredUsers],
+  );
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm]);
 
-  const totalPages = useMemo(() => {
-    return Math.max(1, Math.ceil(filteredUsers.length / itemsPerPage));
-  }, [filteredUsers]);
+  useEffect(() => {
+    if (!deleteTarget) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [deleteTarget]);
 
-  // Paginated slice
-  const paginatedUsers = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredUsers.slice(start, start + itemsPerPage);
-  }, [filteredUsers, currentPage]);
+  const handleToggleStatus = async (user: User) => {
+    const nextStatus: UserStatus =
+      user.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE";
 
-  const handleToggleStatus = (id: string, name: string) => {
-    setUsers((prev) =>
-      prev.map((u) =>
-        u.id === id
-          ? { ...u, status: u.status === "Active" ? "Inactive" : "Active" }
-          : u
-      )
-    );
-    toast.success(`Successfully toggled status for user "${name}"!`);
+    try {
+      const response = await updateUserStatus({
+        id: user.id,
+        status: nextStatus,
+      }).unwrap();
+      toast.success(
+        response?.message ||
+          `${getUserName(user)} marked as ${normalizeStatus(nextStatus)}.`,
+      );
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to update user status."));
+    }
   };
 
-  const handleDeleteUser = (id: string, name: string) => {
-    setUsers((prev) => prev.filter((u) => u.id !== id));
-    toast.error(`Deleted user "${name}" record.`);
+  const handleDeleteUser = async () => {
+    if (!deleteTarget) return;
+
+    try {
+      const response = await deleteUser(deleteTarget.id).unwrap();
+      toast.success(response?.message || "User deleted successfully.");
+      setDeleteTarget(null);
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to delete user."));
+    }
   };
 
-  // Ant Design Dropdown items builder
-  const getActionMenuItems = (user: SuperAdminUserItem) => [
+  const getActionMenuItems = (user: User) => [
     {
       key: "toggle",
       label: (
-        <span className="font-semibold text-slate-700 font-sans px-2 py-1 block flex items-center gap-2">
-          <Eye size={14} className="text-[#00B2D6]" />
-          Toggle Status
+        <span className="block px-2 py-1 font-sans font-semibold text-slate-700">
+          {user.status === "ACTIVE" ? "Suspend User" : "Activate User"}
         </span>
       ),
-      onClick: () => handleToggleStatus(user.id, user.userName),
-    },
-    {
-      key: "suspend",
-      label: (
-        <span className="font-semibold text-amber-600 font-sans px-2 py-1 block flex items-center gap-2">
-          <ShieldAlert size={14} />
-          Suspend User
-        </span>
-      ),
-      onClick: () => toast.warning(`Suspended user "${user.userName}" session active states.`),
+      onClick: () => handleToggleStatus(user),
+      disabled: isUpdatingStatus,
     },
     {
       key: "delete",
       label: (
-        <span className="font-semibold text-red-500 font-sans px-2 py-1 block flex items-center gap-2">
-          <Trash2 size={14} />
+        <span className="block px-2 py-1 font-sans font-semibold text-red-500">
           Delete
         </span>
       ),
-      onClick: () => handleDeleteUser(user.id, user.userName),
+      onClick: () => setDeleteTarget(user),
+      disabled: isDeleting,
+    },
+  ];
+
+  const stats = [
+    {
+      title: "Total Users",
+      value: total,
+      icon: Users,
+      iconClassName: "text-[#00B2D6]",
+      iconBackground: "bg-[#E6FAFF]",
+    },
+    {
+      title: "Active Users",
+      value: activeCount,
+      icon: Check,
+      iconClassName: "text-[#10B981]",
+      iconBackground: "bg-[#E8F8F5]",
+    },
+    {
+      title: "Inactive Users",
+      value: 0,
+      icon: XSquare,
+      iconClassName: "text-[#D9A700]",
+      iconBackground: "bg-[#FEF9E7]",
+    },
+    {
+      title: "Suspended Users",
+      value: suspendedCount,
+      icon: XCircle,
+      iconClassName: "text-[#E53E3E]",
+      iconBackground: "bg-[#FDF2F2]",
     },
   ];
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-8 w-full">
-      {/* Title */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0F2E4A] font-poppins tracking-tight">
-          Manage Users
-        </h1>
+    <div className="w-full space-y-8 p-4 md:p-6 lg:p-8">
+      <h1 className="font-poppins text-2xl font-extrabold tracking-tight text-[#0F2E4A] sm:text-3xl">
+        Manage Users
+      </h1>
+
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <div
+              key={stat.title}
+              className="flex min-h-[140px] flex-col justify-between rounded-[24px] border border-slate-100 bg-white p-6 shadow-[0_4px_25px_rgba(0,0,0,0.01)]"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-poppins text-xs font-bold text-[#0F2E4A] sm:text-sm">
+                  {stat.title}
+                </span>
+                <div
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${stat.iconBackground} ${stat.iconClassName}`}
+                >
+                  <Icon size={18} className="stroke-[2.5]" />
+                </div>
+              </div>
+              <div className="pt-4 font-poppins text-2xl font-extrabold text-[#0F2E4A] sm:text-3xl">
+                {isUsersLoading ? (
+                  <StatsSkeleton />
+                ) : (
+                  stat.value.toLocaleString("en-GB")
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Stats Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Total Users */}
-        <div className="bg-white rounded-[24px] border border-slate-100 p-6 flex flex-col justify-between min-h-[140px] shadow-[0_4px_25px_rgba(0,0,0,0.01)]">
-          <div className="flex items-center justify-between">
-            <span className="text-xs sm:text-sm font-bold text-[#0F2E4A] font-poppins">
-              Total Users
-            </span>
-            <div className="w-10 h-10 rounded-2xl bg-[#E6FAFF] text-[#00B2D6] flex items-center justify-center shrink-0">
-              <Users size={18} className="stroke-[2.5]" />
-            </div>
-          </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-[#0F2E4A] font-poppins pt-4">
-            12
-          </div>
-        </div>
-
-        {/* Active Users */}
-        <div className="bg-white rounded-[24px] border border-slate-100 p-6 flex flex-col justify-between min-h-[140px] shadow-[0_4px_25px_rgba(0,0,0,0.01)]">
-          <div className="flex items-center justify-between">
-            <span className="text-xs sm:text-sm font-bold text-[#0F2E4A] font-poppins">
-              Active Users
-            </span>
-            <div className="w-10 h-10 rounded-2xl bg-[#E6FAFF] text-[#00B2D6] flex items-center justify-center shrink-0">
-              <Check size={18} className="stroke-[3]" />
-            </div>
-          </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-[#0F2E4A] font-poppins pt-4">
-            322
-          </div>
-        </div>
-
-        {/* Inactive Users */}
-        <div className="bg-white rounded-[24px] border border-slate-100 p-6 flex flex-col justify-between min-h-[140px] shadow-[0_4px_25px_rgba(0,0,0,0.01)]">
-          <div className="flex items-center justify-between">
-            <span className="text-xs sm:text-sm font-bold text-[#0F2E4A] font-poppins">
-              Inactive Users
-            </span>
-            <div className="w-10 h-10 rounded-2xl bg-[#E6FAFF] text-[#00B2D6] flex items-center justify-center shrink-0">
-              <XSquare size={18} className="stroke-[2.5]" />
-            </div>
-          </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-[#0F2E4A] font-poppins pt-4">
-            342
-          </div>
-        </div>
-
-        {/* Suspended Users */}
-        <div className="bg-white rounded-[24px] border border-slate-100 p-6 flex flex-col justify-between min-h-[140px] shadow-[0_4px_25px_rgba(0,0,0,0.01)]">
-          <div className="flex items-center justify-between">
-            <span className="text-xs sm:text-sm font-bold text-[#0F2E4A] font-poppins">
-              Suspended Users
-            </span>
-            <div className="w-10 h-10 rounded-2xl bg-[#FDF2F2] text-[#E53E3E] flex items-center justify-center shrink-0">
-              <XCircle size={18} className="stroke-[2.5]" />
-            </div>
-          </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-[#0F2E4A] font-poppins pt-4">
-            5
-          </div>
-        </div>
-      </div>
-
-      {/* Search Input Box */}
       <div className="relative">
-        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+        <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
           <Search size={18} />
         </span>
         <input
-          type="text"
+          type="search"
           placeholder="Search Users"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-12 pr-4 py-3.5 border border-slate-200 bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.01)] focus:outline-none focus:border-[#00B2D6] focus:ring-1 focus:ring-[#00B2D6] text-xs sm:text-sm text-[#0F2E4A] placeholder-slate-400 transition-all font-semibold"
+          className="w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-12 pr-4 text-xs font-semibold text-[#0F2E4A] shadow-[0_2px_10px_rgba(0,0,0,0.01)] transition-all placeholder-slate-400 focus:border-[#00B2D6] focus:outline-none focus:ring-1 focus:ring-[#00B2D6] sm:text-sm"
         />
       </div>
 
-      {/* Users List Table */}
       <div className="space-y-4 pt-2">
-        <h2 className="text-xl sm:text-2xl font-extrabold text-[#0F2E4A] font-poppins tracking-tight">
+        <h2 className="font-poppins text-xl font-extrabold tracking-tight text-[#0F2E4A] sm:text-2xl">
           Users
         </h2>
 
-        <div className="bg-white rounded-[24px] border border-slate-100/90 shadow-[0_4px_25px_rgba(0,0,0,0.01)] overflow-hidden">
-          <div className="overflow-x-auto w-full">
-            <table className="w-full min-w-[900px] border-collapse text-left">
+        <div className="overflow-hidden rounded-[24px] border border-slate-100/90 bg-white shadow-[0_4px_25px_rgba(0,0,0,0.01)]">
+          <div className="w-full overflow-x-auto">
+            <table className="w-full min-w-[980px] border-collapse text-left">
               <thead>
                 <tr className="border-b border-[#00B2D6] bg-white">
-                  <th className="py-4 px-6 text-xs sm:text-sm font-bold text-[#0F2E4A] font-poppins w-[22%]">
+                  <th className="w-[18%] px-6 py-4 font-poppins text-xs font-bold text-[#0F2E4A] sm:text-sm">
                     User Name
                   </th>
-                  <th className="py-4 px-6 text-xs sm:text-sm font-bold text-[#0F2E4A] font-poppins w-[24%]">
+                  <th className="w-[22%] px-6 py-4 font-poppins text-xs font-bold text-[#0F2E4A] sm:text-sm">
                     Email
                   </th>
-                  <th className="py-4 px-6 text-xs sm:text-sm font-bold text-[#0F2E4A] font-poppins w-[18%]">
+                  <th className="w-[14%] px-6 py-4 font-poppins text-xs font-bold text-[#0F2E4A] sm:text-sm">
                     Phone Number
                   </th>
-                  <th className="py-4 px-6 text-xs sm:text-sm font-bold text-[#0F2E4A] font-poppins w-[18%]">
+                  <th className="w-[12%] px-6 py-4 font-poppins text-xs font-bold text-[#0F2E4A] sm:text-sm">
+                    Role
+                  </th>
+                  <th className="w-[14%] px-6 py-4 font-poppins text-xs font-bold text-[#0F2E4A] sm:text-sm">
                     Join Date
                   </th>
-                  <th className="py-4 px-6 text-xs sm:text-sm font-bold text-[#0F2E4A] font-poppins w-[12%]">
+                  <th className="w-[12%] px-6 py-4 font-poppins text-xs font-bold text-[#0F2E4A] sm:text-sm">
                     Status
                   </th>
-                  <th className="py-4 px-6 text-xs sm:text-sm font-bold text-[#0F2E4A] font-poppins text-center w-[6%]">
+                  <th className="w-[8%] px-6 py-4 text-center font-poppins text-xs font-bold text-[#0F2E4A] sm:text-sm">
                     Action
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100/80">
-                {paginatedUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-slate-50/40 transition-colors">
-                    <td className="py-3.5 px-6 text-xs sm:text-sm text-[#0F2E4A] font-bold font-sans">
-                      {user.userName}
-                    </td>
-                    <td className="py-3.5 px-6 text-xs sm:text-sm text-slate-500 font-semibold font-sans">
-                      {user.email}
-                    </td>
-                    <td className="py-3.5 px-6 text-xs sm:text-sm text-slate-500 font-semibold font-sans">
-                      {user.phoneNumber}
-                    </td>
-                    <td className="py-3.5 px-6 text-xs sm:text-sm text-slate-500 font-semibold font-sans">
-                      {user.joinDate}
-                    </td>
-                    <td className="py-3.5 px-6">
-                      <span
-                        className={`inline-block px-3.5 py-1 rounded-full text-xs font-bold font-poppins tracking-wider ${
-                          user.status === "Active"
-                            ? "bg-[#E8F8F5] text-[#10B981]"
-                            : "bg-[#FEF9E7] text-[#D9A700]"
-                        }`}
+
+              {isUsersLoading ? (
+                <TableSkeleton />
+              ) : (
+                <tbody className="divide-y divide-slate-100/80">
+                  {paginatedUsers.map((user) => {
+                    const status = normalizeStatus(user.status);
+                    return (
+                      <tr
+                        key={user.id}
+                        className="transition-colors hover:bg-slate-50/40"
                       >
-                        {user.status}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-6 text-center">
-                      <Dropdown
-                        menu={{ items: getActionMenuItems(user) }}
-                        trigger={["click"]}
-                        placement="bottomRight"
-                        overlayClassName="min-w-[150px] bg-white border border-slate-100 rounded-xl shadow-lg"
-                      >
-                        <button
-                          type="button"
-                          className="w-8 h-8 rounded-full bg-[#E6FAFF] text-[#00B2D6] hover:bg-[#D0F3FC] hover:scale-105 active:scale-95 transition-all flex items-center justify-center cursor-pointer border-none outline-none"
-                        >
-                          <MoreVertical size={16} />
-                        </button>
-                      </Dropdown>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
+                        <td className="px-6 py-3.5 font-sans text-xs font-bold text-[#0F2E4A] sm:text-sm">
+                          {getUserName(user)}
+                        </td>
+                        <td className="px-6 py-3.5 font-sans text-xs font-semibold text-slate-500 sm:text-sm">
+                          {user.email || "N/A"}
+                        </td>
+                        <td className="px-6 py-3.5 font-sans text-xs font-semibold text-slate-500 sm:text-sm">
+                          {user.phoneNumber || "N/A"}
+                        </td>
+                        <td className="px-6 py-3.5 font-sans text-xs font-semibold text-slate-500 sm:text-sm">
+                          {user.role || "N/A"}
+                        </td>
+                        <td className="px-6 py-3.5 font-sans text-xs font-semibold text-slate-500 sm:text-sm">
+                          {formatDate(user.joinDate || user.createdAt)}
+                        </td>
+                        <td className="px-6 py-3.5">
+                          <span
+                            className={`inline-block rounded-full px-3.5 py-1 font-poppins text-xs font-bold tracking-wider ${
+                              status === "Active"
+                                ? "bg-[#E8F8F5] text-[#10B981]"
+                                : "bg-[#FDF2F2] text-[#E53E3E]"
+                            }`}
+                          >
+                            {status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-3.5 text-center">
+                          <Dropdown
+                            menu={{ items: getActionMenuItems(user) }}
+                            trigger={["click"]}
+                            placement="bottomRight"
+                            overlayClassName="min-w-[150px] bg-white border border-slate-100 rounded-xl shadow-lg"
+                          >
+                            <button
+                              type="button"
+                              className="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-[#E6FAFF] text-[#00B2D6] transition-all hover:scale-105 hover:bg-[#D0F3FC] active:scale-95"
+                              aria-label={`Open actions for ${getUserName(user)}`}
+                              title="Actions"
+                            >
+                              <MoreVertical size={16} />
+                            </button>
+                          </Dropdown>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              )}
             </table>
+
+            {!isUsersLoading && isError && (
+              <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 border-t border-slate-100 text-center">
+                <p className="text-sm font-bold text-red-500">
+                  Failed to load users.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => refetch()}
+                  className="rounded-full bg-[#00B2D6] px-5 py-2 text-xs font-bold text-white hover:bg-[#009cb9]"
+                >
+                  Try Again
+                </button>
+              </div>
+            )}
+
+            {!isUsersLoading && !isError && filteredUsers.length === 0 && (
+              <div className="flex min-h-[280px] items-center justify-center border-t border-slate-100 px-6 text-center text-sm font-semibold text-slate-400">
+                No users found.
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Bottom Pagination Control Section */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-end gap-2 pt-4">
-            <button
-              type="button"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              className="px-3.5 py-1.5 border border-slate-200 hover:bg-slate-50 rounded-lg text-slate-400 font-bold text-xs sm:text-sm flex items-center gap-1 transition-all outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ChevronLeft size={14} />
-              <span>Previous</span>
-            </button>
-            
-            {Array.from({ length: totalPages }).map((_, idx) => {
-              const pageNum = idx + 1;
-              const isActive = currentPage === pageNum;
-              return (
-                <button
-                  key={pageNum}
-                  type="button"
-                  onClick={() => setCurrentPage(pageNum)}
-                  className={`w-8 h-8 rounded-lg font-bold text-xs sm:text-sm transition-all cursor-pointer ${
-                    isActive
-                      ? "bg-[#00B2D6] text-white border border-[#00B2D6] shadow-sm"
-                      : "border border-slate-200 text-slate-500 hover:bg-slate-50"
-                  }`}
-                >
-                  {pageNum}
-                </button>
-              );
-            })}
-
-            <button
-              type="button"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              className="px-3.5 py-1.5 border border-slate-200 hover:bg-slate-50 rounded-lg text-slate-500 font-bold text-xs sm:text-sm flex items-center gap-1 transition-all outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <span>Next</span>
-              <ChevronRight size={14} />
-            </button>
-          </div>
+        {!isLoading && !isError && totalPages > 1 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
         )}
       </div>
+
+      {deleteTarget && mounted && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+          <button
+            type="button"
+            aria-label="Cancel delete user"
+            className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
+            onClick={() => setDeleteTarget(null)}
+          />
+          <div className="relative z-10 w-full max-w-[420px] rounded-[28px] border border-slate-100 bg-white p-6 shadow-[0_20px_50px_rgba(0,0,0,0.12)] sm:p-7">
+            <h3 className="font-poppins text-xl font-extrabold text-[#0F2E4A]">
+              Delete User
+            </h3>
+            <p className="mt-3 text-sm font-semibold leading-relaxed text-slate-500">
+              Are you sure you want to delete {getUserName(deleteTarget)}? This
+              action cannot be undone.
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                disabled={isDeleting}
+                className="rounded-full border border-slate-200 px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteUser}
+                disabled={isDeleting}
+                className="rounded-full bg-red-500 px-5 py-2.5 text-xs font-bold text-white hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
     </div>
   );
 }
