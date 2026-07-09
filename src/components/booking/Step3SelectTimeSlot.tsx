@@ -29,9 +29,6 @@ const SlotSkeleton = () => (
   </div>
 );
 
-const isSlotUnavailable = (slot: BookingSlot) =>
-  slot.status !== "Active" || slot.booked >= slot.capacity;
-
 export default function Step3SelectTimeSlot({
   selectedDate,
   setSelectedDate,
@@ -190,19 +187,15 @@ export default function Step3SelectTimeSlot({
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {slots.map((slot) => {
                   const isSelected = selectedSlotId === slot.id;
-                  const unavailable = isSlotUnavailable(slot);
                   return (
                     <button
                       key={slot.id}
                       type="button"
-                      disabled={unavailable}
                       onClick={() => setSelectedSlotId(slot.id)}
                       className={`rounded-xl px-4 py-3 text-center text-xs font-bold transition-all sm:text-sm ${
                         isSelected
                           ? "bg-[#00B2D6] text-white shadow-sm shadow-[#00B2D6]/10"
-                          : unavailable
-                            ? "cursor-not-allowed bg-slate-100 text-slate-300"
-                            : "bg-[#E6FAFF] text-[#0F2E4A] hover:bg-[#00B2D6] hover:text-white"
+                          : "bg-[#E6FAFF] text-[#0F2E4A] hover:bg-[#00B2D6] hover:text-white"
                       }`}
                     >
                       {slot.startTime}

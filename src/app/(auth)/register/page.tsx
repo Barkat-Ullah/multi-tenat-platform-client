@@ -8,7 +8,7 @@ import Link from "next/link";
 import { type RegisterRequest, useRegisterUserMutation } from "@/redux/service/auth/authApi";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { User, Mail, Phone, MapPin, Lock, Eye, EyeOff } from "lucide-react";
+import { User, Mail, Phone, MapPin, Lock, Eye, EyeOff, CalendarDays } from "lucide-react";
 
 const RegisterPage = () => {
   // Tab State: 'driver' | 'corporate'
@@ -18,6 +18,7 @@ const RegisterPage = () => {
   const [driverName, setDriverName] = useState("");
   const [driverEmail, setDriverEmail] = useState("");
   const [driverPhone, setDriverPhone] = useState("");
+  const [driverDob, setDriverDob] = useState("");
   const [driverPassword, setDriverPassword] = useState("");
 
   // Corporate Fields
@@ -32,6 +33,10 @@ const RegisterPage = () => {
 
   const [register, { isLoading }] = useRegisterUserMutation();
   const router = useRouter();
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
+    now.getDate(),
+  ).padStart(2, "0")}`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,6 +48,7 @@ const RegisterPage = () => {
               fullName: driverName,
               email: driverEmail,
               phoneNumber: driverPhone,
+              dob: driverDob,
               password: driverPassword,
               role: "USER",
             }
@@ -200,6 +206,30 @@ const RegisterPage = () => {
                       onChange={(e) => setDriverPhone(e.target.value)}
                       className="w-full pl-12 pr-4 py-2.5 border border-slate-200 rounded-2xl focus:outline-none focus:border-[#00B2D6] focus:ring-1 focus:ring-[#00B2D6] transition-all text-sm font-semibold text-[#0F2E4A] placeholder-slate-400"
                       placeholder="Phone Number"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Driver - Date of Birth */}
+                <div>
+                  <label
+                    htmlFor="driverDob"
+                    className="block text-xs font-bold text-[#55697A] uppercase tracking-wider mb-2"
+                  >
+                    Date of Birth
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                      <CalendarDays className="h-5 w-5" />
+                    </span>
+                    <input
+                      type="date"
+                      id="driverDob"
+                      value={driverDob}
+                      max={today}
+                      onChange={(e) => setDriverDob(e.target.value)}
+                      className="w-full pl-12 pr-4 py-2.5 border border-slate-200 rounded-2xl focus:outline-none focus:border-[#00B2D6] focus:ring-1 focus:ring-[#00B2D6] transition-all text-sm font-semibold text-[#0F2E4A]"
                       required
                     />
                   </div>

@@ -24,6 +24,7 @@ export interface RegisterRequest {
   fullName: string;
   email: string;
   phoneNumber: string;
+  dob?: string;
   password: string;
   role: Extract<BackendRole, "USER" | "ORGINIZER">;
   companyLocation?: string;

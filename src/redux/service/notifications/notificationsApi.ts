@@ -1,11 +1,11 @@
 import baseApi from "@/redux/api/baseApi";
 
-export interface AdminNotificationListParams {
+export interface NotificationListParams {
   page: number;
   limit: number;
 }
 
-export interface AdminNotification {
+export interface AppNotification {
   id?: string;
   _id?: string;
   title?: string | null;
@@ -30,7 +30,7 @@ export interface AdminNotification {
   [key: string]: unknown;
 }
 
-export interface AdminNotificationListResponse {
+export interface NotificationListResponse {
   success: boolean;
   statusCode: number;
   message: string;
@@ -39,21 +39,21 @@ export interface AdminNotificationListResponse {
     page: number;
     limit: number;
   };
-  data: AdminNotification[];
+  data: AppNotification[];
 }
 
-export interface AdminNotificationResponse {
+export interface NotificationResponse {
   success: boolean;
   statusCode: number;
   message: string;
-  data: AdminNotification;
+  data: AppNotification;
 }
 
-const adminNotificationsApi = baseApi.injectEndpoints({
+const notificationsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getAdminNotifications: builder.query<
-      AdminNotificationListResponse,
-      AdminNotificationListParams
+    getNotifications: builder.query<
+      NotificationListResponse,
+      NotificationListParams
     >({
       query: (params) => ({
         url: "/notifications",
@@ -62,7 +62,7 @@ const adminNotificationsApi = baseApi.injectEndpoints({
       }),
       providesTags: ["notifications"],
     }),
-    getAdminNotification: builder.query<AdminNotificationResponse, string>({
+    getNotification: builder.query<NotificationResponse, string>({
       query: (notificationId) => ({
         url: `/notifications/${notificationId}`,
         method: "GET",
@@ -73,6 +73,6 @@ const adminNotificationsApi = baseApi.injectEndpoints({
 });
 
 export const {
-  useGetAdminNotificationsQuery,
-  useLazyGetAdminNotificationQuery,
-} = adminNotificationsApi;
+  useGetNotificationsQuery,
+  useLazyGetNotificationQuery,
+} = notificationsApi;

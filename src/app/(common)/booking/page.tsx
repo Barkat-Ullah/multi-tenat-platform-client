@@ -216,7 +216,34 @@ function BookingFlowCoordinator() {
   const selectedClinic =
     clinics.find((clinic) => clinic.id === selectedClinicId) || null;
   const slots = slotsResponse?.data?.slots || [];
-  const selectedSlot = slots.find((slot) => slot.id === selectedSlotId) || null;
+  const availableSlots = useMemo(
+    () =>
+      slots.filter(
+        (slot) =>
+          !slot.isBooked &&
+          slot.status.toLowerCase() === "active" &&
+          slot.booked < slot.capacity,
+      ),
+    [slots],
+  );
+  const selectedSlot =
+    availableSlots.find((slot) => slot.id === selectedSlotId) || null;
+
+  useEffect(() => {
+    if (
+      selectedSlotId &&
+      !isSlotsLoading &&
+      !isSlotsFetching &&
+      !availableSlots.some((slot) => slot.id === selectedSlotId)
+    ) {
+      setSelectedSlotId(null);
+    }
+  }, [
+    availableSlots,
+    isSlotsFetching,
+    isSlotsLoading,
+    selectedSlotId,
+  ]);
 
   const handleSelectService = (id: string | null) => {
     setSelectedServiceId(id);
@@ -399,8 +426,11 @@ function BookingFlowCoordinator() {
                 setSelectedDate={setSelectedDate}
                 selectedSlotId={selectedSlotId}
                 setSelectedSlotId={setSelectedSlotId}
-                slots={slots}
-                isAvailable={Boolean(slotsResponse?.data?.isAvailable)}
+                slots={availableSlots}
+                isAvailable={
+                  Boolean(slotsResponse?.data?.isAvailable) &&
+                  availableSlots.length > 0
+                }
                 isLoading={isSlotsLoading || isSlotsFetching}
                 isError={isSlotsError}
                 calendarMonth={calendarMonth}

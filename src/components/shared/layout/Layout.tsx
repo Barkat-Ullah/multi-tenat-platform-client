@@ -10,7 +10,7 @@ import logo from "@/assets/logo/logo.png";
 import { logout } from "@/redux/features/auth";
 import { useDispatch } from "react-redux";
 import { useAppSelector } from "@/redux/store";
-import { normalizeRole } from "@/utils/roles";
+import { getDashboardPathByRole, normalizeRole } from "@/utils/roles";
 import { useGetProfileDataQuery } from "@/redux/service/profile/profileApi";
 import { getImageUrl } from "@/utils/getImageUrl";
 
@@ -79,6 +79,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, menu }) => {
   }, [user?.profile?.name, user?.email]);
 
   const role = normalizeRole(user?.role);
+  const notificationsPath = `${getDashboardPathByRole(user?.role)}/notifications`;
 
   const avatarUrl = useMemo(() => {
     const url = user?.profile?.avatar?.trim();
@@ -92,53 +93,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, menu }) => {
       "U";
     return initial.toUpperCase();
   }, [user?.profile?.name, user?.email]);
-
-  // --- Custom Notification Dropdown Content ---
-  const notificationDropdown = (
-    <div className="bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] border border-slate-100 p-4 w-80 space-y-3">
-      <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-        <h4 className="font-bold text-[#0F2E4A] text-sm font-poppins">Notifications</h4>
-        <span className="text-[10px] font-bold text-[#00B2D6] bg-[#E6FAFF] px-2 py-0.5 rounded-full">3 New</span>
-      </div>
-      <div className="space-y-3 max-h-[250px] overflow-y-auto">
-        <div className="flex gap-3 text-xs p-2 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer">
-          <div className="w-2 h-2 rounded-full bg-[#00B2D6] mt-1.5 shrink-0 animate-ping" />
-          <div>
-            <p className="font-bold text-[#0F2E4A] leading-tight">New Booking Created</p>
-            <p className="text-slate-500 mt-0.5 leading-snug">John Doe booked COVID Test at London East</p>
-            <span className="text-[10px] font-semibold text-slate-400 block mt-1">5 mins ago</span>
-          </div>
-        </div>
-        <div className="flex gap-3 text-xs p-2 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer">
-          <div className="w-2 h-2 rounded-full bg-[#00B2D6] mt-1.5 shrink-0 animate-ping" />
-          <div>
-            <p className="font-bold text-[#0F2E4A] leading-tight">Report Ready</p>
-            <p className="text-slate-500 mt-0.5 leading-snug">Monthly compliance report is ready for download</p>
-            <span className="text-[10px] font-semibold text-slate-400 block mt-1">1 hour ago</span>
-          </div>
-        </div>
-        <div className="flex gap-3 text-xs p-2 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer">
-          <div className="w-2 h-2 rounded-full bg-slate-300 mt-1.5 shrink-0" />
-          <div>
-            <p className="font-bold text-gray-500 leading-tight">System Update</p>
-            <p className="text-slate-400 mt-0.5 leading-snug">v2.1 dashboard successfully deployed</p>
-            <span className="text-[10px] font-semibold text-slate-400 block mt-1">1 day ago</span>
-          </div>
-        </div>
-      </div>
-      <div className="flex items-center justify-between pt-2 border-t border-slate-100 px-1">
-        <button className="text-[11px] font-bold text-slate-400 hover:text-slate-600 transition-colors cursor-pointer border-none bg-transparent">
-          Mark all as read
-        </button>
-        <Link
-          href="/dashboard/admin/notifications"
-          className="text-[11px] font-bold text-[#00B2D6] hover:underline transition-all"
-        >
-          View all
-        </Link>
-      </div>
-    </div>
-  );
 
   if (isLoading) {
     return (
@@ -221,19 +175,18 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, menu }) => {
           </button>
 
           {/* Right Action Bar containing Bell Notification & Profile Dropdown */}
-          <div className="hidden lg:flex items-center gap-4">
-            <Dropdown popupRender={() => notificationDropdown} placement="bottomRight" arrow trigger={["click"]}>
-              <button
-                className="w-10 h-10 rounded-2xl flex items-center justify-center bg-[#E6FAFF] text-[#00B2D6] hover:bg-[#D0F3FC] hover:scale-105 active:scale-95 transition-all relative cursor-pointer border-none outline-none"
-                aria-label="Notifications"
-              >
-                <Bell size={20} className="stroke-[2.25]" />
-                <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full" />
-              </button>
-            </Dropdown>
+          <div className="flex items-center gap-2 lg:gap-4">
+            <Link
+              href={notificationsPath}
+              aria-label="Notifications"
+              title="Notifications"
+              className="relative flex h-10 w-10 items-center justify-center rounded-2xl border-none bg-[#E6FAFF] text-[#00B2D6] outline-none transition-all hover:scale-105 hover:bg-[#D0F3FC] active:scale-95"
+            >
+              <Bell size={20} className="stroke-[2.25]" />
+            </Link>
 
             <Dropdown menu={{ items: profileMenuItems }} placement="bottomRight" arrow>
-              <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
+              <div className="hidden items-center gap-3 rounded-lg p-2 transition-colors hover:bg-gray-50 lg:flex">
                 <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
                   {avatarUrl ? (
                     <Image

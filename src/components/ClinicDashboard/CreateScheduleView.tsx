@@ -103,6 +103,7 @@ const timeToMinutes = (time: string) => {
 };
 
 export default function CreateScheduleView() {
+  const today = dayjs().startOf("day");
   const [selectedDate, setSelectedDate] = useState<Dayjs>(() =>
     dayjs().startOf("day"),
   );
@@ -144,7 +145,8 @@ export default function CreateScheduleView() {
   const selectedMonthAvailability = monthAvailability.find(
     (item) => item.date === selectedDate.format("YYYY-MM-DD"),
   );
-  const selectedDateIsPast = selectedDate.isBefore(dayjs().startOf("day"), "day");
+  const selectedDateIsPast = selectedDate.isBefore(today, "day");
+  const isCurrentMonth = visibleMonth.isSame(today, "month");
   const selectedDateHasSchedule =
     Boolean(selectedAvailability) || selectedMonthAvailability?.isActive === true;
   const isScheduleDataLoading =
@@ -171,8 +173,10 @@ export default function CreateScheduleView() {
 
   const changeMonth = (direction: -1 | 1) => {
     const nextMonth = visibleMonth.add(direction, "month").startOf("month");
+    if (nextMonth.isBefore(today.startOf("month"), "month")) return;
+
     setVisibleMonth(nextMonth);
-    setSelectedDate(nextMonth);
+    setSelectedDate(nextMonth.isSame(today, "month") ? today : nextMonth);
   };
 
   const handleGenerateSlots = async (event: React.FormEvent) => {
@@ -232,9 +236,10 @@ export default function CreateScheduleView() {
                 <button
                   type="button"
                   onClick={() => changeMonth(-1)}
+                  disabled={isCurrentMonth}
                   aria-label="Previous month"
                   title="Previous month"
-                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:border-[#00B2D6] hover:text-[#00B2D6]"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:border-[#00B2D6] hover:text-[#00B2D6] disabled:cursor-not-allowed disabled:border-slate-100 disabled:text-slate-300"
                 >
                   <ChevronLeft size={17} />
                 </button>
@@ -276,6 +281,7 @@ export default function CreateScheduleView() {
 
                   const date = visibleMonth.date(day);
                   const isSelected = date.isSame(selectedDate, "day");
+                  const isPast = date.isBefore(today, "day");
                   const dayAvailability = monthAvailability.find(
                     (item) => item.date === date.format("YYYY-MM-DD"),
                   );
@@ -286,8 +292,16 @@ export default function CreateScheduleView() {
                       key={day}
                       type="button"
                       onClick={() => setSelectedDate(date)}
+                      disabled={isPast}
+                      aria-label={
+                        isPast
+                          ? `${date.format("DD MMMM YYYY")} unavailable`
+                          : date.format("DD MMMM YYYY")
+                      }
                       className={`relative flex h-10 w-full items-center justify-center rounded-xl border text-xs font-bold transition-colors sm:h-11 sm:text-sm ${
-                        isSelected
+                        isPast
+                          ? "cursor-not-allowed border-slate-100 bg-slate-50 text-slate-300"
+                          : isSelected
                           ? "border-[#00B2D6] bg-[#00B2D6] text-white shadow-md shadow-cyan-100"
                           : "border-cyan-100/50 bg-white text-slate-500 hover:border-[#00B2D6]/40"
                       }`}

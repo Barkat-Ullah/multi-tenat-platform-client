@@ -10,8 +10,12 @@ import logoImg from "@/assets/logo/logo.png";
 import { useResendOtpMutation, useVerifyUserMutation } from "@/redux/service/auth/authApi";
 import { toast } from "sonner";
 
+const OTP_LENGTH = 4;
+
 const OTPage = () => {
-  const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
+  const [otp, setOtp] = useState<string[]>(() =>
+    Array.from({ length: OTP_LENGTH }, () => ""),
+  );
   const [email, setEmail] = useState<string | null>(null);
   const [authFlow, setAuthFlow] = useState<"registration" | "forgot-password">("registration");
 
@@ -36,7 +40,7 @@ const OTPage = () => {
     newOtp[index] = value;
     setOtp(newOtp);
 
-    if (value && index < 5) {
+    if (value && index < OTP_LENGTH - 1) {
       inputRefs.current[index + 1]?.focus();
     }
   };
@@ -48,14 +52,18 @@ const OTPage = () => {
   };
 
   const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
-    const paste = e.clipboardData.getData("text").trim().slice(0, 6);
-    if (!/^\d{1,6}$/.test(paste)) return;
+    e.preventDefault();
+    const paste = e.clipboardData.getData("text").trim().slice(0, OTP_LENGTH);
+    if (!new RegExp(`^\\d{1,${OTP_LENGTH}}$`).test(paste)) return;
 
     const digits = paste.split("");
-    const filled = Array.from({ length: 6 }, (_, i) => digits[i] ?? "");
+    const filled = Array.from(
+      { length: OTP_LENGTH },
+      (_, i) => digits[i] ?? "",
+    );
     setOtp(filled);
 
-    const nextIndex = Math.min(digits.length, 5);
+    const nextIndex = Math.min(digits.length, OTP_LENGTH - 1);
     inputRefs.current[nextIndex]?.focus();
   };
 
@@ -63,11 +71,11 @@ const OTPage = () => {
     e.preventDefault();
     const otpValue = otp.join("");
 
-    if (otpValue.length !== 6) {
+    if (otpValue.length !== OTP_LENGTH) {
       appAlert.fire({
         icon: "error",
         title: "Invalid OTP",
-        text: "Please enter the 6-digit OTP.",
+        text: `Please enter the ${OTP_LENGTH}-digit OTP.`,
       });
       return;
     }
