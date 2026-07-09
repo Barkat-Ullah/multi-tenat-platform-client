@@ -6,6 +6,15 @@ export interface AdminBookingListParams {
   createdAt?: string;
 }
 
+export interface AdminBookingCalendarParams {
+  rangeStartDay: string;
+  rangeEndDay: string;
+  period?: "daily" | "weekly" | "monthly" | string;
+  clinicId?: string;
+  driverId?: string;
+  locationId?: string;
+}
+
 export interface AdminBooking {
   id: string;
   serviceId?: string;
@@ -77,6 +86,68 @@ export interface AdminBookingListResponse {
   data: AdminBooking[];
 }
 
+export interface AdminBookingCalendarResponse {
+  success: boolean;
+  statusCode: number;
+  message: string;
+  meta: {
+    total: number;
+    bookingTotal: number;
+    organizerRequestTotal: number;
+    page: number;
+    limit: number;
+    period: string;
+    rangeStartDay: string;
+    rangeEndDay: string;
+  };
+  data: {
+    events: AdminBookingCalendarEvent[];
+  };
+}
+
+export interface AdminBookingCalendarEvent {
+  type: "booking" | "organizerRequest" | string;
+  id: string;
+  title: string;
+  start: string;
+  status: string;
+  clinicId?: string | null;
+  driverId?: string;
+  organizerId?: string;
+  timeSlot?: {
+    id: string;
+    date: string;
+    startTime: string;
+    endTime: string;
+    duration: number;
+    status: string;
+  } | null;
+  payload?: {
+    id?: string;
+    scheduledAt?: string;
+    createdAt?: string;
+    companyName?: string;
+    status?: string;
+    driver?: {
+      id: string;
+      fullName: string;
+      email?: string;
+    } | null;
+    organizer?: {
+      id: string;
+      fullName: string;
+    } | null;
+    service?: {
+      id: string;
+      title: string;
+    } | null;
+    clinic?: {
+      id: string;
+      fullName: string;
+    } | null;
+  };
+}
+
 const adminBookingsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAdminBookings: builder.query<
@@ -90,7 +161,19 @@ const adminBookingsApi = baseApi.injectEndpoints({
       }),
       providesTags: ["bookings"],
     }),
+    getAdminBookingsCalendar: builder.query<
+      AdminBookingCalendarResponse,
+      AdminBookingCalendarParams
+    >({
+      query: (params) => ({
+        url: "/bookings/calendar",
+        method: "GET",
+        params,
+      }),
+      providesTags: ["bookings"],
+    }),
   }),
 });
 
-export const { useGetAdminBookingsQuery } = adminBookingsApi;
+export const { useGetAdminBookingsQuery, useGetAdminBookingsCalendarQuery } =
+  adminBookingsApi;

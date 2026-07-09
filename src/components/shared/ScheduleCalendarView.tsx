@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { Calendar, Popover, Select } from "antd";
 import type { Dayjs } from "dayjs";
@@ -15,6 +15,7 @@ export interface ScheduleCalendarAppointmentData {
   day: "MON" | "TUE" | "WED" | "THU" | "FRI" | "SAT" | "SUN";
   timeSlot: string;
   color: "cyan" | "navy";
+  date?: string;
 }
 
 type CalendarDay = ScheduleCalendarAppointmentData["day"];
@@ -27,6 +28,9 @@ interface ScheduleCalendarViewProps {
   showFilters?: boolean;
   createScheduleHref?: string;
   createScheduleLabel?: string;
+  isLoading?: boolean;
+  isError?: boolean;
+  onRetry?: () => void;
 }
 
 const days: CalendarDay[] = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
@@ -40,8 +44,28 @@ const dayOffsets: Record<CalendarDay, number> = {
   SUN: 6,
 };
 
-const timeSlots = ["8:00 AM", "8:30 AM", "9:00 AM", "10:00 AM", "4:30 PM", "5:00 PM"];
 const startOfWeek = (date: Dayjs) => date.startOf("day").subtract((date.day() + 6) % 7, "day");
+const defaultTimeSlots = ["8:00 AM", "8:30 AM", "9:00 AM", "10:00 AM", "4:30 PM", "5:00 PM"];
+
+const timeSlotToMinutes = (value: string) => {
+  const normalized = value.trim().toUpperCase();
+  const parsedDate = new Date(normalized);
+  if (!Number.isNaN(parsedDate.getTime()) && normalized.includes("T")) {
+    return parsedDate.getHours() * 60 + parsedDate.getMinutes();
+  }
+
+  const match = normalized.match(/^(\d{1,2}):(\d{2})(?:\s*(AM|PM))?$/);
+  if (!match) return Number.MAX_SAFE_INTEGER;
+
+  let hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  const meridiem = match[3];
+
+  if (meridiem === "PM" && hours < 12) hours += 12;
+  if (meridiem === "AM" && hours === 12) hours = 0;
+
+  return hours * 60 + minutes;
+};
 
 export default function ScheduleCalendarView({
   appointments: appointmentData,
@@ -49,27 +73,54 @@ export default function ScheduleCalendarView({
   showFilters = true,
   createScheduleHref,
   createScheduleLabel = "Create Schedule",
+  isLoading = false,
+  isError = false,
+  onRetry,
 }: ScheduleCalendarViewProps) {
   const [hospital, setHospital] = useState("Royal Free Hospital");
   const [location, setLocation] = useState("London");
   const [viewMode, setViewMode] = useState<ViewMode>("Weekly");
   const [selectedDate, setSelectedDate] = useState(() => dayjs().startOf("day"));
-  const [appointments] = useState<ScheduledAppointment[]>(() => {
+  const appointments = useMemo<ScheduledAppointment[]>(() => {
     const currentWeekStart = startOfWeek(dayjs());
 
     return appointmentData.map((appointment) => ({
       ...appointment,
-      date: currentWeekStart.add(dayOffsets[appointment.day], "day").format("YYYY-MM-DD"),
+      date: appointment.date || currentWeekStart.add(dayOffsets[appointment.day], "day").format("YYYY-MM-DD"),
     }));
-  });
+  }, [appointmentData]);
 
   const selectedWeek = days.map((_, index) => startOfWeek(selectedDate).add(index, "day"));
+
+  const visibleTimeSlots = useMemo(() => {
+    const visibleDates =
+      viewMode === "Daily"
+        ? new Set([selectedDate.format("YYYY-MM-DD")])
+        : new Set(selectedWeek.map((date) => date.format("YYYY-MM-DD")));
+
+    const appointmentTimeSlots = appointments
+      .filter((appointment) => visibleDates.has(appointment.date))
+      .map((appointment) => appointment.timeSlot);
+
+    const slots = appointmentTimeSlots.length > 0 ? appointmentTimeSlots : defaultTimeSlots;
+
+    return Array.from(new Set(slots)).sort(
+      (first, second) => timeSlotToMinutes(first) - timeSlotToMinutes(second),
+    );
+  }, [appointments, selectedDate, selectedWeek, viewMode]);
 
   const getAppointmentsForCell = (date: Dayjs, timeSlot: string) => {
     return appointments.filter(
       (appointment) => appointment.date === date.format("YYYY-MM-DD") && appointment.timeSlot === timeSlot,
     );
   };
+
+  const selectedDateAppointments = appointments.filter(
+    (appointment) => appointment.date === selectedDate.format("YYYY-MM-DD"),
+  );
+
+  const selectedWeekDates = new Set(selectedWeek.map((date) => date.format("YYYY-MM-DD")));
+  const selectedWeekAppointments = appointments.filter((appointment) => selectedWeekDates.has(appointment.date));
 
   const handlePillClick = (app: ScheduledAppointment) => {
     toast.info(
@@ -229,7 +280,48 @@ export default function ScheduleCalendarView({
         <p className="text-sm font-extrabold text-[#0F2E4A] sm:text-base">{periodLabel}</p>
       </div>
 
-      {viewMode === "Daily" && (
+      {isError && (
+        <div className="rounded-2xl border border-red-100 bg-red-50 px-5 py-4 text-sm font-semibold text-red-700">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <span>Unable to load calendar appointments.</span>
+            {onRetry && (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="w-fit rounded-lg bg-red-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-red-700"
+              >
+                Retry
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {isLoading && (
+        <div className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-[0_4px_25px_rgba(0,0,0,0.015)]">
+          <div className="grid grid-cols-4 gap-px bg-slate-100 sm:grid-cols-8">
+            {Array.from({ length: 32 }).map((_, index) => (
+              <div key={index} className="h-20 animate-pulse bg-white p-3">
+                <div className="mb-3 h-3 w-14 rounded bg-slate-100" />
+                <div className="h-7 rounded-lg bg-slate-100" />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!isLoading && viewMode === "Daily" && selectedDateAppointments.length === 0 && (
+        <div className="rounded-3xl border border-slate-100 bg-white px-6 py-14 text-center shadow-[0_4px_25px_rgba(0,0,0,0.015)]">
+          <p className="text-base font-extrabold text-[#0F2E4A]">
+            {selectedDate.isSame(dayjs(), "day") ? "No appointments today" : "No appointments on this date"}
+          </p>
+          <p className="mt-2 text-sm font-semibold text-slate-400">
+            {selectedDate.format("dddd, DD MMMM YYYY")}
+          </p>
+        </div>
+      )}
+
+      {!isLoading && viewMode === "Daily" && selectedDateAppointments.length > 0 && (
         <div className="overflow-x-auto rounded-3xl border border-slate-100 shadow-[0_4px_25px_rgba(0,0,0,0.015)] bg-white">
           <table className="w-full border-collapse">
             <thead>
@@ -250,7 +342,7 @@ export default function ScheduleCalendarView({
               </tr>
             </thead>
             <tbody>
-              {timeSlots.map((timeSlot) => {
+              {visibleTimeSlots.map((timeSlot) => {
                 const cellApps = getAppointmentsForCell(selectedDate, timeSlot);
                 return (
                   <tr key={timeSlot} className="border-b border-slate-100 last:border-b-0">
@@ -283,7 +375,14 @@ export default function ScheduleCalendarView({
         </div>
       )}
 
-      {viewMode === "Weekly" && (
+      {!isLoading && viewMode === "Weekly" && selectedWeekAppointments.length === 0 && (
+        <div className="rounded-3xl border border-slate-100 bg-white px-6 py-14 text-center shadow-[0_4px_25px_rgba(0,0,0,0.015)]">
+          <p className="text-base font-extrabold text-[#0F2E4A]">No appointments this week</p>
+          <p className="mt-2 text-sm font-semibold text-slate-400">{periodLabel}</p>
+        </div>
+      )}
+
+      {!isLoading && viewMode === "Weekly" && selectedWeekAppointments.length > 0 && (
         <div className="overflow-x-auto rounded-3xl border border-slate-100 shadow-[0_4px_25px_rgba(0,0,0,0.015)] bg-white">
           <table className="w-full border-collapse min-w-[1200px] table-fixed">
             <thead>
@@ -309,7 +408,7 @@ export default function ScheduleCalendarView({
               </tr>
             </thead>
             <tbody>
-              {timeSlots.map((timeSlot) => (
+              {visibleTimeSlots.map((timeSlot) => (
                 <tr key={timeSlot} className="border-b border-slate-100 last:border-b-0">
                   <td className="py-6 px-4 text-xs font-bold text-slate-400 border-r border-slate-100 bg-slate-50/10 align-middle">
                     {timeSlot}
@@ -350,7 +449,7 @@ export default function ScheduleCalendarView({
         </div>
       )}
 
-      {viewMode === "Monthly" && (
+      {!isLoading && viewMode === "Monthly" && (
         <div className="bg-white rounded-3xl border border-slate-100 shadow-[0_4px_25px_rgba(0,0,0,0.015)] p-6">
           <Calendar
             value={selectedDate}
