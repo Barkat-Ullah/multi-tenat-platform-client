@@ -3,15 +3,23 @@
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
+import type {
+  AdminFaq,
+  AdminFaqMutationRequest,
+} from "@/redux/service/admin/faqApi";
 
 interface AddFaqModalProps {
   isOpen: boolean;
+  faq?: AdminFaq | null;
+  isSaving: boolean;
   onClose: () => void;
-  onSave: (data: { question: string; answer: string }) => void;
+  onSave: (data: AdminFaqMutationRequest) => Promise<boolean>;
 }
 
 export default function AddFaqModal({
   isOpen,
+  faq,
+  isSaving,
   onClose,
   onSave,
 }: AddFaqModalProps) {
@@ -28,8 +36,8 @@ export default function AddFaqModal({
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
-      setQuestion("");
-      setAnswer("");
+      setQuestion(faq?.title || "");
+      setAnswer(faq?.description || "");
       setErrors({});
     } else {
       document.body.style.overflow = "unset";
@@ -37,11 +45,11 @@ export default function AddFaqModal({
     return () => {
       document.body.style.overflow = "unset";
     };
-  }, [isOpen]);
+  }, [faq, isOpen]);
 
   if (!isOpen || !mounted) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const newErrors: Record<string, string> = {};
@@ -53,11 +61,11 @@ export default function AddFaqModal({
       return;
     }
 
-    onSave({
-      question: question.trim(),
-      answer: answer.trim(),
+    const saved = await onSave({
+      title: question.trim(),
+      description: answer.trim(),
     });
-    onClose();
+    if (saved) onClose();
   };
 
   return createPortal(
@@ -65,7 +73,9 @@ export default function AddFaqModal({
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity duration-300"
-        onClick={onClose}
+        onClick={() => {
+          if (!isSaving) onClose();
+        }}
       />
 
       {/* Modal Container */}
@@ -76,13 +86,14 @@ export default function AddFaqModal({
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-100/80">
           <h2 className="text-xl sm:text-2xl font-extrabold text-[#0F2E4A] font-poppins">
-            Add New FAQ
+            {faq ? "Edit FAQ" : "Add New FAQ"}
           </h2>
           {/* Close Button */}
           <button
             type="button"
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-[#E6FAFF] text-[#00B2D6] hover:bg-[#D0F3FC] hover:scale-105 active:scale-95 transition-all flex items-center justify-center cursor-pointer border-none outline-none"
+            disabled={isSaving}
+            className="w-9 h-9 rounded-full bg-[#E6FAFF] text-[#00B2D6] hover:bg-[#D0F3FC] hover:scale-105 active:scale-95 transition-all flex items-center justify-center cursor-pointer border-none outline-none disabled:cursor-not-allowed disabled:opacity-50"
             aria-label="Close modal"
           >
             <X size={18} className="stroke-[2.5]" />
@@ -130,9 +141,10 @@ export default function AddFaqModal({
         <div className="mt-8 flex justify-start">
           <button
             type="submit"
-            className="px-8 py-3 bg-[#00B2D6] hover:bg-[#009cb9] rounded-full text-white font-bold text-sm tracking-wide transition-all active:scale-[0.98] shadow-md shadow-cyan-100/50 cursor-pointer border-none outline-none"
+            disabled={isSaving}
+            className="px-8 py-3 bg-[#00B2D6] hover:bg-[#009cb9] rounded-full text-white font-bold text-sm tracking-wide transition-all active:scale-[0.98] shadow-md shadow-cyan-100/50 cursor-pointer border-none outline-none disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Submit
+            {isSaving ? "Saving..." : faq ? "Update" : "Submit"}
           </button>
         </div>
       </form>

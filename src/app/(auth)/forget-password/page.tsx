@@ -6,9 +6,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Mail, ChevronLeft } from "lucide-react";
+import { Mail } from "lucide-react";
 import logoImg from "@/assets/logo/logo.png";
 import { useForgotPasswordMutation } from "@/redux/service/auth/authApi";
+import AuthBackButton from "@/components/auth/AuthBackButton";
 
 const ForgotPasswordPage = () => {
   const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
@@ -37,7 +38,8 @@ const ForgotPasswordPage = () => {
     <div className="min-h-screen bg-[#F4F5F6] flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 font-sans select-none">
       <div className="w-full max-w-[480px]">
         {/* Main Forget Password Card */}
-        <div className="bg-white rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-slate-100 p-6 sm:p-8">
+        <div className="relative bg-white rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-slate-100 p-6 sm:p-8">
+          <AuthBackButton />
           
           {/* Logo Center */}
           <div className="flex justify-center mb-4">
@@ -55,17 +57,6 @@ const ForgotPasswordPage = () => {
 
           {/* Horizontal separator line */}
           <div className="border-t border-slate-100 my-4" />
-
-          {/* Back to login */}
-          <div className="mb-4">
-            <Link
-              href="/login"
-              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#55697A] hover:text-[#0F2E4A] transition-colors"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Back to login
-            </Link>
-          </div>
 
           {/* Title */}
           <h1 className="text-xl sm:text-2xl font-extrabold text-[#0F2E4A] tracking-tight mb-4">

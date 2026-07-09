@@ -70,48 +70,50 @@ export default function TaxiBookingSection({ councils }: TaxiBookingSectionProps
           
           {/* Custom Searchable Select Dropdown */}
           <div ref={dropdownRef} className="relative">
-            <button
-              type="button"
-              onClick={() => {
-                setIsOpen(!isOpen);
-                setShowError(false);
-              }}
-              className={cn(
-                "w-full flex items-center justify-between rounded-full bg-white border px-6 py-4 text-left shadow-[0_4px_20px_rgba(0,0,0,0.02)] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#00B2D6]/20",
-                isOpen ? "border-[#00B2D6]" : "border-slate-200 hover:border-slate-300",
-                showError ? "border-red-500 bg-red-50/10 focus:ring-red-500/20" : ""
-              )}
-            >
-              <span className={cn(
-                "text-[15px] truncate",
-                selectedCouncil ? "text-slate-800 font-medium" : "text-slate-400"
-              )}>
-                {selectedCouncil || "Choose your local Authority"}
-              </span>
-              
-              <div className="flex items-center gap-2">
-                {selectedCouncil && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedCouncil("");
-                      setSearchQuery("");
-                    }}
-                    className="p-1 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
-                  >
-                    <X size={16} />
-                  </button>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsOpen(!isOpen);
+                  setShowError(false);
+                }}
+                className={cn(
+                  "w-full flex items-center justify-between rounded-full bg-white border px-6 py-4 text-left shadow-[0_4px_20px_rgba(0,0,0,0.02)] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#00B2D6]/20",
+                  selectedCouncil ? "pr-20" : "pr-14",
+                  isOpen ? "border-[#00B2D6]" : "border-slate-200 hover:border-slate-300",
+                  showError ? "border-red-500 bg-red-50/10 focus:ring-red-500/20" : ""
                 )}
+              >
+                <span className={cn(
+                  "text-[15px] truncate",
+                  selectedCouncil ? "text-slate-800 font-medium" : "text-slate-400"
+                )}>
+                  {selectedCouncil || "Choose your local Authority"}
+                </span>
+
                 <ChevronDown
                   size={20}
                   className={cn(
-                    "text-slate-400 transition-transform duration-300",
-                    isOpen ? "transform rotate-180 text-[#00B2D6]" : ""
+                    "absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 transition-transform duration-300",
+                    isOpen ? "rotate-180 text-[#00B2D6]" : ""
                   )}
                 />
-              </div>
-            </button>
+              </button>
+
+              {selectedCouncil && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCouncil("");
+                    setSearchQuery("");
+                  }}
+                  className="absolute right-12 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#00B2D6]/20"
+                  aria-label="Clear selected local authority"
+                >
+                  <X size={16} />
+                </button>
+              )}
+            </div>
 
             {/* Error Message */}
             <AnimatePresence>

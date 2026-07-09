@@ -1,174 +1,135 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
-import { Sparkles, ChevronRight, FileText } from "lucide-react";
-import { termsIntro, termsSections } from "@/app/data/TermsData";
+import { RefreshCw, Sparkles } from "lucide-react";
+import { useGetTermsQuery } from "@/redux/service/terms/termsApi";
 
 export default function TermsClient() {
-  const [activeSection, setActiveSection] = useState<string>("about-us");
+  const { data, isLoading, isFetching, isError, refetch } = useGetTermsQuery();
 
-  const scrollToSection = (id: string) => {
-    if (typeof window !== "undefined") {
-      const element = document.getElementById(id);
-      if (element) {
-        element.scrollIntoView({ behavior: "smooth", block: "start" });
-        setActiveSection(id);
-      }
-    }
-  };
+  const terms = data || null;
+  const isBusy = (isLoading || isFetching) && !data;
 
   return (
-    <div className="bg-[#FCFDFE] poppins min-h-screen">
-      
-      {/* Hero Header Block */}
-      <section className="bg-white border-b border-slate-100 py-12 md:py-16">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-          
-          {/* Breadcrumbs */}
+    <div className="min-h-screen bg-[#FCFDFE] poppins">
+      <section className="border-b border-slate-100 bg-white py-12 md:py-16">
+        <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
           <nav
             aria-label="Breadcrumb"
-            className="mb-6 flex items-center flex-wrap gap-1 text-[13px] sm:text-[14px] font-bold text-[#1F2937] tracking-wide"
+            className="mb-6 flex flex-wrap items-center gap-1 text-[13px] font-bold tracking-wide text-[#1F2937] sm:text-[14px]"
           >
-            <Link href="/" className="transition-colors hover:text-[#00B2D6] font-extrabold text-[#1F2937]">
+            <Link
+              href="/"
+              className="font-extrabold text-[#1F2937] transition-colors hover:text-[#00B2D6]"
+            >
               Home
             </Link>
-            <span className="text-[#1F2937] mx-1 opacity-80 select-none">»</span>
-            <span className="font-extrabold text-[#1F2937] opacity-90">Terms & Conditions</span>
+            <span className="mx-1 select-none opacity-80">&raquo;</span>
+            <span className="font-extrabold opacity-90">
+              Terms & Conditions
+            </span>
           </nav>
 
-          <div className="text-center max-w-3xl mx-auto">
-            <div className="flex items-center justify-center gap-4 mb-4">
-              <div className="flex items-center gap-0">
+          <div className="mx-auto max-w-3xl text-center">
+            <div className="mb-4 flex items-center justify-center gap-4">
+              <div className="flex items-center">
                 <div className="h-1.5 w-1.5 rounded-full bg-[#00B2D6]" />
-                <div className="h-[1.5px] w-8 sm:w-16 bg-gradient-to-r from-[#00B2D6] to-[#00B2D6]/20" />
+                <div className="h-[1.5px] w-8 bg-gradient-to-r from-[#00B2D6] to-[#00B2D6]/20 sm:w-16" />
               </div>
-              <div className="flex items-center gap-1.5 text-[#00B2D6] font-bold text-xs sm:text-sm uppercase tracking-widest">
+              <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-[#00B2D6] sm:text-sm">
                 <Sparkles className="h-3.5 w-3.5" />
                 <span>Compliance Medicals</span>
               </div>
-              <div className="flex items-center gap-0">
-                <div className="h-[1.5px] w-8 sm:w-16 bg-gradient-to-l from-[#00B2D6] to-[#00B2D6]/20" />
+              <div className="flex items-center">
+                <div className="h-[1.5px] w-8 bg-gradient-to-l from-[#00B2D6] to-[#00B2D6]/20 sm:w-16" />
                 <div className="h-1.5 w-1.5 rounded-full bg-[#00B2D6]" />
               </div>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#0F2E4A] tracking-tight leading-tight">
+            <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-[#0F2E4A] sm:text-4xl lg:text-5xl">
               Terms & Conditions
             </h1>
-            <p className="text-[#55697A] text-sm sm:text-base font-semibold mt-3 leading-relaxed">
-              {termsIntro.subtitle}
+            <p className="mt-3 text-sm font-semibold leading-relaxed text-[#55697A] sm:text-base">
+              Review the terms that apply when using Compliance Medicals.
             </p>
           </div>
         </div>
       </section>
 
-      {/* Main Content Body */}
-      <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
-          
-          {/* Sticky Left Sidebar for Desktop Table of Contents */}
-          <aside className="lg:w-[320px] w-full shrink-0 sticky top-28 bg-white border border-slate-200/60 p-5 rounded-2xl shadow-[0_4px_25px_rgba(15,46,74,0.015)] hidden lg:block">
-            <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
-              <FileText className="h-4.5 w-4.5 text-[#00B2D6]" />
-              <h2 className="text-xs font-extrabold uppercase tracking-wider text-[#0F2E4A]">
-                Table of Contents
-              </h2>
-            </div>
-            
-            <nav className="flex flex-col gap-1.5">
-              {termsSections.map((section) => {
-                const isActive = activeSection === section.id;
-                // Get display title by striping out the number index for clean nav
-                const cleanTitle = section.title.replace(/^\d+\.\s*/, "");
-
-                return (
-                  <button
-                    key={section.id}
-                    onClick={() => scrollToSection(section.id)}
-                    className={`w-full text-left py-2 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all ${
-                      isActive
-                        ? "bg-[#EBF7FC] text-[#00B2D6] scale-[1.01]"
-                        : "text-[#55697A] hover:bg-slate-50 hover:text-[#0F2E4A]"
-                    }`}
-                  >
-                    {cleanTitle}
-                  </button>
-                );
-              })}
-            </nav>
-          </aside>
-
-          {/* Right Main Text Panel */}
-          <main className="flex-1 bg-white border border-slate-200/60 p-6 sm:p-8 md:p-10 lg:p-12 rounded-3xl shadow-[0_4px_30px_rgba(15,46,74,0.01)] min-w-0">
-            
-            {/* Mobile View: Table of Contents List */}
-            <div className="mb-10 bg-slate-50/50 border border-slate-200/50 p-5 rounded-2xl lg:hidden">
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#0F2E4A] mb-3">
-                Table of Contents
-              </h3>
-              <ul className="space-y-2">
-                {termsSections.map((section) => (
-                  <li key={section.id}>
-                    <button
-                      onClick={() => scrollToSection(section.id)}
-                      className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#00B2D6] hover:underline text-left leading-normal"
-                    >
-                      <ChevronRight className="h-3.5 w-3.5 shrink-0" />
-                      <span>{section.title}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Render Sections */}
-            <div className="space-y-10">
-              {termsSections.map((section) => (
-                <div
-                  key={section.id}
-                  id={section.id}
-                  className="scroll-mt-28 pb-10 border-b border-slate-100 last:border-none last:pb-0"
-                >
-                  <h3 className="text-[#0F2E4A] font-extrabold text-base sm:text-lg md:text-xl tracking-tight mb-4">
-                    {section.title}
-                  </h3>
-                  
-                  <div className="space-y-4">
-                    {section.content.map((paragraph, pIdx) => (
-                      <p
-                        key={pIdx}
-                        className="text-[#55697A] text-xs sm:text-sm md:text-base font-semibold leading-relaxed"
-                      >
-                        {paragraph}
-                      </p>
-                    ))}
-                  </div>
-
-                  {section.bullets && (
-                    <ul className="list-disc pl-5 mt-4 space-y-2.5 text-[#55697A] text-xs sm:text-sm md:text-base font-semibold leading-relaxed">
-                      {section.bullets.map((bullet, bIdx) => (
-                        <li key={bIdx} className="pl-1">
-                          {bullet}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* Terms Footer Text */}
-            <div className="mt-12 pt-6 border-t border-slate-100 text-center">
-              <p className="text-xs font-bold text-[#00B2D6] tracking-wide">
-                {termsIntro.footerText}
-              </p>
-            </div>
-
-          </main>
-        </div>
+      <section className="mx-auto max-w-[1100px] px-4 py-10 sm:px-6 md:py-16 lg:px-8">
+        {isBusy ? (
+          <div
+            className="space-y-4 rounded-3xl border border-slate-200/60 bg-white p-8 md:p-12"
+            role="status"
+            aria-label="Loading Terms of Service"
+          >
+            <div className="h-6 w-64 animate-pulse rounded-full bg-slate-200" />
+            {Array.from({ length: 10 }, (_, index) => (
+              <div
+                key={index}
+                className={`h-3 animate-pulse rounded-full bg-slate-100 ${
+                  index % 4 === 0 ? "w-3/4" : "w-full"
+                }`}
+              />
+            ))}
+          </div>
+        ) : isError ? (
+          <div className="rounded-3xl border border-red-100 bg-white p-12 text-center">
+            <p className="text-sm font-semibold text-red-500">
+              Failed to load the Terms of Service.
+            </p>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#00B2D6] px-5 py-2.5 text-xs font-bold text-white hover:bg-[#009cb9]"
+            >
+              <RefreshCw size={14} />
+              Try Again
+            </button>
+          </div>
+        ) : terms?.text ? (
+          <article
+            className="public-terms-content rounded-3xl border border-slate-200/60 bg-white p-6 text-sm font-medium leading-relaxed text-[#55697A] shadow-[0_4px_30px_rgba(15,46,74,0.01)] sm:p-8 md:p-12 md:text-base"
+            dangerouslySetInnerHTML={{ __html: terms.text }}
+          />
+        ) : (
+          <div className="rounded-3xl border border-dashed border-slate-200 bg-white p-12 text-center text-sm font-semibold text-slate-500">
+            The Terms of Service is not available yet.
+          </div>
+        )}
       </section>
 
+      <style jsx global>{`
+        .public-terms-content h1,
+        .public-terms-content h2,
+        .public-terms-content h3 {
+          margin: 1.75rem 0 0.75rem;
+          color: #0f2e4a;
+          font-weight: 800;
+          line-height: 1.3;
+        }
+        .public-terms-content h2 {
+          font-size: 1.25rem;
+        }
+        .public-terms-content p {
+          margin: 0.75rem 0;
+        }
+        .public-terms-content ul,
+        .public-terms-content ol {
+          margin: 0.75rem 0;
+          padding-left: 1.5rem;
+        }
+        .public-terms-content ul {
+          list-style: disc;
+        }
+        .public-terms-content ol {
+          list-style: decimal;
+        }
+        .public-terms-content li {
+          margin: 0.4rem 0;
+        }
+      `}</style>
     </div>
   );
 }

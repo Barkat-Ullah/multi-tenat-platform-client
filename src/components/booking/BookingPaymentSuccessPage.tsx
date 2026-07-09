@@ -20,9 +20,13 @@ type StoredBooking = {
 };
 
 const DetailRow = ({ label, value }: { label: string; value?: string | number | null }) => (
-  <div className="flex items-center justify-between border-b border-slate-100 pb-2 text-xs sm:text-sm">
-    <span className="font-bold uppercase tracking-wider text-slate-400">{label}</span>
-    <span className="text-right font-extrabold text-[#0F2E4A]">{value || "N/A"}</span>
+  <div className="grid grid-cols-[minmax(0,0.4fr)_minmax(0,0.6fr)] items-start gap-4 border-b border-slate-100 pb-3 text-xs sm:text-sm">
+    <span className="font-bold uppercase tracking-wider text-slate-400">
+      {label}
+    </span>
+    <span className="min-w-0 break-all text-right font-extrabold leading-relaxed text-[#0F2E4A]">
+      {value || "N/A"}
+    </span>
   </div>
 );
 
@@ -74,7 +78,7 @@ function BookingPaymentSuccessContent() {
   }, []);
 
   const booking = bookingResponse?.data || storedBooking?.booking || null;
-  const payment = storedBooking?.payment || booking?.payment || null;
+  const payment = booking?.payment || storedBooking?.payment || null;
   const isBusy = isLoading || isFetching;
 
   const paymentStatus = useMemo(() => {

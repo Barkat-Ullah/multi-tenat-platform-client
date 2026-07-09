@@ -28,12 +28,31 @@ function formatDate(iso: string | null | undefined) {
 
 function SkeletonRow() {
   return (
-    <tr className="border-b border-slate-100 animate-pulse">
-      {[...Array(7)].map((_, i) => (
-        <td key={i} className="py-4 px-6">
-          <div className="h-3 bg-slate-200 rounded w-3/4" />
-        </td>
-      ))}
+    <tr className="animate-pulse border-b border-slate-100">
+      <td className="px-6 py-5">
+        <div className="h-3 w-28 rounded-full bg-slate-200" />
+      </td>
+      <td className="px-6 py-5">
+        <div className="h-3 w-10 rounded-full bg-slate-200" />
+      </td>
+      <td className="px-6 py-5">
+        <div className="space-y-2">
+          <div className="h-3 w-32 rounded-full bg-slate-200" />
+          <div className="h-2.5 w-40 rounded-full bg-slate-100" />
+        </div>
+      </td>
+      <td className="px-6 py-5">
+        <div className="h-3 w-28 rounded-full bg-slate-200" />
+      </td>
+      <td className="px-6 py-5">
+        <div className="h-3 w-24 rounded-full bg-slate-200" />
+      </td>
+      <td className="px-6 py-5">
+        <div className="mx-auto h-6 w-20 rounded-full bg-slate-200" />
+      </td>
+      <td className="px-6 py-5">
+        <div className="mx-auto h-7 w-24 rounded-full bg-slate-200" />
+      </td>
     </tr>
   );
 }
@@ -41,7 +60,7 @@ function SkeletonRow() {
 // ── main component ────────────────────────────────────────────────────────────
 
 export default function OrganizerBookingsView() {
-  const { data: requestsData, isLoading, isFetching } = useGetMyOrganizerRequestsQuery();
+  const { data: requestsData, isLoading } = useGetMyOrganizerRequestsQuery();
   const { data: driversData } = useGetCorporateAllDriversQuery();
   const [assignDrivers, { isLoading: isAssigning }] = useAssignDriversToRequestMutation();
 
@@ -58,6 +77,7 @@ export default function OrganizerBookingsView() {
 
   const requests: OrganizerRequest[] = requestsData?.data ?? [];
   const allOrgDrivers: CorporateDriver[] = driversData?.data ?? [];
+  const isTableLoading = isLoading && requests.length === 0;
 
   // Stats derived from real data
   const confirmed = requests.filter((r) => r.status === "Confirmed").length;
@@ -227,13 +247,14 @@ export default function OrganizerBookingsView() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100/80">
-                {isLoading || isFetching ? (
-                  <>
-                    <SkeletonRow />
-                    <SkeletonRow />
-                    <SkeletonRow />
-                  </>
+              <tbody
+                className="divide-y divide-slate-100/80"
+                aria-busy={isTableLoading}
+              >
+                {isTableLoading ? (
+                  Array.from({ length: 5 }, (_, index) => (
+                    <SkeletonRow key={index} />
+                  ))
                 ) : filteredRequests.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="py-8 text-center text-sm font-bold text-slate-400 font-sans">

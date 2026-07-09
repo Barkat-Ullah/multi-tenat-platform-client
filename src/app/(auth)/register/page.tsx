@@ -2,17 +2,20 @@
 "use client";
 
 import Image from "next/image";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import logoImg from "@/assets/logo/logo.png";
 import Link from "next/link";
 import { type RegisterRequest, useRegisterUserMutation } from "@/redux/service/auth/authApi";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { User, Mail, Phone, MapPin, Lock, Eye, EyeOff, CalendarDays } from "lucide-react";
+import { BOOKING_AUTH_RETURN_KEY } from "@/utils/bookingResume";
+import AuthBackButton from "@/components/auth/AuthBackButton";
 
 const RegisterPage = () => {
   // Tab State: 'driver' | 'corporate'
   const [activeTab, setActiveTab] = useState<"driver" | "corporate">("driver");
+  const [isBookingRegistration, setIsBookingRegistration] = useState(false);
 
   // Driver Fields
   const [driverName, setDriverName] = useState("");
@@ -37,6 +40,15 @@ const RegisterPage = () => {
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
     now.getDate(),
   ).padStart(2, "0")}`;
+
+  useEffect(() => {
+    const bookingRegistration =
+      new URLSearchParams(window.location.search).get("booking") === "1" ||
+      Boolean(sessionStorage.getItem(BOOKING_AUTH_RETURN_KEY));
+
+    setIsBookingRegistration(bookingRegistration);
+    if (bookingRegistration) setActiveTab("driver");
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,7 +93,8 @@ const RegisterPage = () => {
     <div className="min-h-screen bg-[#F4F5F6] flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 font-sans select-none">
       <div className="w-full max-w-[480px]">
         {/* Main Register Card */}
-        <div className="bg-white rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-slate-100 p-6 sm:p-8">
+        <div className="relative bg-white rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-slate-100 p-6 sm:p-8">
+          <AuthBackButton />
 
           {/* Logo Center */}
           <div className="flex justify-center mb-4">
@@ -101,7 +114,7 @@ const RegisterPage = () => {
           <div className="border-t border-slate-100 my-4" />
 
           {/* Selector Tabs: As a Driver / As a Corporate */}
-          <div className="grid grid-cols-2 gap-4 mb-5">
+          <div className={`grid gap-4 mb-5 ${isBookingRegistration ? "grid-cols-1" : "grid-cols-2"}`}>
             <button
               type="button"
               onClick={() => {
@@ -115,19 +128,21 @@ const RegisterPage = () => {
             >
               As a Driver
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab("corporate");
-                setShowPassword(false);
-              }}
-              className={`py-2.5 px-4 text-sm font-bold rounded-2xl border text-center transition-all duration-200 ${activeTab === "corporate"
-                  ? "bg-[#E6FAFF] border-[#00B2D6] text-[#0F2E4A]"
-                  : "bg-white border-slate-200 text-[#55697A] hover:bg-slate-50/50"
-                }`}
-            >
-              As a Corporate
-            </button>
+            {!isBookingRegistration && (
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("corporate");
+                  setShowPassword(false);
+                }}
+                className={`py-2.5 px-4 text-sm font-bold rounded-2xl border text-center transition-all duration-200 ${activeTab === "corporate"
+                    ? "bg-[#E6FAFF] border-[#00B2D6] text-[#0F2E4A]"
+                    : "bg-white border-slate-200 text-[#55697A] hover:bg-slate-50/50"
+                  }`}
+              >
+                As a Corporate
+              </button>
+            )}
           </div>
 
           {/* Title */}

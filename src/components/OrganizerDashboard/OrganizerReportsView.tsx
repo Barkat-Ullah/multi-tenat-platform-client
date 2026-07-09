@@ -6,6 +6,23 @@ import { Search, FileText, Eye, Download, X } from "lucide-react";
 import { useGetCorporateReportsQuery, CorporateReport } from "@/redux/service/corporate/corporateDashboardApi";
 import { toast } from "sonner";
 
+const ReportCardSkeleton = () => (
+  <div className="flex min-h-[88px] items-center justify-between gap-4 rounded-[20px] border border-slate-100 bg-white p-4 shadow-[0_4px_25px_rgba(0,0,0,0.01)] sm:min-h-[96px] sm:p-5">
+    <div className="flex min-w-0 flex-1 items-center gap-4">
+      <div className="h-12 w-12 shrink-0 animate-pulse rounded-[16px] bg-slate-100" />
+      <div className="min-w-0 flex-1 space-y-2">
+        <div className="h-4 w-48 max-w-[80%] animate-pulse rounded-full bg-slate-200" />
+        <div className="h-3 w-32 max-w-[60%] animate-pulse rounded-full bg-slate-100" />
+        <div className="h-3 w-64 max-w-[90%] animate-pulse rounded-full bg-slate-100" />
+      </div>
+    </div>
+    <div className="flex shrink-0 items-center gap-2 sm:gap-4">
+      <div className="h-10 w-10 animate-pulse rounded-full bg-slate-100" />
+      <div className="h-10 w-10 animate-pulse rounded-full bg-slate-100" />
+    </div>
+  </div>
+);
+
 export default function OrganizerReportsView() {
   const { data: reportsData, isLoading } = useGetCorporateReportsQuery();
   const reports = reportsData?.data || [];
@@ -97,32 +114,20 @@ export default function OrganizerReportsView() {
       </div>
 
       {/* Reports vertical cards wrapper */}
-      <div className="space-y-4">
+      <div
+        className="space-y-4"
+        aria-busy={isLoading}
+        aria-label={isLoading ? "Loading reports" : undefined}
+      >
         {isLoading ? (
-          Array.from({ length: 4 }).map((_, index) => (
-            <div
-              key={index}
-              className="flex items-center justify-between p-4 sm:p-5 bg-white border border-slate-100 rounded-[20px] shadow-[0_4px_25px_rgba(0,0,0,0.01)] gap-4"
-            >
-              <div className="flex items-center gap-4 min-w-0 flex-1">
-                <div className="w-12 h-12 rounded-[16px] bg-slate-100 animate-pulse shrink-0" />
-                <div className="min-w-0 font-sans space-y-2 flex-1 max-w-md">
-                  <div className="h-4 bg-slate-200 animate-pulse rounded w-3/4" />
-                  <div className="h-3 bg-slate-100 animate-pulse rounded w-1/2" />
-                  <div className="h-3 bg-slate-100 animate-pulse rounded w-5/6" />
-                </div>
-              </div>
-              <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-                <div className="w-10 h-10 rounded-full bg-slate-100 animate-pulse" />
-                <div className="w-10 h-10 rounded-full bg-slate-100 animate-pulse" />
-              </div>
-            </div>
+          Array.from({ length: 5 }, (_, index) => (
+            <ReportCardSkeleton key={index} />
           ))
         ) : (
           filteredReports.map((report) => (
             <div
               key={report.id}
-              className="flex items-center justify-between p-4 sm:p-5 bg-white border border-slate-100 rounded-[20px] shadow-[0_4px_25px_rgba(0,0,0,0.01)] hover:shadow-[0_4px_25px_rgba(0,0,0,0.02)] transition-shadow duration-200 gap-4"
+              className="flex min-h-[88px] items-center justify-between gap-4 rounded-[20px] border border-slate-100 bg-white p-4 shadow-[0_4px_25px_rgba(0,0,0,0.01)] transition-shadow duration-200 hover:shadow-[0_4px_25px_rgba(0,0,0,0.02)] sm:min-h-[96px] sm:p-5"
             >
               {/* Left Content Column */}
               <div className="flex items-center gap-4 min-w-0">

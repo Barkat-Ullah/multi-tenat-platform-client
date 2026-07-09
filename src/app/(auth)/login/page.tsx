@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import Image from "next/image";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import logoImg from "@/assets/logo/logo.png";
 import Link from "next/link";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
@@ -13,6 +13,11 @@ import Cookies from "js-cookie";
 import { jwtDecode } from "jwt-decode";
 import { toast } from "sonner";
 import { getDashboardPathByRole, normalizeRole, type BackendRole } from "@/utils/roles";
+import {
+  BOOKING_AUTH_RETURN_KEY,
+  clearBookingResume,
+} from "@/utils/bookingResume";
+import AuthBackButton from "@/components/auth/AuthBackButton";
 
 // Define or import this type to match your JWT payload
 interface UserType {
@@ -27,10 +32,15 @@ const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isBookingAuth, setIsBookingAuth] = useState(false);
   const [login, { isLoading }] = useLoginUserMutation();
 
   const dispatch = useDispatch();
   const router = useRouter();
+
+  useEffect(() => {
+    setIsBookingAuth(Boolean(sessionStorage.getItem(BOOKING_AUTH_RETURN_KEY)));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +54,8 @@ const LoginPage = () => {
           toast.info(res.message || "Please verify your account.");
           // If the message contains 'verify', we can redirect to OTP page
           if (res.message?.toLowerCase().includes("verify")) {
+            localStorage.setItem("email", email);
+            localStorage.setItem("authFlow", "registration");
             router.push(`/otp?email=${encodeURIComponent(email)}`);
           }
           return;
@@ -81,9 +93,23 @@ const LoginPage = () => {
           Cookies.set("refreshToken", refreshToken, { expires: refreshTokenExpiry, path: "/" });
         }
 
+        const bookingReturn = sessionStorage.getItem(BOOKING_AUTH_RETURN_KEY);
+        if (bookingReturn) {
+          if (decodedUser.role === "USER") {
+            sessionStorage.removeItem(BOOKING_AUTH_RETURN_KEY);
+            toast.success(res.message || "You have successfully logged in.");
+            router.push(bookingReturn);
+            return;
+          }
+
+          clearBookingResume();
+          toast.error("Only drivers can complete a medical booking.");
+          router.push(getDashboardPathByRole(decodedUser.role));
+          return;
+        }
+
         router.push(getDashboardPathByRole(decodedUser.role));
-        // Show success & redirect
-        toast.success(res.message || "You have successfully logged in.")
+        toast.success(res.message || "You have successfully logged in.");
       }
     } catch (err: any) {
       console.error("Login failed:", err);
@@ -99,7 +125,8 @@ const LoginPage = () => {
     <div className="min-h-screen bg-[#F4F5F6] flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 font-sans select-none">
       <div className="w-full max-w-[480px]">
         {/* Main Login Card */}
-        <div className="bg-white rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-slate-100 p-6 sm:p-8">
+        <div className="relative bg-white rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-slate-100 p-6 sm:p-8">
+          <AuthBackButton />
           
           {/* Logo Center */}
           <div className="flex justify-center mb-4">
@@ -217,7 +244,7 @@ const LoginPage = () => {
           <div className="mt-6 text-center text-xs sm:text-sm font-bold text-[#55697A]">
             Don&apos;t have an account?{" "}
             <Link
-              href="/register"
+              href={isBookingAuth ? "/register?booking=1" : "/register"}
               className="text-[#00B2D6] hover:underline font-bold transition-all ml-1"
             >
               Sign Up

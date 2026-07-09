@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Search, Plus, MoreVertical } from "lucide-react";
+import { createPortal } from "react-dom";
+import { AlertTriangle, Search, Plus, MoreVertical, X } from "lucide-react";
 import { Dropdown } from "antd";
 import Pagination from "./Pagination";
 import AddClinicianModal from "./AddClinicianModal";
@@ -11,6 +12,7 @@ import {
   AdminClinic,
   CreateAdminClinicRequest,
   useCreateAdminClinicMutation,
+  useDeleteAdminClinicMutation,
   useGetAdminClinicsQuery,
 } from "@/redux/service/admin/cliniciansApi";
 import { useGetAdminLocationsQuery } from "@/redux/service/admin/locationsApi";
@@ -44,6 +46,8 @@ export default function CliniciansView() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedClinician, setSelectedClinician] = useState<AdminClinic | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [clinicianToDelete, setClinicianToDelete] = useState<AdminClinic | null>(null);
+  const [deletingClinicianId, setDeletingClinicianId] = useState<string | null>(null);
 
   const {
     data,
@@ -67,6 +71,7 @@ export default function CliniciansView() {
     isFetching: isServicesFetching,
   } = useGetAdminServicesQuery({ page: 1, limit: 100 });
   const [createClinic, { isLoading: isCreating }] = useCreateAdminClinicMutation();
+  const [deleteClinic] = useDeleteAdminClinicMutation();
 
   const clinicians = data?.data || [];
   const locations = locationsData?.data || [];
@@ -104,6 +109,17 @@ export default function CliniciansView() {
     setCurrentPage(1);
   }, [searchTerm]);
 
+  useEffect(() => {
+    if (!clinicianToDelete || deletingClinicianId) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setClinicianToDelete(null);
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [clinicianToDelete, deletingClinicianId]);
+
   const handleSaveClinician = async (payload: CreateAdminClinicRequest) => {
     try {
       const response = await createClinic(payload).unwrap();
@@ -124,11 +140,46 @@ export default function CliniciansView() {
     setIsDetailsOpen(true);
   };
 
+  const handleDeleteClinician = async (clinician: AdminClinic) => {
+    setDeletingClinicianId(clinician.id);
+    try {
+      const response = await deleteClinic(clinician.id).unwrap();
+      toast.success(response.message || "Clinician deleted successfully.");
+      setClinicianToDelete(null);
+
+      if (selectedClinician?.id === clinician.id) {
+        setSelectedClinician(null);
+        setIsDetailsOpen(false);
+      }
+
+      if (clinicians.length === 1 && currentPage > 1) {
+        setCurrentPage((page) => page - 1);
+      }
+    } catch (error) {
+      const message =
+        (error as { data?: { message?: string } })?.data?.message ||
+        "Failed to delete clinician.";
+      toast.error(message);
+    } finally {
+      setDeletingClinicianId(null);
+    }
+  };
+
   const getActionMenuItems = (clinician: AdminClinic) => [
     {
       key: "view",
       label: <span className="block px-2 font-sans font-semibold text-slate-700">View</span>,
       onClick: () => handleViewClinician(clinician),
+    },
+    {
+      key: "delete",
+      disabled: deletingClinicianId === clinician.id,
+      label: (
+        <span className="block px-2 font-sans font-semibold text-red-600">
+          {deletingClinicianId === clinician.id ? "Deleting..." : "Delete"}
+        </span>
+      ),
+      onClick: () => setClinicianToDelete(clinician),
     },
   ];
 
@@ -291,6 +342,70 @@ export default function CliniciansView() {
         onClose={() => setIsDetailsOpen(false)}
         clinician={selectedClinician}
       />
+
+      {clinicianToDelete && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-clinician-title"
+        >
+          <button
+            type="button"
+            aria-label="Close delete confirmation"
+            className="absolute inset-0 bg-[#0F2E4A]/45 backdrop-blur-[2px]"
+            onClick={() => {
+              if (!deletingClinicianId) setClinicianToDelete(null);
+            }}
+          />
+
+          <div className="relative z-10 w-full max-w-md rounded-3xl border border-slate-100 bg-white p-7 text-center shadow-[0_24px_70px_rgba(15,46,74,0.2)] sm:p-8">
+            <button
+              type="button"
+              onClick={() => setClinicianToDelete(null)}
+              disabled={Boolean(deletingClinicianId)}
+              aria-label="Close"
+              title="Close"
+              className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200 hover:text-[#0F2E4A] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <X size={17} />
+            </button>
+
+            <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-red-500">
+              <AlertTriangle size={28} />
+            </div>
+            <h2
+              id="delete-clinician-title"
+              className="text-xl font-extrabold text-[#0F2E4A] sm:text-2xl"
+            >
+              Delete Clinician?
+            </h2>
+            <p className="mt-3 text-sm font-semibold leading-relaxed text-slate-500">
+              {clinicianToDelete.fullName} will be removed from the clinician list.
+            </p>
+
+            <div className="mt-7 grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setClinicianToDelete(null)}
+                disabled={Boolean(deletingClinicianId)}
+                className="rounded-full border border-slate-200 px-5 py-3 text-sm font-bold text-[#0F2E4A] transition-colors hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDeleteClinician(clinicianToDelete)}
+                disabled={Boolean(deletingClinicianId)}
+                className="rounded-full bg-red-500 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {deletingClinicianId ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
     </div>
   );
 }

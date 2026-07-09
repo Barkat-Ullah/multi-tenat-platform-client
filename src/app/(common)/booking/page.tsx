@@ -1,9 +1,11 @@
 "use client";
 
 import React, { Suspense, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { X } from "lucide-react";
 import { useAppSelector } from "@/redux/store";
 import { useGetProfileDataQuery } from "@/redux/service/profile/profileApi";
 import {
@@ -21,6 +23,11 @@ import Step2YourLocation, {
 import Step3SelectTimeSlot from "@/components/booking/Step3SelectTimeSlot";
 import Step4YourDetails from "@/components/booking/Step4YourDetails";
 import Step5Success from "@/components/booking/Step5Success";
+import {
+  clearBookingResume,
+  getBookingDraft,
+  saveBookingDraft,
+} from "@/utils/bookingResume";
 
 const DEFAULT_BOOKING_PRICE = 49.99;
 
@@ -87,7 +94,7 @@ export default function BookingPage() {
 
 function BookingFlowCoordinator() {
   const searchParams = useSearchParams();
-  const accessToken = useAppSelector((state) => state.auth.accessToken);
+  const { accessToken, user: authUser } = useAppSelector((state) => state.auth);
 
   const [step, setStep] = useState(1);
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
@@ -105,6 +112,9 @@ function BookingFlowCoordinator() {
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [resumeDraftLoaded, setResumeDraftLoaded] = useState(false);
+  const [isResumingBooking, setIsResumingBooking] = useState(false);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
 
   const {
     data: servicesResponse,
@@ -232,6 +242,7 @@ function BookingFlowCoordinator() {
   useEffect(() => {
     if (
       selectedSlotId &&
+      slotsResponse &&
       !isSlotsLoading &&
       !isSlotsFetching &&
       !availableSlots.some((slot) => slot.id === selectedSlotId)
@@ -243,7 +254,101 @@ function BookingFlowCoordinator() {
     isSlotsFetching,
     isSlotsLoading,
     selectedSlotId,
+    slotsResponse,
   ]);
+
+  useEffect(() => {
+    if (
+      resumeDraftLoaded ||
+      searchParams.get("resume") !== "1" ||
+      !accessToken ||
+      !authUser
+    ) {
+      return;
+    }
+
+    setResumeDraftLoaded(true);
+
+    if (authUser.role !== "USER") {
+      clearBookingResume();
+      toast.error("Only drivers can complete a medical booking.");
+      return;
+    }
+
+    const draft = getBookingDraft();
+    if (!draft) {
+      toast.error("Your saved booking could not be restored.");
+      return;
+    }
+
+    const restoredDate = new Date(`${draft.date}T00:00:00`);
+    if (Number.isNaN(restoredDate.getTime())) {
+      clearBookingResume();
+      toast.error("Your saved booking date is invalid.");
+      return;
+    }
+
+    setSelectedServiceId(draft.serviceId);
+    setSelectedClinicId(draft.clinicId);
+    setSelectedDate(restoredDate);
+    setCalendarMonth(
+      new Date(restoredDate.getFullYear(), restoredDate.getMonth(), 1),
+    );
+    setSelectedSlotId(draft.slotId);
+    setStep(3);
+    setIsResumingBooking(true);
+  }, [
+    accessToken,
+    authUser,
+    resumeDraftLoaded,
+    searchParams,
+  ]);
+
+  useEffect(() => {
+    if (
+      !isResumingBooking ||
+      !slotsResponse ||
+      isSlotsLoading ||
+      isSlotsFetching
+    ) {
+      return;
+    }
+
+    if (selectedSlot) {
+      clearBookingResume();
+      setIsResumingBooking(false);
+      setStep(4);
+      toast.success("Your booking selections have been restored.");
+      return;
+    }
+
+    clearBookingResume();
+    setIsResumingBooking(false);
+    setSelectedSlotId(null);
+    toast.error(
+      "Your previously selected time slot is no longer available. Please choose another slot.",
+    );
+  }, [
+    isResumingBooking,
+    isSlotsFetching,
+    isSlotsLoading,
+    selectedSlot,
+    slotsResponse,
+  ]);
+
+  useEffect(() => {
+    if (!showAuthPrompt) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        clearBookingResume();
+        setShowAuthPrompt(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [showAuthPrompt]);
 
   const handleSelectService = (id: string | null) => {
     setSelectedServiceId(id);
@@ -304,15 +409,48 @@ function BookingFlowCoordinator() {
       toast.error("Please select a time slot to continue.");
       return;
     }
+
+    if (!accessToken || !authUser) {
+      if (!selectedServiceId || !selectedClinicId) {
+        toast.error("Please complete your booking selections.");
+        return;
+      }
+
+      try {
+        saveBookingDraft({
+          serviceId: selectedServiceId,
+          clinicId: selectedClinicId,
+          date: formatDateParam(selectedDate),
+          slotId: selectedSlotId,
+        });
+      } catch {
+        toast.error("Unable to save your booking selections.");
+        return;
+      }
+
+      setShowAuthPrompt(true);
+      return;
+    }
+
+    if (authUser.role !== "USER") {
+      toast.error("Only drivers can complete a medical booking.");
+      return;
+    }
+
     setStep(4);
   };
 
   const handleSubmitBooking = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!accessToken) {
+    if (!accessToken || !authUser) {
       toast.error("Please log in as a driver before booking.");
-      window.location.href = `/login?redirect=${encodeURIComponent("/booking")}`;
+      window.location.href = "/login?booking=1";
+      return;
+    }
+
+    if (authUser.role !== "USER") {
+      toast.error("Only drivers can complete a medical booking.");
       return;
     }
 
@@ -479,6 +617,64 @@ function BookingFlowCoordinator() {
           )}
         </AnimatePresence>
       </div>
+
+      {showAuthPrompt && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="booking-auth-title"
+        >
+          <button
+            type="button"
+            aria-label="Close authentication prompt"
+            className="absolute inset-0 bg-[#0F2E4A]/45 backdrop-blur-[2px]"
+            onClick={() => {
+              clearBookingResume();
+              setShowAuthPrompt(false);
+            }}
+          />
+          <div className="relative z-10 w-full max-w-md rounded-3xl border border-slate-100 bg-white p-7 text-center shadow-[0_24px_70px_rgba(15,46,74,0.2)] sm:p-9">
+            <button
+              type="button"
+              onClick={() => {
+                clearBookingResume();
+                setShowAuthPrompt(false);
+              }}
+              aria-label="Close"
+              title="Close"
+              className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200 hover:text-[#0F2E4A]"
+            >
+              <X size={17} />
+            </button>
+
+            <h2
+              id="booking-auth-title"
+              className="pr-8 text-2xl font-extrabold text-[#0F2E4A]"
+            >
+              Continue Your Booking
+            </h2>
+            <p className="mx-auto mt-3 max-w-sm text-sm font-semibold leading-relaxed text-[#55697A]">
+              Log in or create a Driver account to continue with your selected appointment.
+            </p>
+
+            <div className="mt-7 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Link
+                href="/login?booking=1"
+                className="rounded-full bg-[#00B2D6] px-6 py-3.5 text-sm font-bold text-white transition-colors hover:bg-[#0092B3]"
+              >
+                Log In
+              </Link>
+              <Link
+                href="/register?booking=1"
+                className="rounded-full border border-[#00B2D6] px-6 py-3.5 text-sm font-bold text-[#00B2D6] transition-colors hover:bg-[#E6FAFF]"
+              >
+                Register as Driver
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

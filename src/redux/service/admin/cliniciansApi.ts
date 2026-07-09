@@ -75,10 +75,18 @@ const adminCliniciansApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["clinics", "dashboard"],
     }),
+    deleteAdminClinic: builder.mutation<AdminClinicMutationResponse, string>({
+      query: (id) => ({
+        url: `/user/soft-delete/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["clinics", "user", "dashboard"],
+    }),
   }),
 });
 
 export const {
   useGetAdminClinicsQuery,
   useCreateAdminClinicMutation,
+  useDeleteAdminClinicMutation,
 } = adminCliniciansApi;

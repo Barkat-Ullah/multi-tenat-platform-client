@@ -9,6 +9,7 @@ import { appAlert } from "@/utils/appAlert";
 import logoImg from "@/assets/logo/logo.png";
 import { useResendOtpMutation, useVerifyUserMutation } from "@/redux/service/auth/authApi";
 import { toast } from "sonner";
+import AuthBackButton from "@/components/auth/AuthBackButton";
 
 const OTP_LENGTH = 4;
 
@@ -145,7 +146,8 @@ const OTPage = () => {
     <div className="min-h-screen bg-[#F4F5F6] flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 font-sans select-none">
       <div className="w-full max-w-[480px]">
         {/* Main Verify Code Card */}
-        <div className="bg-white rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-slate-100 p-6 sm:p-8">
+        <div className="relative bg-white rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-slate-100 p-6 sm:p-8">
+          <AuthBackButton />
           
           {/* Logo Center */}
           <div className="flex justify-center mb-4">

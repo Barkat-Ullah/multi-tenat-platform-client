@@ -19,6 +19,18 @@ function formatLocalDate(iso: string | null | undefined): string {
 }
 
 // Skeleton row — mirrors all 7 table columns with pulsing blocks
+function displayValue(value: unknown): string {
+  if (value === null || value === undefined) return "N/A";
+  if (typeof value === "string" && value.trim() === "") return "N/A";
+  return String(value);
+}
+
+function formatModalDate(iso: string | null | undefined): string {
+  if (!iso) return "N/A";
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? "N/A" : formatLocalDate(iso);
+}
+
 function DriverRowSkeleton() {
   return (
     <tr className="border-b border-slate-100 animate-pulse">
@@ -206,27 +218,31 @@ export default function OrganizerDriversView() {
                 <tr key={driver.id} className="hover:bg-slate-50/40 transition-colors">
                   {/* Driver Name */}
                   <td className="py-3.5 px-6 text-xs sm:text-sm text-[#0F2E4A] font-bold font-sans">
-                    {driver.fullName}
+                    {displayValue(driver.fullName)}
                   </td>
                   {/* Email */}
                   <td className="py-3.5 px-6 text-xs sm:text-sm text-slate-500 font-semibold font-sans">
-                    {driver.email}
+                    {displayValue(driver.email)}
                   </td>
                   {/* Service */}
                   <td className="py-3.5 px-6 text-xs sm:text-sm text-slate-500 font-semibold font-sans">
-                    {driver.service}
+                    {displayValue(driver.service)}
                   </td>
                   {/* Last Medical */}
                   <td className="py-3.5 px-6 text-xs sm:text-sm text-slate-500 font-semibold font-sans">
-                    {formatLocalDate(driver.lastMedical)}
+                    {formatModalDate(driver.lastMedical)}
                   </td>
                   {/* Expiry Date */}
                   <td className="py-3.5 px-6 text-xs sm:text-sm text-slate-500 font-semibold font-sans">
-                    {formatLocalDate(driver.expiryDate)}
+                    {formatModalDate(driver.expiryDate)}
                   </td>
                   {/* Medical Status */}
                   <td className="py-3.5 px-6 text-center">
-                    {driver.medicalResult === "Completed" ? (
+                    {!driver.medicalResult?.trim() ? (
+                      <span className="inline-flex items-center justify-center rounded-full bg-slate-100 px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 sm:text-xs">
+                        N/A
+                      </span>
+                    ) : driver.medicalResult === "Completed" ? (
                       <span className="inline-flex items-center justify-center px-4 py-1.5 rounded-full text-[10px] sm:text-xs font-bold bg-[#E8F8F5] text-[#10B981] border border-[#A3E4D7]/20 uppercase tracking-wider">
                         Completed
                       </span>
@@ -401,32 +417,34 @@ export default function OrganizerDriversView() {
             <div className="space-y-4 text-sm sm:text-base text-[#0F2E4A] font-sans mt-6">
               <div className="flex items-start gap-1.5">
                 <span className="font-extrabold whitespace-nowrap">Driver Name:</span>
-                <span className="font-semibold text-slate-500">{viewingDriver.fullName}</span>
+                <span className="font-semibold text-slate-500">{displayValue(viewingDriver.fullName)}</span>
               </div>
               <div className="flex items-start gap-1.5">
                 <span className="font-extrabold whitespace-nowrap">Email Address:</span>
-                <span className="font-semibold text-slate-500">{viewingDriver.email}</span>
+                <span className="font-semibold text-slate-500">{displayValue(viewingDriver.email)}</span>
               </div>
               <div className="flex items-start gap-1.5">
                 <span className="font-extrabold whitespace-nowrap">Service Type:</span>
-                <span className="font-semibold text-slate-500">{viewingDriver.service}</span>
+                <span className="font-semibold text-slate-500">{displayValue(viewingDriver.service)}</span>
               </div>
               <div className="flex items-start gap-1.5">
                 <span className="font-extrabold whitespace-nowrap">Last Medical:</span>
-                <span className="font-semibold text-slate-500">{formatLocalDate(viewingDriver.lastMedical)}</span>
+                <span className="font-semibold text-slate-500">{formatModalDate(viewingDriver.lastMedical)}</span>
               </div>
               <div className="flex items-start gap-1.5">
                 <span className="font-extrabold whitespace-nowrap">Expiry Date:</span>
-                <span className="font-semibold text-slate-500">{formatLocalDate(viewingDriver.expiryDate)}</span>
+                <span className="font-semibold text-slate-500">{formatModalDate(viewingDriver.expiryDate)}</span>
               </div>
               <div className="flex items-start gap-1.5">
                 <span className="font-extrabold whitespace-nowrap">Medical Status:</span>
                 <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                  viewingDriver.medicalResult === "Completed"
+                  !viewingDriver.medicalResult
+                    ? "bg-slate-100 text-slate-500"
+                    : viewingDriver.medicalResult === "Completed"
                     ? "bg-emerald-50 text-emerald-600"
                     : "bg-amber-50 text-amber-600"
                 }`}>
-                  {viewingDriver.medicalResult}
+                  {displayValue(viewingDriver.medicalResult)}
                 </span>
               </div>
             </div>
