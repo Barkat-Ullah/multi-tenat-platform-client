@@ -1,15 +1,31 @@
 "use client";
 
+import { useCallback, useMemo, useState } from "react";
 import ScheduleCalendarView, {
   ScheduleCalendarAppointmentData,
 } from "@/components/shared/ScheduleCalendarView";
+import { useGetAdminClinicsQuery } from "@/redux/service/admin/cliniciansApi";
+import { useGetAdminLocationsQuery } from "@/redux/service/admin/locationsApi";
 import {
   AdminBookingCalendarEvent,
   useGetAdminBookingsCalendarQuery,
 } from "@/redux/service/admin/bookingsApi";
 
-const CALENDAR_RANGE_START_DAY = "2026-06-07";
-const CALENDAR_RANGE_END_DAY = "2026-07-14";
+const getInitialCalendarRange = () => {
+  const today = new Date();
+  const day = today.getDay();
+  const diffToMonday = (day + 6) % 7;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - diffToMonday);
+
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+
+  return {
+    rangeStartDay: monday.toISOString().slice(0, 10),
+    rangeEndDay: sunday.toISOString().slice(0, 10),
+  };
+};
 
 type CalendarDay = ScheduleCalendarAppointmentData["day"];
 type CalendarColor = ScheduleCalendarAppointmentData["color"];
@@ -93,7 +109,41 @@ const mapCalendarAppointments = (events: AdminBookingCalendarEvent[] = []): Sche
     })
     .filter((appointment): appointment is ScheduleCalendarAppointmentData => Boolean(appointment));
 
-export default function CalendarView() {
+interface CalendarViewProps {
+  title?: string;
+  showFilters?: boolean;
+  createScheduleHref?: string;
+  createScheduleLabel?: string;
+}
+
+export default function CalendarView({
+  title,
+  showFilters = true,
+  createScheduleHref,
+  createScheduleLabel,
+}: CalendarViewProps) {
+  const [selectedClinicId, setSelectedClinicId] = useState("");
+  const [selectedLocationId, setSelectedLocationId] = useState("");
+  const [calendarRange, setCalendarRange] = useState(getInitialCalendarRange);
+
+  const { data: clinicsResponse, isFetching: isFetchingClinics } =
+    useGetAdminClinicsQuery(
+      {
+        page: 1,
+        limit: 100,
+      },
+      { skip: !showFilters },
+    );
+
+  const { data: locationsResponse, isFetching: isFetchingLocations } =
+    useGetAdminLocationsQuery(
+      {
+        page: 1,
+        limit: 100,
+      },
+      { skip: !showFilters },
+    );
+
   const {
     data: calendarResponse,
     isLoading,
@@ -101,18 +151,70 @@ export default function CalendarView() {
     isError,
     refetch,
   } = useGetAdminBookingsCalendarQuery({
-    rangeStartDay: CALENDAR_RANGE_START_DAY,
-    rangeEndDay: CALENDAR_RANGE_END_DAY,
+    rangeStartDay: calendarRange.rangeStartDay,
+    rangeEndDay: calendarRange.rangeEndDay,
+    clinicId: selectedClinicId || undefined,
+    locationId: selectedLocationId || undefined,
   });
+
+  const clinicOptions = useMemo(
+    () => [
+      { value: "", label: "All Clinics" },
+      ...(clinicsResponse?.data || []).map((clinic) => ({
+        value: clinic.id,
+        label: clinic.fullName || clinic.email || "N/A",
+      })),
+    ],
+    [clinicsResponse?.data],
+  );
+
+  const locationOptions = useMemo(
+    () => [
+      { value: "", label: "All Locations" },
+      ...(locationsResponse?.data || []).map((location) => ({
+        value: location.id,
+        label: location.locationName || "N/A",
+      })),
+    ],
+    [locationsResponse?.data],
+  );
 
   const appointments = mapCalendarAppointments(calendarResponse?.data.events);
 
+  const handleVisibleRangeChange = useCallback(
+    (range: { rangeStartDay: string; rangeEndDay: string }) => {
+      setCalendarRange((currentRange) => {
+        if (
+          currentRange.rangeStartDay === range.rangeStartDay &&
+          currentRange.rangeEndDay === range.rangeEndDay
+        ) {
+          return currentRange;
+        }
+
+        return range;
+      });
+    },
+    [],
+  );
+
   return (
     <ScheduleCalendarView
+      title={title}
       appointments={appointments}
+      showFilters={showFilters}
+      clinicOptions={clinicOptions}
+      locationOptions={locationOptions}
+      selectedClinicId={selectedClinicId}
+      selectedLocationId={selectedLocationId}
+      onClinicChange={setSelectedClinicId}
+      onLocationChange={setSelectedLocationId}
+      filtersLoading={isFetchingClinics || isFetchingLocations}
+      createScheduleHref={createScheduleHref}
+      createScheduleLabel={createScheduleLabel}
       isLoading={isLoading || isFetching}
       isError={isError}
       onRetry={refetch}
+      onVisibleRangeChange={handleVisibleRangeChange}
     />
   );
 }

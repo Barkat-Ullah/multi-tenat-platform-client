@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Calendar, Popover, Select } from "antd";
 import type { Dayjs } from "dayjs";
@@ -22,15 +22,28 @@ type CalendarDay = ScheduleCalendarAppointmentData["day"];
 type ScheduledAppointment = ScheduleCalendarAppointmentData & { date: string };
 type ViewMode = "Daily" | "Weekly" | "Monthly";
 
+export interface ScheduleCalendarFilterOption {
+  value: string;
+  label: string;
+}
+
 interface ScheduleCalendarViewProps {
   appointments: ScheduleCalendarAppointmentData[];
   title?: string;
   showFilters?: boolean;
+  clinicOptions?: ScheduleCalendarFilterOption[];
+  locationOptions?: ScheduleCalendarFilterOption[];
+  selectedClinicId?: string;
+  selectedLocationId?: string;
+  onClinicChange?: (clinicId: string) => void;
+  onLocationChange?: (locationId: string) => void;
+  filtersLoading?: boolean;
   createScheduleHref?: string;
   createScheduleLabel?: string;
   isLoading?: boolean;
   isError?: boolean;
   onRetry?: () => void;
+  onVisibleRangeChange?: (range: { rangeStartDay: string; rangeEndDay: string }) => void;
 }
 
 const days: CalendarDay[] = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
@@ -71,14 +84,20 @@ export default function ScheduleCalendarView({
   appointments: appointmentData,
   title = "Calendar",
   showFilters = true,
+  clinicOptions = [],
+  locationOptions = [],
+  selectedClinicId = "",
+  selectedLocationId = "",
+  onClinicChange,
+  onLocationChange,
+  filtersLoading = false,
   createScheduleHref,
   createScheduleLabel = "Create Schedule",
   isLoading = false,
   isError = false,
   onRetry,
+  onVisibleRangeChange,
 }: ScheduleCalendarViewProps) {
-  const [hospital, setHospital] = useState("Royal Free Hospital");
-  const [location, setLocation] = useState("London");
   const [viewMode, setViewMode] = useState<ViewMode>("Weekly");
   const [selectedDate, setSelectedDate] = useState(() => dayjs().startOf("day"));
   const appointments = useMemo<ScheduledAppointment[]>(() => {
@@ -90,7 +109,33 @@ export default function ScheduleCalendarView({
     }));
   }, [appointmentData]);
 
-  const selectedWeek = days.map((_, index) => startOfWeek(selectedDate).add(index, "day"));
+  const selectedWeek = useMemo(
+    () => days.map((_, index) => startOfWeek(selectedDate).add(index, "day")),
+    [selectedDate],
+  );
+
+  useEffect(() => {
+    if (!onVisibleRangeChange) return;
+
+    if (viewMode === "Daily") {
+      const day = selectedDate.format("YYYY-MM-DD");
+      onVisibleRangeChange({ rangeStartDay: day, rangeEndDay: day });
+      return;
+    }
+
+    if (viewMode === "Weekly") {
+      onVisibleRangeChange({
+        rangeStartDay: selectedWeek[0].format("YYYY-MM-DD"),
+        rangeEndDay: selectedWeek[6].format("YYYY-MM-DD"),
+      });
+      return;
+    }
+
+    onVisibleRangeChange({
+      rangeStartDay: selectedDate.startOf("month").format("YYYY-MM-DD"),
+      rangeEndDay: selectedDate.endOf("month").format("YYYY-MM-DD"),
+    });
+  }, [onVisibleRangeChange, selectedDate, selectedWeek, viewMode]);
 
   const visibleTimeSlots = useMemo(() => {
     const visibleDates =
@@ -200,26 +245,19 @@ export default function ScheduleCalendarView({
           {showFilters && (
             <>
               <Select
-                value={hospital}
-                onChange={setHospital}
-                options={[
-                  { value: "Royal Free Hospital", label: "Royal Free Hospital" },
-                  { value: "St Thomas' Hospital", label: "St Thomas' Hospital" },
-                  { value: "Guy's Hospital", label: "Guy's Hospital" },
-                ]}
+                value={selectedClinicId}
+                onChange={onClinicChange}
+                loading={filtersLoading}
+                options={clinicOptions}
                 className="w-48 h-10 select-premium-calendar"
                 classNames={{ popup: { root: "premium-select-popup" } }}
               />
 
               <Select
-                value={location}
-                onChange={setLocation}
-                options={[
-                  { value: "London", label: "London" },
-                  { value: "Manchester", label: "Manchester" },
-                  { value: "Leeds", label: "Leeds" },
-                  { value: "Birmingham", label: "Birmingham" },
-                ]}
+                value={selectedLocationId}
+                onChange={onLocationChange}
+                loading={filtersLoading}
+                options={locationOptions}
                 className="w-32 h-10 select-premium-calendar"
                 classNames={{ popup: { root: "premium-select-popup" } }}
               />
@@ -310,7 +348,7 @@ export default function ScheduleCalendarView({
         </div>
       )}
 
-      {!isLoading && viewMode === "Daily" && selectedDateAppointments.length === 0 && (
+      {!isLoading && !isError && viewMode === "Daily" && selectedDateAppointments.length === 0 && (
         <div className="rounded-3xl border border-slate-100 bg-white px-6 py-14 text-center shadow-[0_4px_25px_rgba(0,0,0,0.015)]">
           <p className="text-base font-extrabold text-[#0F2E4A]">
             {selectedDate.isSame(dayjs(), "day") ? "No appointments today" : "No appointments on this date"}
@@ -321,7 +359,7 @@ export default function ScheduleCalendarView({
         </div>
       )}
 
-      {!isLoading && viewMode === "Daily" && selectedDateAppointments.length > 0 && (
+      {!isLoading && !isError && viewMode === "Daily" && selectedDateAppointments.length > 0 && (
         <div className="overflow-x-auto rounded-3xl border border-slate-100 shadow-[0_4px_25px_rgba(0,0,0,0.015)] bg-white">
           <table className="w-full border-collapse">
             <thead>
@@ -375,14 +413,14 @@ export default function ScheduleCalendarView({
         </div>
       )}
 
-      {!isLoading && viewMode === "Weekly" && selectedWeekAppointments.length === 0 && (
+      {!isLoading && !isError && viewMode === "Weekly" && selectedWeekAppointments.length === 0 && (
         <div className="rounded-3xl border border-slate-100 bg-white px-6 py-14 text-center shadow-[0_4px_25px_rgba(0,0,0,0.015)]">
           <p className="text-base font-extrabold text-[#0F2E4A]">No appointments this week</p>
           <p className="mt-2 text-sm font-semibold text-slate-400">{periodLabel}</p>
         </div>
       )}
 
-      {!isLoading && viewMode === "Weekly" && selectedWeekAppointments.length > 0 && (
+      {!isLoading && !isError && viewMode === "Weekly" && selectedWeekAppointments.length > 0 && (
         <div className="overflow-x-auto rounded-3xl border border-slate-100 shadow-[0_4px_25px_rgba(0,0,0,0.015)] bg-white">
           <table className="w-full border-collapse min-w-[1200px] table-fixed">
             <thead>
@@ -449,7 +487,7 @@ export default function ScheduleCalendarView({
         </div>
       )}
 
-      {!isLoading && viewMode === "Monthly" && (
+      {!isLoading && !isError && viewMode === "Monthly" && (
         <div className="bg-white rounded-3xl border border-slate-100 shadow-[0_4px_25px_rgba(0,0,0,0.015)] p-6">
           <Calendar
             value={selectedDate}

@@ -1,12 +1,11 @@
 "use client";
 
-import { clinicCalendarAppointments } from "@/app/data/ClinicDashboardData";
-import ScheduleCalendarView from "@/components/shared/ScheduleCalendarView";
+import CalendarView from "@/components/AdminDashboard/CalendarView";
 
 export default function ClinicScheduleView() {
   return (
-    <ScheduleCalendarView
-      appointments={clinicCalendarAppointments}
+    <CalendarView
+      title="My Schedule"
       showFilters={false}
       createScheduleHref="/dashboard/clinic/create-schedule"
       createScheduleLabel="Create Schedule"
