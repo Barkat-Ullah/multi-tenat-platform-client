@@ -52,7 +52,7 @@ export default function TaxiBookingSection({ councils }: TaxiBookingSectionProps
   };
 
   return (
-    <section className="bg-white py-16 md:py-20 lg:py-24 poppins border-b border-slate-100">
+    <section className="bg-[#FAFAFA] py-16 md:py-20 lg:py-24 poppins border-b border-slate-100">
       <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8 flex flex-col items-center">
         
         {/* Header Title */}

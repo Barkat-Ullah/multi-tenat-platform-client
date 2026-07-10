@@ -155,8 +155,8 @@ export const motorhomeIntroData: MotorhomeIntroData = {
   whatToBringItems: [
     {
       segments: [
-        { text: "D4 Medical Form – ", isLink: false },
-        { text: "Download Here", isLink: true, linkUrl: "/d4-medical-form" }
+        { text: "D4 Medical Form ", isLink: false },
+        // { text: "Download Here", isLink: true, linkUrl: "/d4-medical-form" }
       ]
     },
     {

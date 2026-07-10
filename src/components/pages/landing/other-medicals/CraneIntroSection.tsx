@@ -13,18 +13,18 @@ export default function CraneIntroSection({ data }: CraneIntroSectionProps) {
   return (
     <section className="bg-white py-16 sm:py-20 lg:py-24 poppins relative overflow-hidden border-b border-slate-100">
       <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8 relative z-10">
-        
+
         {/* 2-Column Flex Content (Text on left, Image on right) */}
         <div className="flex flex-col lg:flex-row lg:justify-between items-center gap-12 lg:gap-16">
-          
+
           {/* Left Column: Detailed Text Content */}
           <div className="w-full lg:w-[50%] flex flex-col justify-center order-2 lg:order-1">
-            
+
             {/* Title */}
             <h2 className="text-3xl md:text-4xl lg:text-[42px] font-extrabold text-[#0F2E4A] tracking-tight leading-tight mb-6">
               {data.title}
             </h2>
-            
+
             {/* Description */}
             <p className="text-[#55697A] text-sm sm:text-base font-medium leading-relaxed mb-8">
               {data.description}
@@ -32,7 +32,7 @@ export default function CraneIntroSection({ data }: CraneIntroSectionProps) {
 
             {/* Sub-Blocks */}
             <div className="space-y-6 mb-8">
-              
+
               {/* What Happens */}
               <div className="space-y-2">
                 <h3 className="text-base sm:text-lg font-bold text-[#0F2E4A] leading-tight">
@@ -114,9 +114,9 @@ export default function CraneIntroSection({ data }: CraneIntroSectionProps) {
                   />
                 </div>
               )}
-              
+
               {/* Foreground Image Card */}
-              <div className="relative aspect-[1.1/1] overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-50 shadow-[0_4px_25px_rgba(0,0,0,0.04)]">
+              <div className="relative aspect-[1.1/1] overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 shadow-[0_4px_25px_rgba(0,0,0,0.04)]">
                 <Image
                   src={data.image}
                   alt={data.imageAlt}

@@ -1,13 +1,15 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
-import { Users, Check, Calendar, FileText } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
+import { Users, Check, Calendar, FileText, X } from "lucide-react";
 import Pagination from "./Pagination";
 import {
   AdminCorporateRequest,
   useGetAdminCorporateRequestsQuery,
   useUpdateCorporateRequestStatusMutation,
 } from "@/redux/service/admin/corporateApi";
+import { useGetAdminClinicsQuery } from "@/redux/service/admin/cliniciansApi";
 import { toast } from "sonner";
 
 const PAGE_LIMIT = 10;
@@ -78,9 +80,17 @@ const getStatusClassName = (status: string) => {
   return "bg-[#FFF8E6] text-[#F59E0B]";
 };
 
+type CorporateActionStatus = "Confirmed" | "Canceled";
+
 export default function CorporateView() {
   const [currentPage, setCurrentPage] = useState(1);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [assigningRequest, setAssigningRequest] =
+    useState<AdminCorporateRequest | null>(null);
+  const [assigningStatus, setAssigningStatus] =
+    useState<CorporateActionStatus>("Confirmed");
+  const [selectedClinicId, setSelectedClinicId] = useState("");
+  const [mounted, setMounted] = useState(false);
   const {
     data,
     isLoading,
@@ -91,6 +101,13 @@ export default function CorporateView() {
     page: currentPage,
     limit: PAGE_LIMIT,
   });
+  const {
+    data: clinicsData,
+    isLoading: isClinicsLoading,
+    isFetching: isClinicsFetching,
+    isError: isClinicsError,
+    refetch: refetchClinics,
+  } = useGetAdminClinicsQuery({ page: 1, limit: 100 });
   const [updateCorporateRequestStatus] = useUpdateCorporateRequestStatusMutation();
 
   const requests = data?.data || [];
@@ -99,13 +116,53 @@ export default function CorporateView() {
     return Math.max(1, Math.ceil((meta?.total || 0) / PAGE_LIMIT));
   }, [meta?.total]);
   const isBusy = isLoading || isFetching;
+  const clinics = clinicsData?.data || [];
+  const isClinicOptionsLoading = isClinicsLoading || isClinicsFetching;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!assigningRequest) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [assigningRequest]);
+
+  const openAssignClinicModal = (
+    request: AdminCorporateRequest,
+    status: CorporateActionStatus,
+  ) => {
+    setAssigningRequest(request);
+    setAssigningStatus(status);
+    setSelectedClinicId(request.clinicId || "");
+  };
+
+  const closeAssignClinicModal = () => {
+    if (updatingId) return;
+    setAssigningRequest(null);
+    setAssigningStatus("Confirmed");
+    setSelectedClinicId("");
+  };
 
   const handleStatusUpdate = async (
     request: AdminCorporateRequest,
     status: "Confirmed" | "Canceled",
+    clinicId?: string | null,
   ) => {
-    if (status === "Confirmed" && !request.clinicId) {
-      toast.error("This request does not have an assigned clinic.");
+    const nextClinicId = clinicId ?? request.clinicId ?? null;
+
+    if (!nextClinicId) {
+      toast.error(
+        status === "Confirmed"
+          ? "Please select a clinic before accepting this request."
+          : "Please select a clinic before rejecting this request.",
+      );
       return;
     }
 
@@ -113,10 +170,13 @@ export default function CorporateView() {
       setUpdatingId(request.id);
       const response = await updateCorporateRequestStatus({
         id: request.id,
-        clinicId: status === "Confirmed" ? request.clinicId as string : null,
+        clinicId: nextClinicId,
         status,
       }).unwrap();
       toast.success(response.message || `Corporate request ${status.toLowerCase()} successfully.`);
+      setAssigningRequest(null);
+      setAssigningStatus("Confirmed");
+      setSelectedClinicId("");
     } catch (error) {
       const message =
         (error as { data?: { message?: string } })?.data?.message ||
@@ -125,6 +185,12 @@ export default function CorporateView() {
     } finally {
       setUpdatingId(null);
     }
+  };
+
+  const handleConfirmAssignClinic = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!assigningRequest) return;
+    handleStatusUpdate(assigningRequest, assigningStatus, selectedClinicId);
   };
 
   return (
@@ -236,7 +302,7 @@ export default function CorporateView() {
                             <button
                               type="button"
                               disabled={updatingId === request.id}
-                              onClick={() => handleStatusUpdate(request, "Canceled")}
+                              onClick={() => openAssignClinicModal(request, "Canceled")}
                               className="rounded-full bg-[#FFEBEB] px-5 py-1.5 text-xs font-bold text-[#FF4D4F] transition-all hover:bg-[#FFD6D6] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
                             >
                               Reject
@@ -244,7 +310,7 @@ export default function CorporateView() {
                             <button
                               type="button"
                               disabled={updatingId === request.id}
-                              onClick={() => handleStatusUpdate(request, "Confirmed")}
+                              onClick={() => openAssignClinicModal(request, "Confirmed")}
                               className="rounded-full bg-[#E6FDF5] px-5 py-1.5 text-xs font-bold text-[#10B981] transition-all hover:bg-[#D1FAE5] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
                             >
                               Accept
@@ -273,6 +339,136 @@ export default function CorporateView() {
           totalPages={totalPages}
           onPageChange={setCurrentPage}
         />
+      )}
+
+      {assigningRequest && mounted && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+          <button
+            type="button"
+            aria-label="Close assign clinic dialog"
+            className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
+            onClick={closeAssignClinicModal}
+          />
+
+          <form
+            onSubmit={handleConfirmAssignClinic}
+            className="relative z-10 w-full max-w-[520px] rounded-[28px] border border-slate-100 bg-white p-6 shadow-[0_20px_50px_rgba(0,0,0,0.12)] sm:p-7"
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div>
+                <h2 className="font-poppins text-xl font-extrabold text-[#0F2E4A]">
+                  {assigningStatus === "Confirmed" ? "Assign Clinic" : "Reject Request"}
+                </h2>
+                <p className="mt-1 text-xs font-semibold text-slate-500">
+                  {assigningRequest.companyName}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeAssignClinicModal}
+                disabled={Boolean(updatingId)}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E6FAFF] text-[#00B2D6] hover:bg-[#D0F3FC] disabled:opacity-60"
+                aria-label="Close assign clinic dialog"
+                title="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="mt-5 space-y-4">
+              <div className="rounded-2xl bg-slate-50 p-4 text-xs font-semibold text-slate-500">
+                <div className="flex justify-between gap-4">
+                  <span>Service</span>
+                  <span className="text-right font-bold text-[#0F2E4A]">
+                    {assigningRequest.service?.title || "N/A"}
+                  </span>
+                </div>
+                <div className="mt-2 flex justify-between gap-4">
+                  <span>Drivers</span>
+                  <span className="font-bold text-[#0F2E4A]">
+                    {assigningRequest.totalDriver}
+                  </span>
+                </div>
+                {assigningStatus === "Canceled" && (
+                  <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-[11px] font-bold text-red-500">
+                    Backend requires a clinic id before this request can be rejected.
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-xs font-bold text-[#0F2E4A]">
+                  Clinic
+                </label>
+                <select
+                  value={selectedClinicId}
+                  onChange={(event) => setSelectedClinicId(event.target.value)}
+                  disabled={isClinicOptionsLoading || Boolean(updatingId)}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-[#0F2E4A] focus:border-[#00B2D6] focus:outline-none focus:ring-1 focus:ring-[#00B2D6] disabled:opacity-60"
+                >
+                  <option value="">
+                    {isClinicOptionsLoading ? "Loading clinics..." : "Select clinic"}
+                  </option>
+                  {clinics.map((clinic) => (
+                    <option key={clinic.id} value={clinic.id}>
+                      {clinic.fullName}
+                      {clinic.location?.locationName ? ` - ${clinic.location.locationName}` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {isClinicsError && (
+                <div className="rounded-2xl border border-red-100 bg-red-50 p-3 text-xs font-semibold text-red-500">
+                  Failed to load clinics.
+                  <button
+                    type="button"
+                    onClick={() => refetchClinics()}
+                    className="ml-2 font-bold underline underline-offset-2"
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
+
+              {!isClinicOptionsLoading && !isClinicsError && clinics.length === 0 && (
+                <p className="text-xs font-bold text-slate-400">
+                  No clinics available to assign.
+                </p>
+              )}
+            </div>
+
+            <div className="mt-7 flex justify-start gap-3">
+              <button
+                type="button"
+                onClick={closeAssignClinicModal}
+                disabled={Boolean(updatingId)}
+                className="rounded-full border border-slate-200 px-6 py-2.5 text-xs font-bold text-slate-500 transition-colors hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={
+                  Boolean(updatingId) ||
+                  isClinicOptionsLoading ||
+                  !selectedClinicId ||
+                  isClinicsError
+                }
+                className="rounded-full bg-[#00B2D6] px-7 py-2.5 text-xs font-bold text-white transition-all hover:bg-[#009cb9] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {updatingId === assigningRequest.id
+                  ? assigningStatus === "Confirmed"
+                    ? "Accepting..."
+                    : "Rejecting..."
+                  : assigningStatus === "Confirmed"
+                    ? "Accept Request"
+                    : "Reject Request"}
+              </button>
+            </div>
+          </form>
+        </div>,
+        document.body,
       )}
     </div>
   );

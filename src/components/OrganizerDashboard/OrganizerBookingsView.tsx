@@ -26,6 +26,16 @@ function formatDate(iso: string | null | undefined) {
   });
 }
 
+const isConfirmedStatus = (status: string | undefined) => status === "Confirmed";
+const isPendingStatus = (status: string | undefined) => status === "Pending";
+const isCanceledStatus = (status: string | undefined) =>
+  status === "Cancelled" || status === "Canceled";
+
+const getRequestedDriverLimit = (request: OrganizerRequest | null) => {
+  const limit = Number(request?.totalDriver);
+  return Number.isFinite(limit) && limit > 0 ? limit : 0;
+};
+
 function SkeletonRow() {
   return (
     <tr className="animate-pulse border-b border-slate-100">
@@ -80,10 +90,10 @@ export default function OrganizerBookingsView() {
   const isTableLoading = isLoading && requests.length === 0;
 
   // Stats derived from real data
-  const confirmed = requests.filter((r) => r.status === "Confirmed").length;
-  const pending = requests.filter((r) => r.status === "Pending").length;
+  const confirmed = requests.filter((r) => isConfirmedStatus(r.status)).length;
+  const pending = requests.filter((r) => isPendingStatus(r.status)).length;
   const upcoming = requests.filter(
-    (r) => r.status !== "Confirmed" && r.status !== "Cancelled"
+    (r) => !isConfirmedStatus(r.status) && !isCanceledStatus(r.status)
   ).length;
 
   // Search filter
@@ -125,6 +135,11 @@ export default function OrganizerBookingsView() {
     if (!assigningBooking) return;
     if (selectedDriverIds.length === 0) {
       toast.error("Please select at least one driver.");
+      return;
+    }
+    const driverLimit = getRequestedDriverLimit(assigningBooking);
+    if (driverLimit > 0 && selectedDriverIds.length > driverLimit) {
+      toast.error(`Only ${driverLimit} drivers can be assigned to this request.`);
       return;
     }
     try {
@@ -295,11 +310,11 @@ export default function OrganizerBookingsView() {
                       </td>
                       {/* Status badge */}
                       <td className="py-4 px-6 text-center">
-                        {req.status === "Confirmed" ? (
+                        {isConfirmedStatus(req.status) ? (
                           <span className="inline-flex items-center justify-center px-4 py-1 rounded-full text-[10px] sm:text-xs font-bold bg-[#E8F8F5] text-[#10B981] border border-[#A3E4D7]/20">
                             Confirm
                           </span>
-                        ) : req.status === "Pending" ? (
+                        ) : isPendingStatus(req.status) ? (
                           <span className="inline-flex items-center justify-center px-4 py-1 rounded-full text-[10px] sm:text-xs font-bold bg-[#FEF9E7] text-[#D9A700] border border-[#F9E79F]/20">
                             Pending
                           </span>
@@ -313,8 +328,8 @@ export default function OrganizerBookingsView() {
                       <td className="py-4 px-6 text-center">
                         <button
                           onClick={() => openAssignModal(req)}
-                          disabled={req.status === "Pending" || req.status === "Cancelled" || req.rosterStatus === "Block"}
-                          className="px-4 py-1.5 rounded-full bg-[#00A88F] hover:bg-[#008f79] disabled:bg-slate-100 disabled:text-slate-400 text-white text-[11px] sm:text-xs font-bold transition-all border-none outline-none cursor-pointer active:scale-95 whitespace-nowrap"
+                          disabled={isPendingStatus(req.status) || isCanceledStatus(req.status)}
+                          className="px-4 py-1.5 rounded-full bg-[#00A88F] hover:bg-[#008f79] disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 text-white text-[11px] sm:text-xs font-bold transition-all border-none outline-none cursor-pointer active:scale-95 whitespace-nowrap"
                         >
                           Assign Driver
                         </button>
@@ -414,6 +429,11 @@ export default function OrganizerBookingsView() {
                           key={driver.id}
                           type="button"
                           onClick={() => {
+                            const driverLimit = getRequestedDriverLimit(assigningBooking);
+                            if (driverLimit > 0 && selectedDriverIds.length >= driverLimit) {
+                              toast.error(`Only ${driverLimit} drivers can be assigned to this request.`);
+                              return;
+                            }
                             setSelectedDriverIds((prev) => [...prev, driver.id]);
                             setDriverSearchQuery("");
                           }}

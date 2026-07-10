@@ -9,7 +9,7 @@ interface ConsentCertificatesSectionProps {
 
 export default function ConsentCertificatesSection({ data }: ConsentCertificatesSectionProps) {
   return (
-    <section className="bg-white py-16 sm:py-20 lg:py-24 poppins relative overflow-hidden border-b border-slate-100">
+    <section className="bg-[#FAFAFA] py-16 sm:py-20 lg:py-24 poppins relative overflow-hidden border-b border-slate-100">
       <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8 relative z-10">
 
         {/* 2-Column Flex Content (Text on left, Image on right) */}

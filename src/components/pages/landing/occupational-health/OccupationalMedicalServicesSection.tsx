@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { OccupationalServicesData } from "@/app/data/OccupationalHealthData";
+import SectionEyebrow from "@/components/shared/SectionEyebrow";
 
 interface OccupationalMedicalServicesSectionProps {
   data: OccupationalServicesData;
@@ -105,9 +106,7 @@ export default function OccupationalMedicalServicesSection({ data }: Occupationa
         
         {/* Section Header */}
         <div className="text-center mb-16">
-          <p className="text-[#00B2D6] font-bold text-sm tracking-widest uppercase">
-            {data.tagline}
-          </p>
+          <SectionEyebrow>{data.tagline}</SectionEyebrow>
           <h2 className="text-3xl md:text-4xl lg:text-[42px] font-extrabold text-[#0F2E4A] tracking-tight leading-tight mt-3 mb-6">
             {data.title}
           </h2>

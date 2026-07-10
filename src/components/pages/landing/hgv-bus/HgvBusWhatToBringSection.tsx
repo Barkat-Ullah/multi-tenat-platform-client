@@ -1,5 +1,6 @@
-import { Sparkles, FileText, Glasses, ClipboardList, Pill } from "lucide-react";
+import { FileText, Glasses, ClipboardList, Pill } from "lucide-react";
 import type { HgvBusWhatToBringData } from "@/app/data/HgvBusMedicalData";
+import SectionEyebrow from "@/components/shared/SectionEyebrow";
 
 interface HgvBusWhatToBringSectionProps {
   data: HgvBusWhatToBringData;
@@ -26,23 +27,8 @@ export default function HgvBusWhatToBringSection({ data }: HgvBusWhatToBringSect
       <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Header Block */}
-        <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
-          <div className="flex items-center justify-center gap-4 mb-4">
-            {/* Left Dot-Line Decorator */}
-            <div className="flex items-center gap-0">
-              <div className="h-1.5 w-1.5 rounded-full bg-[#00B2D6]" />
-              <div className="h-[1.5px] w-8 sm:w-16 bg-gradient-to-r from-[#00B2D6] to-[#00B2D6]/20" />
-            </div>
-            <div className="flex items-center gap-1.5 text-[#00B2D6] font-bold text-xs sm:text-sm uppercase tracking-widest">
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>{data.eyebrow}</span>
-            </div>
-            {/* Right Line-Dot Decorator */}
-            <div className="flex items-center gap-0">
-              <div className="h-[1.5px] w-8 sm:w-16 bg-gradient-to-l from-[#00B2D6] to-[#00B2D6]/20" />
-              <div className="h-1.5 w-1.5 rounded-full bg-[#00B2D6]" />
-            </div>
-          </div>
+        <div className="text-center max-w-4xl mx-auto mb-12 sm:mb-16">
+          <SectionEyebrow>{data.eyebrow}</SectionEyebrow>
 
           <h2 className="text-3xl md:text-4xl lg:text-[42px] font-extrabold text-[#0F2E4A] tracking-tight leading-tight mb-4">
             {data.title}

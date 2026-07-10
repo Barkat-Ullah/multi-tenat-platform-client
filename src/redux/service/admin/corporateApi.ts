@@ -72,7 +72,7 @@ export interface AdminCorporateListResponse {
 
 export interface UpdateCorporateRequestStatusPayload {
   id: string;
-  clinicId: string | null;
+  clinicId?: string | null;
   status: "Confirmed" | "Canceled";
 }
 
@@ -100,14 +100,21 @@ const adminCorporateApi = baseApi.injectEndpoints({
       UpdateCorporateRequestStatusResponse,
       UpdateCorporateRequestStatusPayload
     >({
-      query: ({ id, clinicId, status }) => ({
-        url: `/organizer-requests/assign-clinic/${id}`,
-        method: "PATCH",
-        body: {
-          clinicId,
+      query: ({ id, clinicId, status }) => {
+        const body: { status: "Confirmed" | "Canceled"; clinicId?: string } = {
           status,
-        },
-      }),
+        };
+
+        if (clinicId) {
+          body.clinicId = clinicId;
+        }
+
+        return {
+          url: `/organizer-requests/assign-clinic/${id}`,
+          method: "PATCH",
+          body,
+        };
+      },
       invalidatesTags: ["corporates", "dashboard"],
     }),
   }),

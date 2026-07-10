@@ -140,32 +140,32 @@ export default function OnSiteRequestSection() {
   };
 
   return (
-    <section 
+    <section
       id="request-form-section"
       className="bg-[#F8FAFC] py-16 sm:py-20 lg:py-24 poppins relative overflow-hidden border-b border-slate-100"
     >
       <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col items-center">
-        
+
         {/* Top Header Section */}
         <div className="text-center mb-8 w-full max-w-[650px] flex flex-col items-center">
           <div className="mb-4">
             <Logo />
           </div>
-          
+
           <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0F2E4A] tracking-tight mb-2">
             On-Site Request
           </h2>
-          
+
           {!isSubmitted && (
             <>
               {/* Step indicator */}
               <p className="text-[#00B2D6] font-bold text-sm tracking-wider uppercase mb-3">
                 Step:0{step}/02
               </p>
-              
+
               {/* Custom Progress Bar */}
               <div className="w-[300px] h-2 bg-slate-200 rounded-full overflow-hidden mb-8 relative">
-                <div 
+                <div
                   className="h-full bg-[#00B2D6] rounded-full transition-all duration-500 ease-out"
                   style={{ width: step === 1 ? "50%" : "100%" }}
                 />
@@ -175,11 +175,11 @@ export default function OnSiteRequestSection() {
         </div>
 
         {/* Form Container Card */}
-        <div className="w-full max-w-[650px] bg-white rounded-[2rem] border border-slate-100 p-6 sm:p-10 shadow-[0_4px_30px_rgba(0,0,0,0.02)]">
+        <div className="w-full max-w-[650px] bg-white rounded-3xl border border-slate-100 p-6 sm:p-10 shadow-[0_4px_30px_rgba(0,0,0,0.02)]">
           <AnimatePresence mode="wait">
             {isSubmitted ? (
               // Success Message State
-              <motion.div 
+              <motion.div
                 key="success"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -194,7 +194,7 @@ export default function OnSiteRequestSection() {
                   Request Submitted!
                 </h3>
                 <p className="text-[#55697A] font-medium text-sm sm:text-base leading-relaxed max-w-md mx-auto mb-8">
-                  Thank you for your request. Our medical bookings team will contact you shortly at 
+                  Thank you for your request. Our medical bookings team will contact you shortly at
                   <strong className="text-[#0F2E4A]"> {formData.email} </strong> or via phone to confirm dates, medical candidate details, and finalize your booking.
                 </p>
                 <button
@@ -228,9 +228,8 @@ export default function OnSiteRequestSection() {
                     value={formData.name}
                     onChange={handleInputChange}
                     placeholder="Enter Your Name"
-                    className={`w-full bg-white border ${
-                      errors.name ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
-                    } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all`}
+                    className={`w-full bg-white border ${errors.name ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
+                      } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all`}
                   />
                   {errors.name && <p className="text-red-500 text-xs mt-1.5 font-semibold">{errors.name}</p>}
                 </div>
@@ -247,9 +246,8 @@ export default function OnSiteRequestSection() {
                     value={formData.email}
                     onChange={handleInputChange}
                     placeholder="Enter Your Email"
-                    className={`w-full bg-white border ${
-                      errors.email ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
-                    } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all`}
+                    className={`w-full bg-white border ${errors.email ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
+                      } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all`}
                   />
                   {errors.email && <p className="text-red-500 text-xs mt-1.5 font-semibold">{errors.email}</p>}
                 </div>
@@ -266,9 +264,8 @@ export default function OnSiteRequestSection() {
                     value={formData.phone}
                     onChange={handleInputChange}
                     placeholder="Enter Your Telephone"
-                    className={`w-full bg-white border ${
-                      errors.phone ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
-                    } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all`}
+                    className={`w-full bg-white border ${errors.phone ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
+                      } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all`}
                   />
                   {errors.phone && <p className="text-red-500 text-xs mt-1.5 font-semibold">{errors.phone}</p>}
                 </div>
@@ -285,9 +282,8 @@ export default function OnSiteRequestSection() {
                     value={formData.businessName}
                     onChange={handleInputChange}
                     placeholder="Enter Your Business Name"
-                    className={`w-full bg-white border ${
-                      errors.businessName ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
-                    } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all`}
+                    className={`w-full bg-white border ${errors.businessName ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
+                      } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all`}
                   />
                   {errors.businessName && <p className="text-red-500 text-xs mt-1.5 font-semibold">{errors.businessName}</p>}
                 </div>
@@ -303,11 +299,10 @@ export default function OnSiteRequestSection() {
                       onClick={() => handleRadioChange("yes")}
                       className="flex items-center gap-2.5 group outline-none"
                     >
-                      <div className={`w-5 h-5 rounded-full border ${
-                        formData.hasAccount === "yes" 
-                          ? "border-[#00B2D6] bg-white flex items-center justify-center" 
+                      <div className={`w-5 h-5 rounded-full border ${formData.hasAccount === "yes"
+                          ? "border-[#00B2D6] bg-white flex items-center justify-center"
                           : "border-slate-300 bg-white"
-                      } transition-all duration-200`}>
+                        } transition-all duration-200`}>
                         {formData.hasAccount === "yes" && (
                           <div className="w-2.5 h-2.5 rounded-full bg-[#00B2D6]" />
                         )}
@@ -322,11 +317,10 @@ export default function OnSiteRequestSection() {
                       onClick={() => handleRadioChange("no")}
                       className="flex items-center gap-2.5 group outline-none"
                     >
-                      <div className={`w-5 h-5 rounded-full border ${
-                        formData.hasAccount === "no" 
-                          ? "border-[#00B2D6] bg-white flex items-center justify-center" 
+                      <div className={`w-5 h-5 rounded-full border ${formData.hasAccount === "no"
+                          ? "border-[#00B2D6] bg-white flex items-center justify-center"
                           : "border-slate-300 bg-white"
-                      } transition-all duration-200`}>
+                        } transition-all duration-200`}>
                         {formData.hasAccount === "no" && (
                           <div className="w-2.5 h-2.5 rounded-full bg-[#00B2D6]" />
                         )}
@@ -348,9 +342,8 @@ export default function OnSiteRequestSection() {
                     name="medicalRequired"
                     value={formData.medicalRequired}
                     onChange={handleInputChange}
-                    className={`w-full bg-white border ${
-                      errors.medicalRequired ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
-                    } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all appearance-none cursor-pointer`}
+                    className={`w-full bg-white border ${errors.medicalRequired ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
+                      } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all appearance-none cursor-pointer`}
                   >
                     <option value="" disabled className="text-slate-400">
                       Medical Required
@@ -378,9 +371,8 @@ export default function OnSiteRequestSection() {
                     onChange={handleInputChange}
                     placeholder="No of Candidates"
                     min="1"
-                    className={`w-full bg-white border ${
-                      errors.candidatesCount ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
-                    } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all`}
+                    className={`w-full bg-white border ${errors.candidatesCount ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
+                      } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all`}
                   />
                   {errors.candidatesCount && <p className="text-red-500 text-xs mt-1.5 font-semibold">{errors.candidatesCount}</p>}
                 </div>
@@ -397,9 +389,8 @@ export default function OnSiteRequestSection() {
                     value={formData.additionalServices}
                     onChange={handleInputChange}
                     placeholder="Additional Services"
-                    className={`w-full bg-white border ${
-                      errors.additionalServices ? "border-red-400 focus:border-[#00B2D6]/20" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
-                    } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all`}
+                    className={`w-full bg-white border ${errors.additionalServices ? "border-red-400 focus:border-[#00B2D6]/20" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
+                      } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all`}
                   />
                 </div>
 
@@ -437,9 +428,8 @@ export default function OnSiteRequestSection() {
                     value={formData.siteContact}
                     onChange={handleInputChange}
                     placeholder="Enter Your Site Contact"
-                    className={`w-full bg-white border ${
-                      errors.siteContact ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
-                    } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all`}
+                    className={`w-full bg-white border ${errors.siteContact ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
+                      } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all`}
                   />
                   {errors.siteContact && <p className="text-red-500 text-xs mt-1.5 font-semibold">{errors.siteContact}</p>}
                 </div>
@@ -456,9 +446,8 @@ export default function OnSiteRequestSection() {
                     value={formData.siteContactPhone}
                     onChange={handleInputChange}
                     placeholder="Enter Your Site Contact Telephone"
-                    className={`w-full bg-white border ${
-                      errors.siteContactPhone ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
-                    } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all`}
+                    className={`w-full bg-white border ${errors.siteContactPhone ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
+                      } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all`}
                   />
                   {errors.siteContactPhone && <p className="text-red-500 text-xs mt-1.5 font-semibold">{errors.siteContactPhone}</p>}
                 </div>
@@ -475,9 +464,8 @@ export default function OnSiteRequestSection() {
                     value={formData.siteAddressLine1}
                     onChange={handleInputChange}
                     placeholder="Enter Your Site Address Line 1"
-                    className={`w-full bg-white border ${
-                      errors.siteAddressLine1 ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
-                    } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all`}
+                    className={`w-full bg-white border ${errors.siteAddressLine1 ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
+                      } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all`}
                   />
                   {errors.siteAddressLine1 && <p className="text-red-500 text-xs mt-1.5 font-semibold">{errors.siteAddressLine1}</p>}
                 </div>
@@ -510,9 +498,8 @@ export default function OnSiteRequestSection() {
                     value={formData.siteCityTown}
                     onChange={handleInputChange}
                     placeholder="Enter Your City/Town"
-                    className={`w-full bg-white border ${
-                      errors.siteCityTown ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
-                    } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all`}
+                    className={`w-full bg-white border ${errors.siteCityTown ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
+                      } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all`}
                   />
                   {errors.siteCityTown && <p className="text-red-500 text-xs mt-1.5 font-semibold">{errors.siteCityTown}</p>}
                 </div>
@@ -529,9 +516,8 @@ export default function OnSiteRequestSection() {
                       name="dateRequired"
                       value={formData.dateRequired}
                       onChange={handleInputChange}
-                      className={`w-full bg-white border ${
-                        errors.dateRequired ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
-                      } rounded-xl px-4 py-3 pr-12 text-[#0F2E4A] font-medium outline-none transition-all`}
+                      className={`w-full bg-white border ${errors.dateRequired ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
+                        } rounded-xl px-4 py-3 pr-12 text-[#0F2E4A] font-medium outline-none transition-all`}
                     />
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#00B2D6]">
                       <Calendar size={20} />
@@ -552,9 +538,8 @@ export default function OnSiteRequestSection() {
                     value={formData.startTimeRequired}
                     onChange={handleInputChange}
                     placeholder="AM / PM"
-                    className={`w-full bg-white border ${
-                      errors.startTimeRequired ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
-                    } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all`}
+                    className={`w-full bg-white border ${errors.startTimeRequired ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
+                      } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all`}
                   />
                   {errors.startTimeRequired && <p className="text-red-500 text-xs mt-1.5 font-semibold">{errors.startTimeRequired}</p>}
                 </div>
@@ -570,11 +555,10 @@ export default function OnSiteRequestSection() {
                       onClick={() => setFormData(prev => ({ ...prev, roomSizeMet: "yes" }))}
                       className="flex items-center gap-2.5 group outline-none"
                     >
-                      <div className={`w-5 h-5 rounded-full border ${
-                        formData.roomSizeMet === "yes" 
-                          ? "border-[#00B2D6] bg-white flex items-center justify-center" 
+                      <div className={`w-5 h-5 rounded-full border ${formData.roomSizeMet === "yes"
+                          ? "border-[#00B2D6] bg-white flex items-center justify-center"
                           : "border-slate-300 bg-white"
-                      } transition-all duration-200`}>
+                        } transition-all duration-200`}>
                         {formData.roomSizeMet === "yes" && (
                           <div className="w-2.5 h-2.5 rounded-full bg-[#00B2D6]" />
                         )}
@@ -589,11 +573,10 @@ export default function OnSiteRequestSection() {
                       onClick={() => setFormData(prev => ({ ...prev, roomSizeMet: "no" }))}
                       className="flex items-center gap-2.5 group outline-none"
                     >
-                      <div className={`w-5 h-5 rounded-full border ${
-                        formData.roomSizeMet === "no" 
-                          ? "border-[#00B2D6] bg-white flex items-center justify-center" 
+                      <div className={`w-5 h-5 rounded-full border ${formData.roomSizeMet === "no"
+                          ? "border-[#00B2D6] bg-white flex items-center justify-center"
                           : "border-slate-300 bg-white"
-                      } transition-all duration-200`}>
+                        } transition-all duration-200`}>
                         {formData.roomSizeMet === "no" && (
                           <div className="w-2.5 h-2.5 rounded-full bg-[#00B2D6]" />
                         )}
@@ -616,11 +599,10 @@ export default function OnSiteRequestSection() {
                       onClick={() => setFormData(prev => ({ ...prev, parkingAvailable: "yes" }))}
                       className="flex items-center gap-2.5 group outline-none"
                     >
-                      <div className={`w-5 h-5 rounded-full border ${
-                        formData.parkingAvailable === "yes" 
-                          ? "border-[#00B2D6] bg-white flex items-center justify-center" 
+                      <div className={`w-5 h-5 rounded-full border ${formData.parkingAvailable === "yes"
+                          ? "border-[#00B2D6] bg-white flex items-center justify-center"
                           : "border-slate-300 bg-white"
-                      } transition-all duration-200`}>
+                        } transition-all duration-200`}>
                         {formData.parkingAvailable === "yes" && (
                           <div className="w-2.5 h-2.5 rounded-full bg-[#00B2D6]" />
                         )}
@@ -635,11 +617,10 @@ export default function OnSiteRequestSection() {
                       onClick={() => setFormData(prev => ({ ...prev, parkingAvailable: "no" }))}
                       className="flex items-center gap-2.5 group outline-none"
                     >
-                      <div className={`w-5 h-5 rounded-full border ${
-                        formData.parkingAvailable === "no" 
-                          ? "border-[#00B2D6] bg-white flex items-center justify-center" 
+                      <div className={`w-5 h-5 rounded-full border ${formData.parkingAvailable === "no"
+                          ? "border-[#00B2D6] bg-white flex items-center justify-center"
                           : "border-slate-300 bg-white"
-                      } transition-all duration-200`}>
+                        } transition-all duration-200`}>
                         {formData.parkingAvailable === "no" && (
                           <div className="w-2.5 h-2.5 rounded-full bg-[#00B2D6]" />
                         )}

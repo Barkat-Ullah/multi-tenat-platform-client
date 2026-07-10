@@ -14,7 +14,7 @@ interface TaxiFeaturesSectionProps {
 
 export default function TaxiFeaturesSection({ features }: TaxiFeaturesSectionProps) {
   return (
-    <section className="bg-[#FAFAFA] py-12 md:py-16 lg:py-20 poppins border-b border-slate-100">
+    <section className="bg-white py-12 md:py-16 lg:py-20 poppins border-b border-slate-100">
       <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">

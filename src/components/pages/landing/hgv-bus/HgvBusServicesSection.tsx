@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { ArrowRight, Sparkles, Phone, ScanEye, Activity, UserCheck, Scale } from "lucide-react";
+import { ArrowRight, Phone, ScanEye, Activity, UserCheck, Scale } from "lucide-react";
 import type { HgvBusServicesData, HgvBusServiceItem } from "@/app/data/HgvBusMedicalData";
+import SectionEyebrow from "@/components/shared/SectionEyebrow";
 
 interface HgvBusServicesSectionProps {
   data: HgvBusServicesData;
@@ -30,20 +31,7 @@ export default function HgvBusServicesSection({ data }: HgvBusServicesSectionPro
           {/* Left Column: Content and Services Grid */}
           <div className="flex flex-col">
             {/* Header / Eyebrow */}
-            <div className="flex items-center gap-4 mb-4">
-              <div className="flex items-center gap-0">
-                <div className="h-1.5 w-1.5 rounded-full bg-[#00B2D6]" />
-                <div className="h-[1.5px] w-8 sm:w-16 bg-gradient-to-r from-[#00B2D6] to-[#00B2D6]/20" />
-              </div>
-              <div className="flex items-center gap-1.5 text-[#00B2D6] font-bold text-xs sm:text-sm uppercase tracking-widest">
-                <Sparkles className="h-3.5 w-3.5" />
-                <span>{data.eyebrow}</span>
-              </div>
-              <div className="flex items-center gap-0">
-                <div className="h-[1.5px] w-8 sm:w-16 bg-gradient-to-l from-[#00B2D6] to-[#00B2D6]/20" />
-                <div className="h-1.5 w-1.5 rounded-full bg-[#00B2D6]" />
-              </div>
-            </div>
+            <SectionEyebrow align="start">{data.eyebrow}</SectionEyebrow>
 
             <h2 className="text-3xl font-extrabold leading-tight tracking-tight text-[#0F2E4A] sm:text-4xl lg:text-[42px] mb-4">
               {data.title}

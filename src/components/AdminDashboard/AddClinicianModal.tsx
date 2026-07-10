@@ -145,7 +145,7 @@ export default function AddClinicianModal({
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g., Spider Clinic"
+                  placeholder="e.g., Medical Clinic"
                   value={name}
                   onChange={(event) => {
                     setName(event.target.value);
@@ -181,7 +181,7 @@ export default function AddClinicianModal({
                 </label>
                 <input
                   type="text"
-                  placeholder="0111111111"
+                  placeholder="+44 7700 900000"
                   value={phone}
                   onChange={(event) => {
                     setPhone(event.target.value);
@@ -198,7 +198,7 @@ export default function AddClinicianModal({
                 </label>
                 <input
                   type="text"
-                  placeholder="12345"
+                  placeholder="e.g.,1234567"
                   value={gmcNumber}
                   onChange={(event) => {
                     setGmcNumber(event.target.value);

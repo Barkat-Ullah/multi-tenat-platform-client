@@ -2,8 +2,9 @@
 
 import React from "react";
 import Link from "next/link";
-import { RefreshCw, Sparkles } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { useGetTermsQuery } from "@/redux/service/terms/termsApi";
+import SectionEyebrow from "@/components/shared/SectionEyebrow";
 
 export default function TermsClient() {
   const { data, isLoading, isFetching, isError, refetch } = useGetTermsQuery();
@@ -32,20 +33,7 @@ export default function TermsClient() {
           </nav>
 
           <div className="mx-auto max-w-3xl text-center">
-            <div className="mb-4 flex items-center justify-center gap-4">
-              <div className="flex items-center">
-                <div className="h-1.5 w-1.5 rounded-full bg-[#00B2D6]" />
-                <div className="h-[1.5px] w-8 bg-gradient-to-r from-[#00B2D6] to-[#00B2D6]/20 sm:w-16" />
-              </div>
-              <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-[#00B2D6] sm:text-sm">
-                <Sparkles className="h-3.5 w-3.5" />
-                <span>Compliance Medicals</span>
-              </div>
-              <div className="flex items-center">
-                <div className="h-[1.5px] w-8 bg-gradient-to-l from-[#00B2D6] to-[#00B2D6]/20 sm:w-16" />
-                <div className="h-1.5 w-1.5 rounded-full bg-[#00B2D6]" />
-              </div>
-            </div>
+            <SectionEyebrow>Compliance Medicals</SectionEyebrow>
 
             <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-[#0F2E4A] sm:text-4xl lg:text-5xl">
               Terms & Conditions

@@ -4,8 +4,9 @@ import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, MapPin, Sparkles, Navigation, X, ArrowRight } from "lucide-react";
+import { Search, MapPin, Navigation, X, ArrowRight } from "lucide-react";
 import BookingCTASection from "@/components/pages/home/BookingCTASection/BookingCTASection";
+import SectionEyebrow from "@/components/shared/SectionEyebrow";
 import {
   type PublicLocation,
   useGetPublicLocationsQuery,
@@ -196,20 +197,7 @@ export default function LocationsPageClient() {
           </nav>
 
           <div className="text-center max-w-3xl mx-auto">
-            <div className="flex items-center justify-center gap-4 mb-4">
-              <div className="flex items-center gap-0">
-                <div className="h-1.5 w-1.5 rounded-full bg-[#00B2D6]" />
-                <div className="h-[1.5px] w-8 sm:w-16 bg-gradient-to-r from-[#00B2D6] to-[#00B2D6]/20" />
-              </div>
-              <div className="flex items-center gap-1.5 text-[#00B2D6] font-bold text-xs sm:text-sm uppercase tracking-widest">
-                <Sparkles className="h-3.5 w-3.5" />
-                <span>Our Clinics</span>
-              </div>
-              <div className="flex items-center gap-0">
-                <div className="h-[1.5px] w-8 sm:w-16 bg-gradient-to-l from-[#00B2D6] to-[#00B2D6]/20" />
-                <div className="h-1.5 w-1.5 rounded-full bg-[#00B2D6]" />
-              </div>
-            </div>
+            <SectionEyebrow>Our Clinics</SectionEyebrow>
 
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#0F2E4A] tracking-tight leading-tight">
               Find Your Nearest Clinic

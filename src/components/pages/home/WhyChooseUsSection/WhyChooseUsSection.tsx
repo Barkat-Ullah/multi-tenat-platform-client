@@ -3,10 +3,11 @@
 import React from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Award, ShieldCheck, Clock, MapPin, Zap, Users, Sparkles } from "lucide-react";
+import { Award, ShieldCheck, Clock, MapPin, Zap, Users } from "lucide-react";
 import doctorHero from "@/assets/home/why-choose-doctor.png";
 import whyChooseUsBg from "@/assets/home/whyChooseUsBg.png";
 import { whyChooseUsLeftFeatures, whyChooseUsRightFeatures } from "@/app/data/LandingPageData";
+import SectionEyebrow from "@/components/shared/SectionEyebrow";
 
 export default function WhyChooseUsSection() {
   const getIcon = (iconName: string) => {
@@ -33,22 +34,8 @@ export default function WhyChooseUsSection() {
 
         {/* Header Block */}
         <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-16 md:mb-24">
-          <div className="flex items-center justify-center gap-4 mb-4">
-            {/* Left Dot-Line Decorator */}
-            <div className="flex items-center gap-0">
-              <div className="h-1.5 w-1.5 rounded-full bg-[#00B2D6]" />
-              <div className="h-[1.5px] w-8 sm:w-16 bg-gradient-to-r from-[#00B2D6] to-[#00B2D6]/20" />
-            </div>
-            <div className="flex items-center gap-1.5 text-[#00B2D6] font-bold text-xs sm:text-sm uppercase tracking-widest">
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>Why Choose Us</span>
-            </div>
-            {/* Right Line-Dot Decorator */}
-            <div className="flex items-center gap-0">
-              <div className="h-[1.5px] w-8 sm:w-16 bg-gradient-to-l from-[#00B2D6] to-[#00B2D6]/20" />
-              <div className="h-1.5 w-1.5 rounded-full bg-[#00B2D6]" />
-            </div>
-          </div>
+
+          <SectionEyebrow>Why Choose Us</SectionEyebrow>
 
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-[#0F2E4A] tracking-tight leading-tight">
             Why Choose Masters in Me?
@@ -173,7 +160,7 @@ export default function WhyChooseUsSection() {
               viewport={{ once: true }}
               transition={{ duration: 0.6, ease: "easeOut" }}
               whileHover={{ scale: 1.015 }}
-              className="relative w-full max-w-[280px] sm:max-w-[320px] aspect-[2/3] rounded-[2rem] overflow-hidden shadow-[0_15px_45px_rgba(0,0,0,0.06)] border border-slate-100 bg-[#EBFBFF] transition-shadow duration-500 hover:shadow-[0_20px_55px_rgba(0,0,0,0.1)] flex items-end justify-center"
+              className="relative w-full max-w-[280px] sm:max-w-[320px] aspect-[2/3] rounded-3xl overflow-hidden shadow-[0_15px_45px_rgba(0,0,0,0.06)] border border-slate-100 bg-[#EBFBFF] transition-shadow duration-500 hover:shadow-[0_20px_55px_rgba(0,0,0,0.1)] flex items-end justify-center"
             >
               <Image
                 src={doctorHero}

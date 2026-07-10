@@ -2,9 +2,10 @@
 
 import React from "react";
 import Image from "next/image";
-import { Search, Clock, UserCheck, Sparkles } from "lucide-react";
+import { Search, Clock, UserCheck } from "lucide-react";
 import howItWorksHero from "@/assets/home/howItWorksHero.png";
 import { howItWorksStepsData } from "@/app/data/LandingPageData";
+import SectionEyebrow from "@/components/shared/SectionEyebrow";
 
 export default function HowItWorksSection() {
   // Map string icon names to Lucide icons
@@ -27,14 +28,7 @@ export default function HowItWorksSection() {
 
         {/* Header Block */}
         <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-14 md:mb-16">
-          <div className="flex items-center justify-center gap-4 mb-4">
-            <div className="h-[1px] w-8 sm:w-16 bg-[#00B2D6]/30" />
-            <div className="flex items-center gap-1.5 text-[#00B2D6] font-bold text-xs sm:text-sm uppercase tracking-widest">
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>How it Works</span>
-            </div>
-            <div className="h-[1px] w-8 sm:w-16 bg-[#00B2D6]/30" />
-          </div>
+          <SectionEyebrow>How it Works</SectionEyebrow>
 
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-[#0F2E4A] tracking-tight leading-tight">
             Your Medical in 3 Easy steps
