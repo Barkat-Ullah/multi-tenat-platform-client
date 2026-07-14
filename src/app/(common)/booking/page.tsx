@@ -370,14 +370,9 @@ function BookingFlowCoordinator() {
     setSelectedSlotId(null);
     setSearchQuery("");
     setVisibleCount(3);
-  };
-
-  const handleContinueToLocation = () => {
-    if (!selectedServiceId) {
-      toast.error("Please select a medical type to continue.");
-      return;
+    if (id) {
+      setStep(2);
     }
-    setStep(2);
   };
 
   const handleBookClinic = (clinicId: string) => {
@@ -418,8 +413,8 @@ function BookingFlowCoordinator() {
     setLocationError(null);
   };
 
-  const handleContinueToDetails = () => {
-    if (!selectedSlotId) {
+  const handleContinueToDetails = (slotId = selectedSlotId) => {
+    if (!slotId) {
       toast.error("Please select a time slot to continue.");
       return;
     }
@@ -435,7 +430,7 @@ function BookingFlowCoordinator() {
           serviceId: selectedServiceId,
           clinicId: selectedClinicId,
           date: formatDateParam(selectedDate),
-          slotId: selectedSlotId,
+          slotId,
         });
       } catch {
         toast.error("Unable to save your booking selections.");
@@ -452,6 +447,11 @@ function BookingFlowCoordinator() {
     }
 
     setStep(4);
+  };
+
+  const handleSelectSlot = (slotId: string) => {
+    setSelectedSlotId(slotId);
+    handleContinueToDetails(slotId);
   };
 
   const handleSubmitBooking = async (event: React.FormEvent) => {
@@ -530,7 +530,6 @@ function BookingFlowCoordinator() {
                 isLoading={isServicesLoading || isServicesFetching}
                 isError={isServicesError}
                 setSelectedServiceId={handleSelectService}
-                onNext={handleContinueToLocation}
                 onRetry={refetchServices}
               />
             </motion.div>
@@ -588,7 +587,7 @@ function BookingFlowCoordinator() {
                 calendarMonth={calendarMonth}
                 setCalendarMonth={setCalendarMonth}
                 onBack={() => setStep(2)}
-                onContinue={handleContinueToDetails}
+                onSelectSlot={handleSelectSlot}
                 onRetry={refetchSlots}
               />
             </motion.div>

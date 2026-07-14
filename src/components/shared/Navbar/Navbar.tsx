@@ -314,19 +314,19 @@ export default function Navbar() {
           )}
         >
         {/* Desktop Navbar */}
-        <div className="hidden xl:flex container mx-auto py-4 items-center justify-between">
+        <div className="hidden xl:flex container mx-auto items-center justify-between gap-5 py-3">
           {/* Logo */}
           <Link href="/" className="font-bold">
             <Logo />
           </Link>
 
           {/* Nav Links */}
-          <div className="flex items-center gap-6 xl:gap-8">
+          <div className="flex items-center gap-4 2xl:gap-6">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`text-[14px] xl:text-[15px] font-semibold transition-all duration-200 ${
+                className={`whitespace-nowrap text-[12px] font-semibold transition-all duration-200 2xl:text-[13px] ${
                   isActive(link.href)
                     ? "text-[#00B2D6]"
                     : "text-[#0F2E4A] hover:text-[#00B2D6]"
@@ -338,11 +338,11 @@ export default function Navbar() {
           </div>
 
           {/* Auth Actions - Desktop */}
-          <div className="flex items-center gap-4">
+          <div className="flex shrink-0 items-center gap-3">
             {isAuthenticated ? (
               <>
                 <Dropdown menu={{ items: avatarMenuItems }} trigger={["click"]}>
-                  <div className="flex items-center gap-2 cursor-pointer p-1.5 pr-3 rounded-full hover:bg-gray-50 transition-colors border border-gray-200">
+                  <div className="flex cursor-pointer items-center gap-2 rounded-full border border-gray-200 p-1.5 pr-3 transition-colors hover:bg-gray-50">
                     <div className="w-8 h-8 rounded-full overflow-hidden bg-[#00B2D6] flex items-center justify-center flex-shrink-0">
                       {avatarUrl ? (
                         <Image
@@ -358,7 +358,7 @@ export default function Navbar() {
                         </span>
                       )}
                     </div>
-                    <span className="text-sm font-semibold text-[#0F2E4A] hidden md:inline">
+                    <span className="hidden max-w-[120px] truncate text-xs font-semibold text-[#0F2E4A] 2xl:max-w-[150px] md:inline">
                       {displayName}
                     </span>
                     <DownOutlined className="text-xs text-gray-500" />
@@ -370,21 +370,21 @@ export default function Navbar() {
               <>
                 <Link
                   href="/login"
-                  className="inline-flex h-11 items-center justify-between rounded-full border border-[#00B2D6] bg-white pl-5 pr-1.5 font-sans font-bold text-[#00B2D6] transition-all duration-300 hover:bg-[#E6FAFF] group"
+                  className="group inline-flex h-10 items-center justify-between rounded-full border border-[#00B2D6] bg-white pl-4 pr-1.5 font-sans font-bold text-[#00B2D6] transition-all duration-300 hover:bg-[#E6FAFF]"
                   onClick={handleGuestLoginClick}
                 >
-                  <span className="mr-4 text-sm font-semibold tracking-wide">Login</span>
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#00B2D6] text-white transition-transform group-hover:translate-x-0.5">
-                    <ArrowRight size={16} strokeWidth={2.5} />
+                  <span className="mr-3 text-xs font-semibold tracking-wide 2xl:text-sm">Login</span>
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#00B2D6] text-white transition-transform group-hover:translate-x-0.5">
+                    <ArrowRight size={15} strokeWidth={2.5} />
                   </div>
                 </Link>
                 <Link
                   href="/booking"
-                  className="inline-flex h-11 items-center justify-between rounded-full bg-[#00B2D6] pl-5 pr-1.5 font-sans font-bold text-white transition-all duration-300 hover:bg-[#0092B3] group"
+                  className="group inline-flex h-10 items-center justify-between rounded-full bg-[#00B2D6] pl-4 pr-1.5 font-sans font-bold text-white transition-all duration-300 hover:bg-[#0092B3]"
                 >
-                  <span className="mr-4 text-sm font-semibold tracking-wide">Book Online</span>
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#00B2D6] transition-transform group-hover:translate-x-0.5">
-                    <ArrowRight size={16} strokeWidth={2.5} />
+                  <span className="mr-3 text-xs font-semibold tracking-wide 2xl:text-sm">Book Online</span>
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-[#00B2D6] transition-transform group-hover:translate-x-0.5">
+                    <ArrowRight size={15} strokeWidth={2.5} />
                   </div>
                 </Link>
               </>

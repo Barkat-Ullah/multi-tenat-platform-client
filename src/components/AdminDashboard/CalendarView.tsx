@@ -91,20 +91,37 @@ const getAppointmentName = (event: AdminBookingCalendarEvent) => {
 const getAppointmentService = (event: AdminBookingCalendarEvent) =>
   event.payload?.service?.title || event.title || "N/A";
 
+const getOrganizerServiceLabel = (event: AdminBookingCalendarEvent) => {
+  const serviceTitle = getAppointmentService(event);
+  const totalDriver = event.payload?.totalDriver;
+
+  if (totalDriver === undefined || totalDriver === null || totalDriver === "") {
+    return serviceTitle;
+  }
+
+  const driverCount = Number(totalDriver);
+  const driverLabel =
+    Number.isFinite(driverCount) && driverCount === 1 ? "1 driver" : `${totalDriver} drivers`;
+
+  return `${serviceTitle} (${driverLabel})`;
+};
+
 const mapCalendarAppointments = (events: AdminBookingCalendarEvent[] = []): ScheduleCalendarAppointmentData[] =>
   events
     .map<ScheduleCalendarAppointmentData | null>((event, index) => {
       const date = toDateKey(event.start || event.payload?.scheduledAt || event.payload?.createdAt);
       if (!date) return null;
+      const isOrganizerRequest = event.type === "organizerRequest";
 
       return {
         id: event.id || `${date}-${index}`,
         patientName: getAppointmentName(event),
-        serviceType: getAppointmentService(event),
+        serviceType: isOrganizerRequest ? getOrganizerServiceLabel(event) : getAppointmentService(event),
         day: getScheduledDay(date),
         date,
-        timeSlot: formatTimeSlot(event.timeSlot?.startTime || event.start),
+        timeSlot: isOrganizerRequest ? "All Day" : formatTimeSlot(event.timeSlot?.startTime || event.start),
         color: getAppointmentColor(event.status || event.payload?.status),
+        isFullDay: isOrganizerRequest,
       };
     })
     .filter((appointment): appointment is ScheduleCalendarAppointmentData => Boolean(appointment));

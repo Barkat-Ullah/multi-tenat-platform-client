@@ -23,7 +23,7 @@ export const TopBar = () => {
             src={trustpilotImg}
             alt="Trustpilot Rating"
             priority
-            className="h-[40px] w-auto object-contain"
+            className="h-[35px] w-auto object-contain"
           />
         </div>
         

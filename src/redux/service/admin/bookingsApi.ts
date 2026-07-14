@@ -127,6 +127,7 @@ export interface AdminBookingCalendarEvent {
     scheduledAt?: string;
     createdAt?: string;
     companyName?: string;
+    totalDriver?: string | number | null;
     status?: string;
     driver?: {
       id: string;

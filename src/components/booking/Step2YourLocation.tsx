@@ -194,7 +194,7 @@ export default function Step2YourLocation({
                   return (
                     <div
                       key={clinic.id}
-                      onClick={() => setSelectedClinicId(clinic.id)}
+                      onClick={() => onBookClinic(clinic.id)}
                       className={`flex cursor-pointer flex-col justify-between gap-2 rounded-xl py-2 transition-all duration-200 sm:flex-row sm:items-center ${
                         index === 0 ? "pt-0" : ""
                       } ${isSelected ? "bg-[#E6FAFF]/10 px-2" : "px-2 hover:bg-slate-50/50"}`}

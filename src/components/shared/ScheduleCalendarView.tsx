@@ -16,6 +16,7 @@ export interface ScheduleCalendarAppointmentData {
   timeSlot: string;
   color: "cyan" | "navy";
   date?: string;
+  isFullDay?: boolean;
 }
 
 type CalendarDay = ScheduleCalendarAppointmentData["day"];
@@ -145,6 +146,7 @@ export default function ScheduleCalendarView({
 
     const appointmentTimeSlots = appointments
       .filter((appointment) => visibleDates.has(appointment.date))
+      .filter((appointment) => !appointment.isFullDay)
       .map((appointment) => appointment.timeSlot);
 
     const slots = appointmentTimeSlots.length > 0 ? appointmentTimeSlots : defaultTimeSlots;
@@ -156,9 +158,19 @@ export default function ScheduleCalendarView({
 
   const getAppointmentsForCell = (date: Dayjs, timeSlot: string) => {
     return appointments.filter(
-      (appointment) => appointment.date === date.format("YYYY-MM-DD") && appointment.timeSlot === timeSlot,
+      (appointment) =>
+        appointment.date === date.format("YYYY-MM-DD") &&
+        !appointment.isFullDay &&
+        appointment.timeSlot === timeSlot,
     );
   };
+
+  const getFullDayAppointments = (date: Dayjs) =>
+    appointments.filter(
+      (appointment) => appointment.date === date.format("YYYY-MM-DD") && appointment.isFullDay,
+    );
+
+  const hasFullDayBooking = (date: Dayjs) => getFullDayAppointments(date).length > 0;
 
   const selectedDateAppointments = appointments.filter(
     (appointment) => appointment.date === selectedDate.format("YYYY-MM-DD"),
@@ -169,7 +181,7 @@ export default function ScheduleCalendarView({
 
   const handlePillClick = (app: ScheduledAppointment) => {
     toast.info(
-      `Appointment: ${app.patientName} - ${app.serviceType} (${dayjs(app.date).format("ddd, DD MMM")} ${app.timeSlot})`,
+      `Appointment: ${app.patientName} - ${app.serviceType} (${dayjs(app.date).format("ddd, DD MMM")} ${app.isFullDay ? "All day" : app.timeSlot})`,
     );
   };
 
@@ -369,10 +381,17 @@ export default function ScheduleCalendarView({
                 </th>
                 <th
                   className={`py-4 px-6 text-xs font-bold uppercase tracking-wider text-center ${
-                    selectedDate.isSame(dayjs(), "day") ? "bg-[#E6FAFF]/60 text-[#00B2D6]" : "text-slate-500"
+                    hasFullDayBooking(selectedDate)
+                      ? "bg-[#0F2E4A]/10 text-[#0F2E4A]"
+                      : selectedDate.isSame(dayjs(), "day")
+                        ? "bg-[#E6FAFF]/60 text-[#00B2D6]"
+                        : "text-slate-500"
                   }`}
                 >
                   <div>{selectedDate.format("ddd, DD MMM")}</div>
+                  {hasFullDayBooking(selectedDate) && (
+                    <div className="mt-0.5 text-[10px] font-extrabold text-[#0F2E4A]">FULL DAY BOOKED</div>
+                  )}
                   {selectedDate.isSame(dayjs(), "day") && (
                     <div className="text-[10px] text-[#00B2D6] font-bold mt-0.5">TODAY</div>
                   )}
@@ -380,6 +399,29 @@ export default function ScheduleCalendarView({
               </tr>
             </thead>
             <tbody>
+              {getFullDayAppointments(selectedDate).length > 0 && (
+                <tr className="border-b border-slate-100">
+                  <td className="py-6 px-6 text-xs font-bold text-slate-400 border-r border-slate-100 bg-slate-50/10 align-middle">
+                    ALL DAY
+                  </td>
+                  <td className="border-l-2 border-r-2 border-[#0F2E4A]/15 bg-[#0F2E4A]/5 p-4 align-top">
+                    <div className="flex flex-col sm:flex-row flex-wrap gap-2 min-h-[45px] items-center">
+                      {getFullDayAppointments(selectedDate).map((app) => (
+                        <div
+                          key={app.id}
+                          onClick={() => handlePillClick(app)}
+                          className={`rounded-lg px-4 py-2 text-xs font-bold tracking-wide text-white cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.99] shadow-sm select-none ${
+                            app.color === "cyan" ? "bg-[#00B2D6] hover:bg-[#009cb9]" : "bg-[#0F2E4A] hover:bg-[#0A2033]"
+                          }`}
+                          title={`${app.patientName} - ${app.serviceType}`}
+                        >
+                          {app.patientName} - {app.serviceType}
+                        </div>
+                      ))}
+                    </div>
+                  </td>
+                </tr>
+              )}
               {visibleTimeSlots.map((timeSlot) => {
                 const cellApps = getAppointmentsForCell(selectedDate, timeSlot);
                 return (
@@ -387,7 +429,13 @@ export default function ScheduleCalendarView({
                     <td className="py-6 px-6 text-xs font-bold text-slate-400 border-r border-slate-100 bg-slate-50/10 align-middle">
                       {timeSlot}
                     </td>
-                    <td className="p-4 bg-[#E6FAFF]/10 align-top">
+                    <td
+                      className={`p-4 align-top ${
+                        hasFullDayBooking(selectedDate)
+                          ? "border-l-2 border-r-2 border-[#0F2E4A]/15 bg-[#0F2E4A]/5"
+                          : "bg-[#E6FAFF]/10"
+                      }`}
+                    >
                       <div className="flex flex-col sm:flex-row flex-wrap gap-2 min-h-[45px] items-center">
                         {cellApps.map((app) => (
                           <div
@@ -400,7 +448,12 @@ export default function ScheduleCalendarView({
                             {app.patientName} - {app.serviceType}
                           </div>
                         ))}
-                        {cellApps.length === 0 && (
+                        {cellApps.length === 0 && hasFullDayBooking(selectedDate) && (
+                          <span className="rounded-full bg-[#0F2E4A]/10 px-3 py-1 text-xs font-extrabold text-[#0F2E4A]/70">
+                            Booked all day
+                          </span>
+                        )}
+                        {cellApps.length === 0 && !hasFullDayBooking(selectedDate) && (
                           <span className="text-xs font-semibold text-slate-300">No appointments scheduled</span>
                         )}
                       </div>
@@ -430,15 +483,21 @@ export default function ScheduleCalendarView({
                 </th>
                 {selectedWeek.map((date) => {
                   const isToday = date.isSame(dayjs(), "day");
+                  const isFullDayBooked = hasFullDayBooking(date);
                   return (
                     <th
                       key={date.format("YYYY-MM-DD")}
                       className={`py-4 px-3 text-xs font-bold uppercase tracking-wider text-center border-r border-slate-100 last:border-r-0 ${
-                        isToday ? "bg-[#E6FAFF] text-[#00B2D6]" : "text-slate-500"
+                        isFullDayBooked
+                          ? "bg-[#0F2E4A]/10 text-[#0F2E4A]"
+                          : isToday
+                            ? "bg-[#E6FAFF] text-[#00B2D6]"
+                            : "text-slate-500"
                       }`}
                     >
                       <div>{date.format("ddd")}</div>
                       <div className="mt-0.5 text-[10px]">{date.format("DD MMM")}</div>
+                      {isFullDayBooked && <div className="mt-0.5 text-[10px] text-[#0F2E4A]">FULL DAY</div>}
                       {isToday && <div className="mt-0.5 text-[10px] text-[#00B2D6]">TODAY</div>}
                     </th>
                   );
@@ -446,6 +505,47 @@ export default function ScheduleCalendarView({
               </tr>
             </thead>
             <tbody>
+              {selectedWeek.some((date) => getFullDayAppointments(date).length > 0) && (
+                <tr className="border-b border-slate-100">
+                  <td className="py-6 px-4 text-xs font-bold text-slate-400 border-r border-slate-100 bg-slate-50/10 align-middle">
+                    ALL DAY
+                  </td>
+                  {selectedWeek.map((date) => {
+                    const fullDayApps = getFullDayAppointments(date);
+                    const isToday = date.isSame(dayjs(), "day");
+                    const isFullDayBooked = fullDayApps.length > 0;
+                    return (
+                      <td
+                        key={date.format("YYYY-MM-DD")}
+                        className={`p-2.5 border-r border-slate-100 last:border-r-0 align-top ${
+                          isFullDayBooked
+                            ? "border-l-2 border-r-2 border-[#0F2E4A]/15 bg-[#0F2E4A]/5"
+                            : isToday
+                              ? "bg-[#E6FAFF]/15"
+                              : "bg-white"
+                        }`}
+                      >
+                        <div className="flex min-h-[60px] flex-col justify-center gap-1.5">
+                          {fullDayApps.map((app) => (
+                            <div
+                              key={app.id}
+                              onClick={() => handlePillClick(app)}
+                              className={`rounded-lg px-2 py-1.5 text-[10px] sm:text-[11px] font-bold tracking-wide text-center text-white cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.99] shadow-sm select-none truncate ${
+                                app.color === "cyan"
+                                  ? "bg-[#00B2D6] hover:bg-[#009cb9] shadow-cyan-50/30"
+                                  : "bg-[#0F2E4A] hover:bg-[#0A2033] shadow-slate-200/50"
+                              }`}
+                              title={`${app.patientName} - ${app.serviceType}`}
+                            >
+                              {app.patientName}-{app.serviceType}
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              )}
               {visibleTimeSlots.map((timeSlot) => (
                 <tr key={timeSlot} className="border-b border-slate-100 last:border-b-0">
                   <td className="py-6 px-4 text-xs font-bold text-slate-400 border-r border-slate-100 bg-slate-50/10 align-middle">
@@ -454,11 +554,16 @@ export default function ScheduleCalendarView({
                   {selectedWeek.map((date) => {
                     const cellApps = getAppointmentsForCell(date, timeSlot);
                     const isToday = date.isSame(dayjs(), "day");
+                    const isFullDayBooked = hasFullDayBooking(date);
                     return (
                       <td
                         key={date.format("YYYY-MM-DD")}
                         className={`p-2.5 border-r border-slate-100 last:border-r-0 align-top ${
-                          isToday ? "bg-[#E6FAFF]/15" : "bg-white"
+                          isFullDayBooked
+                            ? "border-l-2 border-r-2 border-[#0F2E4A]/15 bg-[#0F2E4A]/5"
+                            : isToday
+                              ? "bg-[#E6FAFF]/15"
+                              : "bg-white"
                         }`}
                       >
                         <div className="flex flex-col gap-1.5 min-h-[60px] justify-center">
@@ -476,6 +581,11 @@ export default function ScheduleCalendarView({
                               {app.patientName}-{app.serviceType}
                             </div>
                           ))}
+                          {cellApps.length === 0 && isFullDayBooked && (
+                            <span className="mx-auto rounded-full bg-[#0F2E4A]/10 px-2.5 py-1 text-[10px] font-extrabold text-[#0F2E4A]/70">
+                              Booked all day
+                            </span>
+                          )}
                         </div>
                       </td>
                     );

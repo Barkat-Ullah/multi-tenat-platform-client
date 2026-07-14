@@ -11,7 +11,6 @@ interface Step1MedicalTypeProps {
   isLoading: boolean;
   isError: boolean;
   setSelectedServiceId: (id: string | null) => void;
-  onNext: () => void;
   onRetry: () => void;
 }
 
@@ -37,11 +36,8 @@ export default function Step1MedicalType({
   isLoading,
   isError,
   setSelectedServiceId,
-  onNext,
   onRetry,
 }: Step1MedicalTypeProps) {
-  const selectedService = services.find((service) => service.id === selectedServiceId);
-
   return (
     <div className="w-full">
       <div className="mb-10 text-center md:mb-14">
@@ -123,7 +119,6 @@ export default function Step1MedicalType({
                     onClick={(event) => {
                       event.stopPropagation();
                       setSelectedServiceId(service.id);
-                      onNext();
                     }}
                     className={`inline-flex items-center justify-between rounded-full py-0.5 pl-3.5 pr-1 text-xs font-bold transition-all duration-300 ${
                       isSelected
@@ -142,27 +137,6 @@ export default function Step1MedicalType({
           })}
         </div>
       )}
-
-      {selectedService && (
-        <div className="mb-4 text-center text-xs font-bold text-[#0F2E4A] animate-pulse sm:text-sm">
-          Selected: <span className="text-[#00B2D6]">{selectedService.title}</span>
-        </div>
-      )}
-
-      <div className="flex w-full justify-center">
-        <button
-          type="button"
-          onClick={onNext}
-          className={`w-full max-w-md rounded-full py-4 text-base font-bold transition-all duration-200 ${
-            selectedServiceId
-              ? "bg-[#00B2D6] text-white shadow-md shadow-[#00B2D6]/10 hover:scale-[1.02] hover:bg-[#0092B3]"
-              : "cursor-not-allowed bg-slate-200 text-slate-400"
-          }`}
-          disabled={!selectedServiceId}
-        >
-          Continue
-        </button>
-      </div>
     </div>
   );
 }

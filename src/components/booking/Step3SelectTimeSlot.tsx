@@ -16,7 +16,7 @@ interface Step3SelectTimeSlotProps {
   calendarMonth: Date;
   setCalendarMonth: React.Dispatch<React.SetStateAction<Date>>;
   onBack: () => void;
-  onContinue: () => void;
+  onSelectSlot: (slotId: string) => void;
   onRetry: () => void;
 }
 
@@ -41,7 +41,7 @@ export default function Step3SelectTimeSlot({
   calendarMonth,
   setCalendarMonth,
   onBack,
-  onContinue,
+  onSelectSlot,
   onRetry,
 }: Step3SelectTimeSlotProps) {
   const daysOfWeek = ["M", "T", "W", "T", "F", "S", "S"];
@@ -214,7 +214,7 @@ export default function Step3SelectTimeSlot({
                     <button
                       key={slot.id}
                       type="button"
-                      onClick={() => setSelectedSlotId(slot.id)}
+                      onClick={() => onSelectSlot(slot.id)}
                       className={`rounded-xl px-4 py-3 text-center text-xs font-bold transition-all sm:text-sm ${
                         isSelected
                           ? "bg-[#00B2D6] text-white shadow-sm shadow-[#00B2D6]/10"
@@ -228,17 +228,6 @@ export default function Step3SelectTimeSlot({
               </div>
             )}
           </div>
-        </div>
-
-        <div className="mt-8 flex justify-center border-t border-slate-100 pt-6">
-          <button
-            type="button"
-            onClick={onContinue}
-            disabled={!selectedSlotId || isLoading}
-            className="w-full max-w-md rounded-full bg-[#00B2D6] py-4 text-base font-bold text-white shadow-md shadow-[#00B2D6]/10 transition-all duration-200 hover:scale-[1.01] hover:bg-[#0092B3] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
-          >
-            Continue
-          </button>
         </div>
       </div>
     </div>
