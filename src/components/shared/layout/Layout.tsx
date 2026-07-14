@@ -1,11 +1,12 @@
 "use client";
 
-import React, { ReactNode, useMemo, useState } from "react";
-import { usePathname } from "next/navigation";
+import React, { ReactNode, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { Layout, Menu, Spin, Dropdown } from "antd";
 import Link from "next/link";
 import Image from "next/image";
 import { LogOut, Bell } from "lucide-react";
+import Cookies from "js-cookie";
 import logo from "@/assets/logo/logo.png";
 import { logout } from "@/redux/features/auth";
 import { useDispatch } from "react-redux";
@@ -29,11 +30,13 @@ interface AdminLayoutProps {
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children, menu }) => {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const authUser = useAppSelector((state) => state.auth.user);
+  const accessToken = useAppSelector((state) => state.auth.accessToken);
   const { data: profileResponse } = useGetProfileDataQuery(undefined, {
-    skip: !authUser,
+    skip: !authUser || !accessToken,
   });
   const profileData = profileResponse?.data;
 
@@ -62,6 +65,35 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, menu }) => {
   const handleLogout = () => {
     dispatch(logout());
   };
+
+  useEffect(() => {
+    const redirectIfLoggedOut = () => {
+      const hasCookieToken = Boolean(Cookies.get("accessToken"));
+      if (!authUser || !accessToken || !hasCookieToken) {
+        router.replace("/login");
+      }
+    };
+
+    redirectIfLoggedOut();
+
+    const handlePageShow = () => redirectIfLoggedOut();
+    const handleFocus = () => redirectIfLoggedOut();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        redirectIfLoggedOut();
+      }
+    };
+
+    window.addEventListener("pageshow", handlePageShow);
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("pageshow", handlePageShow);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [accessToken, authUser, router]);
 
   // --- Dropdown Menu Items ---
   const profileMenuItems = [

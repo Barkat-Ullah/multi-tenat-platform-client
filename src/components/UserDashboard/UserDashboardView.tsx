@@ -46,10 +46,33 @@ const formatStatus = (status: string) =>
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 
+const normalizeStatus = (status: string) => status.trim().toUpperCase();
+
 const getAppointmentType = (status: string) => {
-  if (status === "COMPLETED") return "Completed Appointment";
-  if (status === "CANCELLED") return "Cancelled Appointment";
+  const normalized = normalizeStatus(status);
+  if (normalized === "COMPLETED") return "Completed Appointment";
+  if (normalized === "CANCELLED" || normalized === "CANCELED") {
+    return "Cancelled Appointment";
+  }
   return "Upcoming Appointment";
+};
+
+const getStatusBadgeClassName = (status: string) => {
+  const normalized = normalizeStatus(status);
+
+  if (normalized === "CONFIRMED") {
+    return "bg-[#E8F8F5] text-[#10B981] border-[#A3E4D7]/30";
+  }
+
+  if (normalized === "COMPLETED") {
+    return "bg-[#E6FAFF] text-[#00B2D6] border-[#B2ECF7]/50";
+  }
+
+  if (normalized === "CANCELLED" || normalized === "CANCELED") {
+    return "bg-red-50 text-red-600 border-red-100";
+  }
+
+  return "bg-[#FEF9E7] text-[#D9A700] border-[#F9E79F]/30";
 };
 
 const SummaryCardSkeleton = () => (
@@ -256,7 +279,11 @@ export default function UserDashboardView() {
 
               {/* Status Badge */}
               <div className="pt-2">
-                <span className="inline-flex items-center px-3.5 py-1 rounded-full text-[10px] sm:text-xs font-extrabold bg-[#FEF9E7] text-[#D9A700] border border-[#F9E79F]/30 uppercase tracking-wider">
+                <span
+                  className={`inline-flex items-center rounded-full border px-3.5 py-1 text-[10px] font-extrabold uppercase tracking-wider sm:text-xs ${getStatusBadgeClassName(
+                    apt.status,
+                  )}`}
+                >
                   {formatStatus(apt.status)}
                 </span>
               </div>

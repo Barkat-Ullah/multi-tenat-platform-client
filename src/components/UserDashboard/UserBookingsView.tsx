@@ -41,6 +41,8 @@ const formatStatus = (status: string) =>
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 
+const normalizeStatus = (status: string) => status.trim().toUpperCase();
+
 const mapBookingToRow = (booking: UserBookingItem): BookingRow => {
   const clinic = booking.clinic;
   const clinicLocation = clinic?.location?.locationName;
@@ -57,12 +59,18 @@ const mapBookingToRow = (booking: UserBookingItem): BookingRow => {
 };
 
 const getStatusClassName = (status: string) => {
-  if (status === "CANCELLED" || status === "CANCELED") {
+  const normalized = normalizeStatus(status);
+
+  if (normalized === "CONFIRMED") {
+    return "bg-[#E8F8F5] text-[#10B981] border-[#A3E4D7]/30";
+  }
+
+  if (normalized === "CANCELLED" || normalized === "CANCELED") {
     return "bg-red-50 text-red-600 border-red-100";
   }
 
-  if (status === "COMPLETED") {
-    return "bg-emerald-50 text-emerald-600 border-emerald-100";
+  if (normalized === "COMPLETED") {
+    return "bg-[#E6FAFF] text-[#00B2D6] border-[#B2ECF7]/50";
   }
 
   return "bg-[#FEF9E7] text-[#D9A700] border-[#F9E79F]/30";

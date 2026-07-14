@@ -62,6 +62,7 @@ const authSlice = createSlice({
       if (typeof window !== "undefined") {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
+        localStorage.removeItem("persist:auth");
         // 3. Clear Auth Cookies
         // We set the date to 1970 to force immediate expiration
         const cookiesToClear = ["accessToken", "refreshToken", "roll"];

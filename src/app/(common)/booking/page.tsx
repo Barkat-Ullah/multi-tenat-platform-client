@@ -39,6 +39,18 @@ const formatDateParam = (date: Date) =>
     date.getDate(),
   ).padStart(2, "0")}`;
 
+const startOfToday = () => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
+};
+
+const isBeforeToday = (date: Date) => {
+  const value = new Date(date);
+  value.setHours(0, 0, 0, 0);
+  return value < startOfToday();
+};
+
 const parseSlotStartToIso = (date: Date, startTime: string) => {
   const match = startTime.trim().match(/^(\d{1,2}):(\d{2})(?:\s*(AM|PM))?$/i);
   const scheduled = new Date(date);
@@ -177,6 +189,7 @@ function BookingFlowCoordinator() {
 
     if (matched) {
       setSelectedServiceId(matched.id);
+      setStep(2);
     }
   }, [searchParams, selectedServiceId, services]);
 
@@ -290,11 +303,12 @@ function BookingFlowCoordinator() {
 
     setSelectedServiceId(draft.serviceId);
     setSelectedClinicId(draft.clinicId);
-    setSelectedDate(restoredDate);
+    const safeDate = isBeforeToday(restoredDate) ? startOfToday() : restoredDate;
+    setSelectedDate(safeDate);
     setCalendarMonth(
-      new Date(restoredDate.getFullYear(), restoredDate.getMonth(), 1),
+      new Date(safeDate.getFullYear(), safeDate.getMonth(), 1),
     );
-    setSelectedSlotId(draft.slotId);
+    setSelectedSlotId(isBeforeToday(restoredDate) ? null : draft.slotId);
     setStep(3);
     setIsResumingBooking(true);
   }, [

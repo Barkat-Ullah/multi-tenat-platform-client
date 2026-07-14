@@ -55,19 +55,19 @@ interface Step2YourLocationProps {
 }
 
 const ClinicsSkeleton = () => (
-  <div className="space-y-4" role="status" aria-label="Loading clinics">
-    {Array.from({ length: 4 }).map((_, index) => (
-      <div key={index} className="flex animate-pulse flex-col gap-4 rounded-2xl border border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex-1 space-y-3">
+  <div className="space-y-2.5" role="status" aria-label="Loading clinics">
+    {Array.from({ length: 5 }).map((_, index) => (
+      <div key={index} className="flex animate-pulse flex-col gap-3 rounded-2xl border border-slate-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex-1 space-y-2">
           <div className="h-3 w-20 rounded bg-slate-100" />
-          <div className="h-5 w-2/3 rounded bg-slate-100" />
+          <div className="h-4 w-2/3 rounded bg-slate-100" />
           <div className="grid grid-cols-3 gap-3">
-            <div className="h-9 rounded bg-slate-100" />
-            <div className="h-9 rounded bg-slate-100" />
-            <div className="h-9 rounded bg-slate-100" />
+            <div className="h-7 rounded bg-slate-100" />
+            <div className="h-7 rounded bg-slate-100" />
+            <div className="h-7 rounded bg-slate-100" />
           </div>
         </div>
-        <div className="h-10 w-32 rounded-full bg-slate-100" />
+        <div className="h-9 w-28 rounded-full bg-slate-100" />
       </div>
     ))}
     <span className="sr-only">Loading clinics...</span>
@@ -147,7 +147,7 @@ export default function Step2YourLocation({
       </div>
 
       <div className="grid grid-cols-1 items-stretch gap-8 lg:grid-cols-12">
-        <div className="h-[400px] lg:col-span-4 lg:h-[520px]">
+        <div className="h-[400px] lg:col-span-4 lg:h-[540px]">
           {isLoading ? (
             <div className="h-full animate-pulse rounded-2xl bg-slate-100" />
           ) : (
@@ -159,9 +159,9 @@ export default function Step2YourLocation({
           )}
         </div>
 
-        <div className="flex h-[400px] flex-col lg:col-span-8 lg:h-[520px]">
-          <div className="flex h-full flex-col justify-between overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
-            <div className="flex-1 divide-y divide-slate-100 overflow-y-auto overflow-x-hidden pr-1">
+        <div className="flex h-[400px] flex-col lg:col-span-8 lg:h-[540px]">
+          <div className="flex h-full flex-col justify-between overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-3.5 shadow-sm sm:p-4">
+            <div className="flex-1 divide-y divide-slate-100 overflow-y-auto overflow-x-hidden pr-1 lg:overflow-visible lg:pr-0">
               {isLoading ? (
                 <ClinicsSkeleton />
               ) : isError ? (
@@ -195,44 +195,44 @@ export default function Step2YourLocation({
                     <div
                       key={clinic.id}
                       onClick={() => setSelectedClinicId(clinic.id)}
-                      className={`flex cursor-pointer flex-col justify-between gap-6 rounded-2xl py-6 transition-all duration-200 sm:flex-row sm:items-center ${
+                      className={`flex cursor-pointer flex-col justify-between gap-2 rounded-xl py-2 transition-all duration-200 sm:flex-row sm:items-center ${
                         index === 0 ? "pt-0" : ""
                       } ${isSelected ? "bg-[#E6FAFF]/10 px-2" : "px-2 hover:bg-slate-50/50"}`}
                     >
-                      <div className="min-w-0 flex-1 space-y-2">
-                        <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#00B2D6]">
-                          <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#00B2D6]">
+                          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#10B981]" />
                           <span>{clinic.status || "Available"}</span>
                         </div>
 
-                        <h4 className="pr-2 text-base font-extrabold leading-tight text-[#0F2E4A] sm:text-lg">
+                        <h4 className="line-clamp-1 pr-2 text-sm font-extrabold leading-tight text-[#0F2E4A]">
                           {clinic.fullName}
                         </h4>
 
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="line-clamp-1 text-[11px] font-semibold text-slate-500">
                           {clinic.address}
                         </p>
 
-                        <div className="grid grid-cols-3 gap-2 pt-2 sm:gap-4">
-                          <div className="flex items-center gap-2">
-                            <MapPin size={16} className="shrink-0 text-[#A3B3C2]" />
+                        <div className="grid grid-cols-3 gap-2 pt-0.5">
+                          <div className="flex items-center gap-1.5">
+                            <MapPin size={13} className="shrink-0 text-[#A3B3C2]" />
                             <div className="flex min-w-0 flex-col">
-                              <span className="text-[10px] font-semibold leading-tight text-slate-400 sm:text-[11px]">Distance</span>
-                              <span className="truncate text-xs font-extrabold leading-tight text-[#0F2E4A] sm:text-sm">{clinic.distanceStr}</span>
+                              <span className="text-[9px] font-semibold leading-tight text-slate-400">Distance</span>
+                              <span className="truncate text-[11px] font-extrabold leading-tight text-[#0F2E4A]">{clinic.distanceStr}</span>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Calendar size={16} className="shrink-0 text-[#A3B3C2]" />
+                          <div className="flex items-center gap-1.5">
+                            <Calendar size={13} className="shrink-0 text-[#A3B3C2]" />
                             <div className="flex min-w-0 flex-col">
-                              <span className="text-[10px] font-semibold leading-tight text-slate-400 sm:text-[11px]">Earliest Appointment</span>
-                              <span className="truncate text-xs font-extrabold leading-tight text-[#0F2E4A] sm:text-sm">{clinic.earliestDate}</span>
+                              <span className="text-[9px] font-semibold leading-tight text-slate-400">Earliest Appointment</span>
+                              <span className="truncate text-[11px] font-extrabold leading-tight text-[#0F2E4A]">{clinic.earliestDate}</span>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Car size={16} className="shrink-0 text-[#A3B3C2]" />
+                          <div className="flex items-center gap-1.5">
+                            <Car size={13} className="shrink-0 text-[#A3B3C2]" />
                             <div className="flex min-w-0 flex-col">
-                              <span className="text-[10px] font-semibold leading-tight text-slate-400 sm:text-[11px]">Car Parking</span>
-                              <span className="truncate text-xs font-extrabold leading-tight text-[#0F2E4A] sm:text-sm">{clinic.parkingStr}</span>
+                              <span className="text-[9px] font-semibold leading-tight text-slate-400">Car Parking</span>
+                              <span className="truncate text-[11px] font-extrabold leading-tight text-[#0F2E4A]">{clinic.parkingStr}</span>
                             </div>
                           </div>
                         </div>
@@ -244,10 +244,10 @@ export default function Step2YourLocation({
                           event.stopPropagation();
                           onBookClinic(clinic.id);
                         }}
-                        className="flex shrink-0 items-center justify-between gap-3 rounded-full bg-[#00B2D6] py-2.5 pl-6 pr-2 font-poppins text-sm font-extrabold text-white shadow-md shadow-[#00B2D6]/10 transition-all duration-300 hover:scale-[1.02] hover:bg-[#0092B3]"
+                        className="flex shrink-0 items-center justify-between gap-2 rounded-full bg-[#00B2D6] py-1.5 pl-4 pr-1.5 font-poppins text-xs font-extrabold text-white shadow-md shadow-[#00B2D6]/10 transition-all duration-300 hover:scale-[1.02] hover:bg-[#0092B3]"
                       >
                         <span>Book Now</span>
-                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white text-[#00B2D6]">
+                        <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white text-[#00B2D6]">
                           <ArrowRight size={12} strokeWidth={3} />
                         </div>
                       </button>

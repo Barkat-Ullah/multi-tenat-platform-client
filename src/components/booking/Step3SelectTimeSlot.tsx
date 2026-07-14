@@ -45,8 +45,17 @@ export default function Step3SelectTimeSlot({
   onRetry,
 }: Step3SelectTimeSlotProps) {
   const daysOfWeek = ["M", "T", "W", "T", "F", "S", "S"];
+  const today = useMemo(() => {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }, []);
+  const isCurrentMonth =
+    calendarMonth.getFullYear() === today.getFullYear() &&
+    calendarMonth.getMonth() === today.getMonth();
 
   const handlePrevMonth = () => {
+    if (isCurrentMonth) return;
     setCalendarMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
   };
 
@@ -98,7 +107,9 @@ export default function Step3SelectTimeSlot({
               <button
                 type="button"
                 onClick={handlePrevMonth}
-                className="rounded-full p-2 text-slate-500 transition-all hover:bg-slate-50 hover:text-[#00B2D6]"
+                disabled={isCurrentMonth}
+                className="rounded-full p-2 text-slate-500 transition-all hover:bg-slate-50 hover:text-[#00B2D6] disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent"
+                aria-label="Previous month"
               >
                 <ChevronLeft size={18} />
               </button>
@@ -126,6 +137,9 @@ export default function Step3SelectTimeSlot({
               {calendarData.days.map((day, index) => {
                 if (day === null) return <div key={index} />;
 
+                const dateForDay = new Date(calendarData.year, calendarData.month, day);
+                dateForDay.setHours(0, 0, 0, 0);
+                const isPastDate = dateForDay < today;
                 const isSelected =
                   selectedDate.getDate() === day &&
                   selectedDate.getMonth() === calendarData.month &&
@@ -135,15 +149,24 @@ export default function Step3SelectTimeSlot({
                   <div key={index} className="flex justify-center">
                     <button
                       type="button"
+                      disabled={isPastDate}
                       onClick={() => {
+                        if (isPastDate) return;
                         setSelectedDate(new Date(calendarData.year, calendarData.month, day));
                         setSelectedSlotId(null);
                       }}
                       className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold transition-all ${
                         isSelected
                           ? "bg-[#00B2D6] text-white shadow-sm shadow-[#00B2D6]/20"
+                          : isPastDate
+                            ? "cursor-not-allowed text-slate-300 line-through"
                           : "text-[#0F2E4A] hover:bg-slate-100 hover:text-[#00B2D6]"
                       }`}
+                      aria-label={
+                        isPastDate
+                          ? `${dateForDay.toLocaleDateString()} unavailable`
+                          : `${dateForDay.toLocaleDateString()}`
+                      }
                     >
                       {day}
                     </button>

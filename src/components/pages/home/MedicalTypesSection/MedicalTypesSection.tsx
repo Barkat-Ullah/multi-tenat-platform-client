@@ -37,7 +37,11 @@ const ServiceCardSkeleton = () => (
 );
 
 const ServiceCard = ({ service }: { service: BookingService }) => (
-  <div className="group flex flex-col gap-4 rounded-2xl border border-[#00B2D6]/10 bg-white p-4 shadow-sm transition-all duration-300 hover:border-[#00B2D6]/20 hover:shadow-md xs:flex-row xs:items-center">
+  <Link
+    href={getServiceBookingHref(service)}
+    className="group flex flex-col gap-4 rounded-2xl border border-[#00B2D6]/10 bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#00B2D6]/20 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#00B2D6]/30 xs:flex-row xs:items-center"
+    aria-label={`Book ${service.title}`}
+  >
     <div className="relative h-36 w-full shrink-0 overflow-hidden rounded-xl border border-gray-100 bg-[#E6FAFF] xs:h-24 xs:w-24 sm:h-28 sm:w-28">
       {service.files ? (
         <Image
@@ -62,17 +66,14 @@ const ServiceCard = ({ service }: { service: BookingService }) => (
       <p className="mb-4 mt-1 w-full text-xs font-medium leading-relaxed text-[#55697A] sm:text-sm">
         {service.description || "Professional medical assessment service"}
       </p>
-      <Link
-        href={getServiceBookingHref(service)}
-        className="inline-flex items-center justify-between rounded-full bg-[#00B2D6] py-1 pl-4 pr-1.5 text-xs font-bold text-white shadow-sm transition-all duration-300 hover:bg-[#0092B3] hover:shadow-md sm:text-sm"
-      >
+      <span className="inline-flex items-center justify-between rounded-full bg-[#00B2D6] py-1 pl-4 pr-1.5 text-xs font-bold text-white shadow-sm transition-all duration-300 group-hover:bg-[#0092B3] group-hover:shadow-md sm:text-sm">
         <span className="mr-3 tracking-wide">Book Now</span>
         <div className="flex h-6 w-6 items-center justify-center rounded-full bg-white text-[#00B2D6] transition-transform duration-200 group-hover:translate-x-0.5">
           <ArrowRight size={12} strokeWidth={2.5} />
         </div>
-      </Link>
+      </span>
     </div>
-  </div>
+  </Link>
 );
 
 export default function MedicalTypesSection() {
@@ -185,9 +186,11 @@ export default function MedicalTypesSection() {
                     >
                       <div className="mt-4 grid grid-cols-1 gap-4 rounded-2xl border border-[#00B2D6]/10 bg-gray-50/50 p-4 sm:p-6 md:grid-cols-2 lg:grid-cols-3">
                         {otherServices.map((service) => (
-                          <div
+                          <Link
                             key={service.id}
-                            className="flex flex-col gap-3 rounded-xl border border-gray-100 bg-white p-4 transition-all duration-300 hover:border-[#00B2D6]/30 hover:shadow-sm xs:flex-row xs:items-center xs:justify-between"
+                            href={getServiceBookingHref(service)}
+                            className="group flex flex-col gap-3 rounded-xl border border-gray-100 bg-white p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#00B2D6]/30 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-[#00B2D6]/30 xs:flex-row xs:items-center xs:justify-between"
+                            aria-label={`Book ${service.title}`}
                           >
                             <div className="min-w-0 pr-3">
                               <h5 className="break-words text-sm font-bold text-[#0F2E4A]">{service.title}</h5>
@@ -195,14 +198,11 @@ export default function MedicalTypesSection() {
                                 {service.description || "Professional medical assessment service"}
                               </p>
                             </div>
-                            <Link
-                              href={getServiceBookingHref(service)}
-                              className="group flex shrink-0 items-center gap-1 text-xs font-bold text-[#00B2D6] hover:text-[#0092B3]"
-                            >
+                            <span className="flex shrink-0 items-center gap-1 text-xs font-bold text-[#00B2D6] group-hover:text-[#0092B3]">
                               <span className="tracking-wide">Book</span>
                               <ArrowRight size={12} className="transition-transform duration-200 group-hover:translate-x-0.5" />
-                            </Link>
-                          </div>
+                            </span>
+                          </Link>
                         ))}
                       </div>
                     </motion.div>
