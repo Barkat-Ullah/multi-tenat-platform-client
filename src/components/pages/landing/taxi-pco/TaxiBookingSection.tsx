@@ -5,22 +5,23 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, ChevronDown, Phone, X, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { TaxiCouncilOption } from "@/app/data/TaxiMedicalData";
 
 interface TaxiBookingSectionProps {
-  councils: string[];
+  councils: TaxiCouncilOption[];
 }
 
 export default function TaxiBookingSection({ councils }: TaxiBookingSectionProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCouncil, setSelectedCouncil] = useState("");
+  const [selectedCouncil, setSelectedCouncil] = useState<TaxiCouncilOption | null>(null);
   const [showError, setShowError] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Filter councils based on user input
   const filteredCouncils = councils.filter((council) =>
-    council.toLowerCase().includes(searchQuery.toLowerCase())
+    council.council.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
 
@@ -42,13 +43,12 @@ export default function TaxiBookingSection({ councils }: TaxiBookingSectionProps
       return;
     }
     setShowError(false);
-    const slug = encodeURIComponent(
-      selectedCouncil
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "")
-    );
-    router.push(`/booking?type=taxi-pco&council=${slug}`);
+    const params = new URLSearchParams({
+      type: "taxi-pco",
+      councilLng: String(selectedCouncil.longitude),
+      councilLat: String(selectedCouncil.latitude),
+    });
+    router.push(`/booking?${params.toString()}`);
   };
 
   return (
@@ -88,7 +88,7 @@ export default function TaxiBookingSection({ councils }: TaxiBookingSectionProps
                   "text-[15px] truncate",
                   selectedCouncil ? "text-slate-800 font-medium" : "text-slate-400"
                 )}>
-                  {selectedCouncil || "Choose your local Authority"}
+                  {selectedCouncil?.council || "Choose your local Authority"}
                 </span>
 
                 <ChevronDown
@@ -104,7 +104,7 @@ export default function TaxiBookingSection({ councils }: TaxiBookingSectionProps
                 <button
                   type="button"
                   onClick={() => {
-                    setSelectedCouncil("");
+                    setSelectedCouncil(null);
                     setSearchQuery("");
                   }}
                   className="absolute right-12 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#00B2D6]/20"
@@ -156,8 +156,8 @@ export default function TaxiBookingSection({ councils }: TaxiBookingSectionProps
                   {/* List Container */}
                   <ul className="max-h-60 overflow-y-auto px-2 py-2 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
                     {filteredCouncils.length > 0 ? (
-                      filteredCouncils.map((council, idx) => (
-                        <li key={idx}>
+                      filteredCouncils.map((council) => (
+                        <li key={council.council}>
                           <button
                             type="button"
                             onClick={() => {
@@ -168,12 +168,12 @@ export default function TaxiBookingSection({ councils }: TaxiBookingSectionProps
                             }}
                             className={cn(
                               "w-full text-left px-4 py-2.5 rounded-2xl text-[14px] transition-colors cursor-pointer focus:outline-none focus:bg-[#E6F8FC] focus:text-[#00B2D6]",
-                              selectedCouncil === council
+                              selectedCouncil?.council === council.council
                                 ? "bg-[#E6F8FC] text-[#00B2D6] font-bold"
                                 : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
                             )}
                           >
-                            {council}
+                            {council.council}
                           </button>
                         </li>
                       ))

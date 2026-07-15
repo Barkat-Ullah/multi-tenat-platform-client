@@ -15,6 +15,7 @@ import {
   useGetBookingServicesQuery,
   useGetBookingSlotsQuery,
 } from "@/redux/service/user/userBookingFlowApi";
+import { useGetCouncilNearestLocationsQuery } from "@/redux/service/locations/locationsApi";
 
 import Step1MedicalType from "@/components/booking/Step1MedicalType";
 import Step2YourLocation, {
@@ -33,6 +34,43 @@ const DEFAULT_BOOKING_PRICE = 49.99;
 
 const getTypeSlug = (title: string) =>
   title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+const normalizeTypeText = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, "");
+
+const getLocationId = (value: unknown) => {
+  if (typeof value !== "object" || value === null) return null;
+
+  const location = value as {
+    id?: unknown;
+    locationId?: unknown;
+    location?: { id?: unknown } | null;
+  };
+
+  if (typeof location.id === "string") return location.id;
+  if (typeof location.locationId === "string") return location.locationId;
+  if (typeof location.location?.id === "string") return location.location.id;
+
+  return null;
+};
+
+const getCouncilNearestLocations = (value: unknown): unknown[] => {
+  if (Array.isArray(value)) return value;
+  if (typeof value !== "object" || value === null) return [];
+
+  const response = value as {
+    locations?: unknown;
+    nearestLocations?: unknown;
+    clinics?: unknown;
+    data?: unknown;
+  };
+
+  if (Array.isArray(response.locations)) return response.locations;
+  if (Array.isArray(response.nearestLocations)) return response.nearestLocations;
+  if (Array.isArray(response.clinics)) return response.clinics;
+  if (Array.isArray(response.data)) return response.data;
+
+  return [];
+};
 
 const formatDateParam = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
@@ -90,6 +128,49 @@ const getDistanceInMiles = (
   return earthRadiusMiles * c;
 };
 
+const normalizeClinicCoordinatesForCouncil = (
+  lat: number,
+  lng: number,
+  councilCoords: { councilLat: number; councilLng: number } | null,
+) => {
+  if (!lat || !lng) return { lat, lng };
+
+  // Some backend location rows arrive with west-UK longitudes as positive values.
+  // Leaflet is correct with [lat, lng]; this only fixes clearly impossible UK eastings.
+  if (lat >= 49 && lat <= 61 && lng > 1.8 && lng <= 8) {
+    return { lat, lng: -lng };
+  }
+
+  if (!councilCoords) return { lat, lng };
+
+  const currentDistance = getDistanceInMiles(
+    councilCoords.councilLat,
+    councilCoords.councilLng,
+    lat,
+    lng,
+  );
+  const mirroredLng = -lng;
+  const mirroredDistance = getDistanceInMiles(
+    councilCoords.councilLat,
+    councilCoords.councilLng,
+    lat,
+    mirroredLng,
+  );
+
+  const looksMirroredAcrossGreenwich =
+    councilCoords.councilLng < 0 &&
+    lng > 0 &&
+    Math.abs(councilCoords.councilLat - lat) < 1.5 &&
+    currentDistance > 50 &&
+    mirroredDistance + 50 < currentDistance;
+
+  if (looksMirroredAcrossGreenwich) {
+    return { lat, lng: mirroredLng };
+  }
+
+  return { lat, lng };
+};
+
 export default function BookingPage() {
   return (
     <Suspense
@@ -122,6 +203,7 @@ function BookingFlowCoordinator() {
   const [paymentMethod, setPaymentMethod] = useState<"Stripe" | "Paypal">("Stripe");
   const [createdBooking, setCreatedBooking] = useState<DriverBooking | null>(null);
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [councilCoords, setCouncilCoords] = useState<{ councilLat: number; councilLng: number } | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [resumeDraftLoaded, setResumeDraftLoaded] = useState(false);
@@ -148,6 +230,11 @@ function BookingFlowCoordinator() {
   } = useGetBookingServiceDetailsQuery(selectedServiceId || "", {
     skip: !selectedServiceId,
   });
+
+  const { data: councilNearestResponse } = useGetCouncilNearestLocationsQuery(
+    councilCoords || { councilLat: 0, councilLng: 0 },
+    { skip: !councilCoords || step < 2 },
+  );
 
   const {
     data: slotsResponse,
@@ -182,9 +269,16 @@ function BookingFlowCoordinator() {
     if (!typeParam || selectedServiceId || services.length === 0) return;
 
     const normalizedTypeParam = typeParam.toLowerCase();
+    const compactTypeParam = normalizeTypeText(typeParam);
     const matched = services.find((service) => {
       const slug = getTypeSlug(service.title);
-      return slug === normalizedTypeParam || service.title.toLowerCase().includes(normalizedTypeParam);
+      const compactTitle = normalizeTypeText(service.title);
+      return (
+        slug === normalizedTypeParam ||
+        slug.includes(normalizedTypeParam) ||
+        compactTitle.includes(compactTypeParam) ||
+        compactTypeParam.includes(compactTitle)
+      );
     });
 
     if (matched) {
@@ -192,6 +286,35 @@ function BookingFlowCoordinator() {
       setStep(2);
     }
   }, [searchParams, selectedServiceId, services]);
+
+  useEffect(() => {
+    const councilLatParam = searchParams.get("councilLat");
+    const councilLngParam = searchParams.get("councilLng");
+
+    if (!councilLatParam || !councilLngParam) return;
+
+    const councilLat = Number(councilLatParam);
+    const councilLng = Number(councilLngParam);
+
+    if (!Number.isFinite(councilLat) || !Number.isFinite(councilLng)) return;
+
+    setCouncilCoords({ councilLat, councilLng });
+    setUserCoords({ lat: councilLat, lng: councilLng });
+    setVisibleCount((count) => Math.max(count, 5));
+  }, [searchParams]);
+
+  const councilLocationOrder = useMemo(() => {
+    const order = new Map<string, number>();
+    if (!councilCoords) return order;
+
+    getCouncilNearestLocations(councilNearestResponse?.data).forEach((location, index) => {
+      const locationId = getLocationId(location);
+      if (locationId) {
+        order.set(locationId, index);
+      }
+    });
+    return order;
+  }, [councilCoords, councilNearestResponse?.data]);
 
   const clinics = useMemo<BookingClinicDisplay[]>(() => {
     const query = searchQuery.toLowerCase().trim();
@@ -209,8 +332,13 @@ function BookingFlowCoordinator() {
       })
       .map((clinic) => {
         const locationName = clinic.location?.locationName || "N/A";
-        const lat = clinic.location?.lat ?? 0;
-        const lng = clinic.location?.lng ?? 0;
+        const rawLat = clinic.location?.lat ?? 0;
+        const rawLng = clinic.location?.lng ?? 0;
+        const { lat, lng } = normalizeClinicCoordinatesForCouncil(
+          rawLat,
+          rawLng,
+          councilCoords,
+        );
         const distance =
           userCoords && lat && lng
             ? getDistanceInMiles(userCoords.lat, userCoords.lng, lat, lng)
@@ -229,12 +357,29 @@ function BookingFlowCoordinator() {
         };
       });
 
-    if (userCoords) {
+    if (councilLocationOrder.size > 0) {
+      mappedClinics.sort((a, b) => {
+        const firstOrder = a.location?.id ? councilLocationOrder.get(a.location.id) : undefined;
+        const secondOrder = b.location?.id ? councilLocationOrder.get(b.location.id) : undefined;
+
+        if (firstOrder !== undefined && secondOrder !== undefined) {
+          return (
+            firstOrder - secondOrder ||
+            (a.distance ?? Number.MAX_VALUE) - (b.distance ?? Number.MAX_VALUE)
+          );
+        }
+
+        if (firstOrder !== undefined) return -1;
+        if (secondOrder !== undefined) return 1;
+
+        return (a.distance ?? Number.MAX_VALUE) - (b.distance ?? Number.MAX_VALUE);
+      });
+    } else if (userCoords) {
       mappedClinics.sort((a, b) => (a.distance ?? Number.MAX_VALUE) - (b.distance ?? Number.MAX_VALUE));
     }
 
     return mappedClinics;
-  }, [searchQuery, serviceDetailsResponse?.data?.clinics, userCoords]);
+  }, [councilCoords, councilLocationOrder, searchQuery, serviceDetailsResponse?.data?.clinics, userCoords]);
 
   const selectedClinic =
     clinics.find((clinic) => clinic.id === selectedClinicId) || null;
@@ -396,6 +541,7 @@ function BookingFlowCoordinator() {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
         });
+        setCouncilCoords(null);
         setVisibleCount((count) => Math.max(count, 5));
         setIsLocating(false);
         toast.success("Showing nearest clinics around your current location.");
@@ -410,6 +556,7 @@ function BookingFlowCoordinator() {
 
   const handleResetLocation = () => {
     setUserCoords(null);
+    setCouncilCoords(null);
     setLocationError(null);
   };
 

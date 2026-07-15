@@ -1,0 +1,502 @@
+[
+  {
+    "council": "Aberdeen City Council",
+    "latitude": 57.1497,
+    "longitude": -2.0943
+  },
+  {
+    "council": "Aberdeenshire Council",
+    "latitude": 57.2869,
+    "longitude": -2.3816
+  },
+  {
+    "council": "Angus Council",
+    "latitude": 56.6621,
+    "longitude": -2.8864
+  },
+  {
+    "council": "Argyll and Bute Council",
+    "latitude": 56.0396,
+    "longitude": -5.4211
+  },
+  {
+    "council": "Ashfield District Council",
+    "latitude": 53.0924,
+    "longitude": -1.2598
+  },
+  {
+    "council": "Barnet London Borough",
+    "latitude": 51.6252,
+    "longitude": -0.1996
+  },
+  {
+    "council": "Blaby Borough Council",
+    "latitude": 52.5743,
+    "longitude": -1.2163
+  },
+  {
+    "council": "Brentwood Borough Council",
+    "latitude": 51.6218,
+    "longitude": 0.3028
+  },
+  {
+    "council": "Brighton & Hove City Council",
+    "latitude": 50.8225,
+    "longitude": -0.1372
+  },
+  {
+    "council": "Buckinghamshire County Council",
+    "latitude": 51.8156,
+    "longitude": -0.8122
+  },
+  {
+    "council": "Cambridge City Council",
+    "latitude": 52.2053,
+    "longitude": 0.1218
+  },
+  {
+    "council": "Cardiff Council",
+    "latitude": 51.4816,
+    "longitude": -3.1791
+  },
+  {
+    "council": "Carlisle City Council",
+    "latitude": 54.8924,
+    "longitude": -2.9329
+  },
+  {
+    "council": "Charnwood Borough Council",
+    "latitude": 52.7721,
+    "longitude": -1.2062
+  },
+  {
+    "council": "Chelmsford City Council",
+    "latitude": 51.7356,
+    "longitude": 0.4686
+  },
+  {
+    "council": "Cheshire West & Chester Borough Council",
+    "latitude": 53.1906,
+    "longitude": -2.8919
+  },
+  {
+    "council": "City of London",
+    "latitude": 51.5123,
+    "longitude": -0.0903
+  },
+  {
+    "council": "City of Westminster",
+    "latitude": 51.4975,
+    "longitude": -0.1357
+  },
+  {
+    "council": "City of Wolverhampton Council",
+    "latitude": 52.5870,
+    "longitude": -2.1288
+  },
+  {
+    "council": "Clackmannanshire Council",
+    "latitude": 56.1495,
+    "longitude": -3.7533
+  },
+  {
+    "council": "Cornwall Council",
+    "latitude": 50.4494,
+    "longitude": -4.8329
+  },
+  {
+    "council": "Coventry City Council",
+    "latitude": 52.4068,
+    "longitude": -1.5197
+  },
+  {
+    "council": "Dorset County Council",
+    "latitude": 50.7482,
+    "longitude": -2.3412
+  },
+  {
+    "council": "Dundee City Council",
+    "latitude": 56.4620,
+    "longitude": -2.9707
+  },
+  {
+    "council": "Durham County Council",
+    "latitude": 54.7761,
+    "longitude": -1.5733
+  },
+  {
+    "council": "East Suffolk Council",
+    "latitude": 52.1741,
+    "longitude": 1.4012
+  },
+  {
+    "council": "Epsom & Ewell Borough Council",
+    "latitude": 51.3324,
+    "longitude": -0.2647
+  },
+  {
+    "council": "Exeter City Council",
+    "latitude": 50.7260,
+    "longitude": -3.5275
+  },
+  {
+    "council": "Fenland District Council",
+    "latitude": 52.5714,
+    "longitude": 0.0531
+  },
+  {
+    "council": "Gwynedd County Council",
+    "latitude": 52.9234,
+    "longitude": -3.9485
+  },
+  {
+    "council": "Hampshire County Council",
+    "latitude": 51.0632,
+    "longitude": -1.3174
+  },
+  {
+    "council": "Havant Borough Council",
+    "latitude": 50.8543,
+    "longitude": -0.9818
+  },
+  {
+    "council": "Ipswich Borough Council",
+    "latitude": 52.0567,
+    "longitude": 1.1482
+  },
+  {
+    "council": "Kent County Council",
+    "latitude": 51.2787,
+    "longitude": 0.5217
+  },
+  {
+    "council": "Lewes District Council",
+    "latitude": 50.8741,
+    "longitude": 0.0122
+  },
+  {
+    "council": "Liverpool City Council",
+    "latitude": 53.4084,
+    "longitude": -2.9916
+  },
+  {
+    "council": "London Borough of Barking & Dagenham",
+    "latitude": 51.5455,
+    "longitude": 0.1268
+  },
+  {
+    "council": "London Borough of Bexley",
+    "latitude": 51.4549,
+    "longitude": 0.1513
+  },
+  {
+    "council": "London Borough of Brent",
+    "latitude": 51.5588,
+    "longitude": -0.2817
+  },
+  {
+    "council": "London Borough of Bromley",
+    "latitude": 51.4039,
+    "longitude": 0.0198
+  },
+  {
+    "council": "London Borough of Camden",
+    "latitude": 51.5290,
+    "longitude": -0.1258
+  },
+  {
+    "council": "London Borough of Croydon",
+    "latitude": 51.3714,
+    "longitude": -0.0977
+  },
+  {
+    "council": "London Borough of Ealing",
+    "latitude": 51.5130,
+    "longitude": -0.3089
+  },
+  {
+    "council": "London Borough of Enfield",
+    "latitude": 51.6538,
+    "longitude": -0.0799
+  },
+  {
+    "council": "London Borough of Hackney",
+    "latitude": 51.5450,
+    "longitude": -0.0553
+  },
+  {
+    "council": "London Borough of Hammersmith & Fulham",
+    "latitude": 51.4927,
+    "longitude": -0.2230
+  },
+  {
+    "council": "London Borough of Haringey",
+    "latitude": 51.5907,
+    "longitude": -0.1110
+  },
+  {
+    "council": "London Borough of Harrow",
+    "latitude": 51.5898,
+    "longitude": -0.3346
+  },
+  {
+    "council": "London Borough of Havering",
+    "latitude": 51.5812,
+    "longitude": 0.1837
+  },
+  {
+    "council": "London Borough of Hillingdon",
+    "latitude": 51.5441,
+    "longitude": -0.4760
+  },
+  {
+    "council": "London Borough of Hounslow",
+    "latitude": 51.4746,
+    "longitude": -0.3680
+  },
+  {
+    "council": "London Borough of Islington",
+    "latitude": 51.5416,
+    "longitude": -0.1022
+  },
+  {
+    "council": "London Borough of Lambeth",
+    "latitude": 51.4607,
+    "longitude": -0.1163
+  },
+  {
+    "council": "London Borough of Lewisham",
+    "latitude": 51.4452,
+    "longitude": -0.0209
+  },
+  {
+    "council": "London Borough of Merton",
+    "latitude": 51.4014,
+    "longitude": -0.1958
+  },
+  {
+    "council": "London Borough of Newham",
+    "latitude": 51.5255,
+    "longitude": 0.0352
+  },
+  {
+    "council": "London Borough of Redbridge",
+    "latitude": 51.5886,
+    "longitude": 0.0818
+  },
+  {
+    "council": "London Borough of Tower Hamlets",
+    "latitude": 51.5099,
+    "longitude": -0.0059
+  },
+  {
+    "council": "London Borough of Waltham Forest",
+    "latitude": 51.5908,
+    "longitude": -0.0134
+  },
+  {
+    "council": "London Borough of Wandsworth",
+    "latitude": 51.4567,
+    "longitude": -0.1910
+  },
+  {
+    "council": "Mid Suffolk District Council",
+    "latitude": 52.2223,
+    "longitude": 1.0543
+  },
+  {
+    "council": "Milton Keynes City Council",
+    "latitude": 52.0406,
+    "longitude": -0.7594
+  },
+  {
+    "council": "Newcastle City Council",
+    "latitude": 54.9783,
+    "longitude": -1.6178
+  },
+  {
+    "council": "Newport City Council",
+    "latitude": 51.5880,
+    "longitude": -2.9975
+  },
+  {
+    "council": "North Norfolk District Council",
+    "latitude": 52.8931,
+    "longitude": 1.2185
+  },
+  {
+    "council": "North Yorkshire County Council",
+    "latitude": 54.3168,
+    "longitude": -1.4862
+  },
+  {
+    "council": "Northumberland County Council",
+    "latitude": 55.2418,
+    "longitude": -2.0084
+  },
+  {
+    "council": "Oldham Council",
+    "latitude": 53.5409,
+    "longitude": -2.1114
+  },
+  {
+    "council": "Oxford City Council",
+    "latitude": 51.7520,
+    "longitude": -1.2577
+  },
+  {
+    "council": "Pembrokeshire County Council",
+    "latitude": 51.8415,
+    "longitude": -4.8517
+  },
+  {
+    "council": "Pendle Borough Council",
+    "latitude": 53.8644,
+    "longitude": -2.1678
+  },
+  {
+    "council": "Portsmouth City Council",
+    "latitude": 50.8135,
+    "longitude": -1.0816
+  },
+  {
+    "council": "Powys County Council",
+    "latitude": 52.3211,
+    "longitude": -3.4283
+  },
+  {
+    "council": "Reading Borough Council",
+    "latitude": 51.4543,
+    "longitude": -0.9781
+  },
+  {
+    "council": "Rochdale Metropolitan Borough Council",
+    "latitude": 53.6148,
+    "longitude": -2.1554
+  },
+  {
+    "council": "Royal Borough Windsor & Maidenhead",
+    "latitude": 51.4839,
+    "longitude": -0.6044
+  },
+  {
+    "council": "Royal Borough of Greenwich",
+    "latitude": 51.4892,
+    "longitude": 0.0648
+  },
+  {
+    "council": "Rushcliffe Borough Council",
+    "latitude": 52.9115,
+    "longitude": -1.0375
+  },
+  {
+    "council": "Rutland County Council",
+    "latitude": 52.6483,
+    "longitude": -0.6558
+  },
+  {
+    "council": "Salford City Council",
+    "latitude": 53.4875,
+    "longitude": -2.2901
+  },
+  {
+    "council": "Sandwell Metropolitan Borough Council",
+    "latitude": 52.5186,
+    "longitude": -2.0094
+  },
+  {
+    "council": "Solihull Metropolitan Borough Council",
+    "latitude": 52.4128,
+    "longitude": -1.7782
+  },
+  {
+    "council": "South Cambridgeshire Council",
+    "latitude": 52.1612,
+    "longitude": 0.0811
+  },
+  {
+    "council": "South Derbyshire District Council",
+    "latitude": 52.8252,
+    "longitude": -1.5369
+  },
+  {
+    "council": "South Gloucestershire Council",
+    "latitude": 51.5381,
+    "longitude": -2.4344
+  },
+  {
+    "council": "South Staffordshire Council",
+    "latitude": 52.6418,
+    "longitude": -2.1812
+  },
+  {
+    "council": "South Tyneside Council",
+    "latitude": 54.9754,
+    "longitude": -1.4288
+  },
+  {
+    "council": "Southampton City Council",
+    "latitude": 50.9097,
+    "longitude": -1.4044
+  },
+  {
+    "council": "Stockton-on-Tees Borough Council",
+    "latitude": 54.5714,
+    "longitude": -1.3217
+  },
+  {
+    "council": "Stoke-On-Trent City Council",
+    "latitude": 53.0027,
+    "longitude": -2.1794
+  },
+  {
+    "council": "Surrey Heath Borough Council",
+    "latitude": 51.3484,
+    "longitude": -0.7022
+  },
+  {
+    "council": "Test Valley Borough Council",
+    "latitude": 51.1345,
+    "longitude": -1.4782
+  },
+  {
+    "council": "Tewkesbury Borough Council",
+    "latitude": 51.9904,
+    "longitude": -2.1586
+  },
+  {
+    "council": "The Royal Borough of Kensington and Chelsea",
+    "latitude": 51.5020,
+    "longitude": -0.1947
+  },
+  {
+    "council": "The Royal Borough of Kingston upon Thames",
+    "latitude": 51.4085,
+    "longitude": -0.3064
+  },
+  {
+    "council": "Tunbridge Wells Borough Council",
+    "latitude": 51.1322,
+    "longitude": 0.2636
+  },
+  {
+    "council": "Watford Borough Council",
+    "latitude": 51.6565,
+    "longitude": -0.3903
+  },
+  {
+    "council": "West Northamptonshire Council",
+    "latitude": 52.2421,
+    "longitude": -0.9027
+  },
+  {
+    "council": "Wirral Council",
+    "latitude": 53.3606,
+    "longitude": -3.0564
+  },
+  {
+    "council": "Wrexham County Borough Council",
+    "latitude": 53.0463,
+    "longitude": -2.9926
+  }
+]

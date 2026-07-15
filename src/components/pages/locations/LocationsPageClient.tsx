@@ -9,6 +9,7 @@ import BookingCTASection from "@/components/pages/home/BookingCTASection/Booking
 import SectionEyebrow from "@/components/shared/SectionEyebrow";
 import {
   type PublicLocation,
+  useGetCouncilNearestLocationsQuery,
   useGetPublicLocationsQuery,
 } from "@/redux/service/locations/locationsApi";
 
@@ -73,23 +74,34 @@ export default function LocationsPageClient() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [councilCoords, setCouncilCoords] = useState<{ councilLat: number; councilLng: number } | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const publicLocationsQuery = useGetPublicLocationsQuery(
+    {
+      page: currentPage,
+      limit: PAGE_LIMIT,
+    },
+    { skip: Boolean(councilCoords) },
+  );
+  const councilNearestQuery = useGetCouncilNearestLocationsQuery(
+    councilCoords || { councilLat: 0, councilLng: 0 },
+    { skip: !councilCoords },
+  );
+
+  const activeLocationsQuery = councilCoords ? councilNearestQuery : publicLocationsQuery;
   const {
     data: locationsResponse,
     isLoading,
     isFetching,
     isError,
     refetch,
-  } = useGetPublicLocationsQuery({
-    page: currentPage,
-    limit: PAGE_LIMIT,
-  });
+  } = activeLocationsQuery;
 
   const locations = locationsResponse?.data || [];
   const totalPages = Math.max(
     1,
-    Math.ceil((locationsResponse?.meta.total || 0) / PAGE_LIMIT)
+    Math.ceil((locationsResponse?.meta?.total ?? locations.length) / PAGE_LIMIT)
   );
   const isLocationsLoading = isLoading || isFetching;
 
@@ -98,9 +110,22 @@ export default function LocationsPageClient() {
     const search = params.get("search");
     const latParam = params.get("lat");
     const lngParam = params.get("lng");
+    const councilLatParam = params.get("councilLat");
+    const councilLngParam = params.get("councilLng");
 
     if (search) {
       setSearchQuery(search);
+    }
+
+    if (councilLatParam && councilLngParam) {
+      const councilLat = Number(councilLatParam);
+      const councilLng = Number(councilLngParam);
+      if (Number.isFinite(councilLat) && Number.isFinite(councilLng)) {
+        setCouncilCoords({ councilLat, councilLng });
+        setUserCoords({ lat: councilLat, lng: councilLng });
+        setLocationError(null);
+      }
+      return;
     }
 
     if (latParam && lngParam) {
@@ -127,6 +152,7 @@ export default function LocationsPageClient() {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
         });
+        setCouncilCoords(null);
         setIsLocating(false);
       },
       (error) => {
@@ -141,6 +167,7 @@ export default function LocationsPageClient() {
   // Reset geolocation sorting
   const handleResetLocation = () => {
     setUserCoords(null);
+    setCouncilCoords(null);
     setLocationError(null);
   };
 
@@ -167,7 +194,12 @@ export default function LocationsPageClient() {
       return clinic;
     });
 
-    // 3. Sort by distance if location available, otherwise alphabetical
+    // 3. Sort by distance if location available, otherwise alphabetical.
+    // Council-nearest results are already returned by the backend endpoint.
+    if (councilCoords) {
+      return mapped;
+    }
+
     if (userCoords) {
       mapped.sort((a, b) => (a.distance || 0) - (b.distance || 0));
     } else {
@@ -175,7 +207,7 @@ export default function LocationsPageClient() {
     }
 
     return mapped;
-  }, [locations, searchQuery, userCoords]);
+  }, [councilCoords, locations, searchQuery, userCoords]);
 
   return (
     <div className="bg-[#FCFDFE] poppins min-h-screen">
@@ -277,7 +309,11 @@ export default function LocationsPageClient() {
             {userCoords && (
               <div className="flex justify-center mt-4">
                 <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200/80 px-3 py-1.5 rounded-full text-xs font-bold text-emerald-700 shadow-sm animate-fadeIn">
-                  <span>Sorting by distance to your current location</span>
+                  <span>
+                    {councilCoords
+                      ? "Showing nearest clinics for selected council"
+                      : "Sorting by distance to your current location"}
+                  </span>
                   <button
                     onClick={handleResetLocation}
                     className="p-0.5 rounded-full hover:bg-emerald-100 text-emerald-600 transition-colors"

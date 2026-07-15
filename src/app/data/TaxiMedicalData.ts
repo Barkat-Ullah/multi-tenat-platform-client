@@ -3,6 +3,7 @@ import taxiHeroImage from "@/assets/home/taxies.png";
 import hvgTaxiImage from "@/assets/home/hvg-taxi.png";
 import medicalBusIllustration from "@/assets/home/medical-bus-illustration.png";
 import medicalRecordsDoctor from "@/assets/home/medical-records-doctor.png";
+import ukLocalAuthorities from "./uk-local-authority.json";
 
 
 
@@ -62,32 +63,15 @@ export const taxiFeaturesData: TaxiFeatureItem[] = [
   },
 ];
 
-export const taxiCouncils = [
-  "Transport for London (TfL)",
-  "Birmingham City Council",
-  "Manchester City Council",
-  "Leeds City Council",
-  "Liverpool City Council",
-  "Sheffield City Council",
-  "Bristol City Council",
-  "Coventry City Council",
-  "Leicester City Council",
-  "Nottingham City Council",
-  "Newcastle City Council",
-  "Wolverhampton City Council",
-  "Bradford City Council",
-  "Southampton City Council",
-  "Cardiff Council",
-  "Edinburgh City Council",
-  "Glasgow City Council",
-  "York City Council",
-  "Kirklees Council",
-  "Wakefield Council",
-  "Dudley Council",
-  "Sandwell Council",
-  "Solihull Council",
-  "Walsall Council",
-];
+export interface TaxiCouncilOption {
+  council: string;
+  latitude: number;
+  longitude: number;
+}
+
+export const taxiCouncils = (ukLocalAuthorities as TaxiCouncilOption[])
+  .filter((authority) => authority.council)
+  .sort((first, second) => first.council.localeCompare(second.council));
 
 export interface TaxiTrustItem {
   iconName: string;
@@ -258,8 +242,6 @@ export const taxiFaqData: TaxiFaqData = {
     },
   ],
 };
-
-
 
 
 

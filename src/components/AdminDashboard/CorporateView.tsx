@@ -155,14 +155,11 @@ export default function CorporateView() {
     status: "Confirmed" | "Canceled",
     clinicId?: string | null,
   ) => {
-    const nextClinicId = clinicId ?? request.clinicId ?? null;
+    const nextClinicId =
+      status === "Canceled" ? clinicId ?? null : clinicId ?? request.clinicId ?? null;
 
-    if (!nextClinicId) {
-      toast.error(
-        status === "Confirmed"
-          ? "Please select a clinic before accepting this request."
-          : "Please select a clinic before rejecting this request.",
-      );
+    if (status === "Confirmed" && !nextClinicId) {
+      toast.error("Please select a clinic before accepting this request.");
       return;
     }
 
@@ -302,7 +299,7 @@ export default function CorporateView() {
                             <button
                               type="button"
                               disabled={updatingId === request.id}
-                              onClick={() => openAssignClinicModal(request, "Canceled")}
+                              onClick={() => handleStatusUpdate(request, "Canceled", null)}
                               className="rounded-full bg-[#FFEBEB] px-5 py-1.5 text-xs font-bold text-[#FF4D4F] transition-all hover:bg-[#FFD6D6] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
                             >
                               Reject
@@ -389,11 +386,6 @@ export default function CorporateView() {
                     {assigningRequest.totalDriver}
                   </span>
                 </div>
-                {assigningStatus === "Canceled" && (
-                  <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-[11px] font-bold text-red-500">
-                    Backend requires a clinic id before this request can be rejected.
-                  </p>
-                )}
               </div>
 
               <div>
@@ -451,9 +443,8 @@ export default function CorporateView() {
                 type="submit"
                 disabled={
                   Boolean(updatingId) ||
-                  isClinicOptionsLoading ||
-                  !selectedClinicId ||
-                  isClinicsError
+                  (assigningStatus === "Confirmed" &&
+                    (isClinicOptionsLoading || !selectedClinicId || isClinicsError))
                 }
                 className="rounded-full bg-[#00B2D6] px-7 py-2.5 text-xs font-bold text-white transition-all hover:bg-[#009cb9] disabled:cursor-not-allowed disabled:opacity-60"
               >

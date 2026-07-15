@@ -5,6 +5,11 @@ export interface PublicLocationsListParams {
   limit: number;
 }
 
+export interface CouncilNearestLocationsParams {
+  councilLng: number;
+  councilLat: number;
+}
+
 export interface PublicLocation {
   id: string;
   locationName: string;
@@ -21,7 +26,7 @@ export interface PublicLocationsListResponse {
   success: boolean;
   statusCode: number;
   message: string;
-  meta: {
+  meta?: {
     total: number;
     page: number;
     limit: number;
@@ -42,7 +47,21 @@ const locationsApi = baseApi.injectEndpoints({
       }),
       providesTags: ["locations"],
     }),
+    getCouncilNearestLocations: builder.query<
+      PublicLocationsListResponse,
+      CouncilNearestLocationsParams
+    >({
+      query: (params) => ({
+        url: "/locations/council-nearest",
+        method: "GET",
+        params,
+      }),
+      providesTags: ["locations"],
+    }),
   }),
 });
 
-export const { useGetPublicLocationsQuery } = locationsApi;
+export const {
+  useGetPublicLocationsQuery,
+  useGetCouncilNearestLocationsQuery,
+} = locationsApi;

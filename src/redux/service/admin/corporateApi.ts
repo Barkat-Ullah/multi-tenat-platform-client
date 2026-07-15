@@ -101,11 +101,11 @@ const adminCorporateApi = baseApi.injectEndpoints({
       UpdateCorporateRequestStatusPayload
     >({
       query: ({ id, clinicId, status }) => {
-        const body: { status: "Confirmed" | "Canceled"; clinicId?: string } = {
+        const body: { status: "Confirmed" | "Canceled"; clinicId?: string | null } = {
           status,
         };
 
-        if (clinicId) {
+        if (clinicId !== undefined) {
           body.clinicId = clinicId;
         }
 
