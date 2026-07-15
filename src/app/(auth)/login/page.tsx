@@ -17,6 +17,10 @@ import {
   BOOKING_AUTH_RETURN_KEY,
   clearBookingResume,
 } from "@/utils/bookingResume";
+import {
+  ONSITE_REQUEST_AUTH_RETURN_KEY,
+  clearOnSiteRequestResume,
+} from "@/utils/onSiteRequestResume";
 import AuthBackButton from "@/components/auth/AuthBackButton";
 
 // Define or import this type to match your JWT payload
@@ -94,6 +98,21 @@ const LoginPage = () => {
         }
 
         const bookingReturn = sessionStorage.getItem(BOOKING_AUTH_RETURN_KEY);
+        const onSiteRequestReturn = sessionStorage.getItem(ONSITE_REQUEST_AUTH_RETURN_KEY);
+        if (onSiteRequestReturn) {
+          if (decodedUser.role === "ORGINIZER") {
+            sessionStorage.removeItem(ONSITE_REQUEST_AUTH_RETURN_KEY);
+            toast.success(res.message || "You have successfully logged in.");
+            router.push(onSiteRequestReturn);
+            return;
+          }
+
+          clearOnSiteRequestResume();
+          toast.error("Only organizer accounts can submit on-site requests.");
+          router.push(getDashboardPathByRole(decodedUser.role));
+          return;
+        }
+
         if (bookingReturn) {
           if (decodedUser.role === "USER") {
             sessionStorage.removeItem(BOOKING_AUTH_RETURN_KEY);

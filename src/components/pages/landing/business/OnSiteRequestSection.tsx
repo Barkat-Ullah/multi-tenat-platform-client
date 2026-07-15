@@ -1,14 +1,60 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Logo } from "@/components/ui/Logo";
-import { ArrowRight, ChevronLeft, Check, Loader2, Calendar } from "lucide-react";
+import { ChevronLeft, Check, Loader2, Calendar } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
+import { useAppSelector } from "@/redux/store";
+import { useRouter } from "next/navigation";
+import {
+  useCreateOrganizerRequestMutation,
+  useGetAllServicesQuery,
+} from "@/redux/service/corporate/corporateDashboardApi";
+import { normalizeRole } from "@/utils/roles";
+import {
+  clearOnSiteRequestResume,
+  getOnSiteRequestDraft,
+  saveOnSiteRequestDraft,
+} from "@/utils/onSiteRequestResume";
+
+const toServiceDateTimeIso = (date: string, time: string) => {
+  const trimmedTime = time.trim();
+  const timeMatch = trimmedTime.match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?$/i);
+
+  let hours = 0;
+  let minutes = 0;
+
+  if (timeMatch) {
+    hours = Number(timeMatch[1]);
+    minutes = Number(timeMatch[2] ?? "0");
+    const period = timeMatch[3]?.toUpperCase();
+
+    if (period === "PM" && hours < 12) hours += 12;
+    if (period === "AM" && hours === 12) hours = 0;
+  }
+
+  return new Date(Date.UTC(
+    Number(date.slice(0, 4)),
+    Number(date.slice(5, 7)) - 1,
+    Number(date.slice(8, 10)),
+    hours,
+    minutes,
+  )).toISOString();
+};
 
 export default function OnSiteRequestSection() {
   const [step, setStep] = useState<number>(1);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  const router = useRouter();
+  const { accessToken, user } = useAppSelector((state) => state.auth);
+  const isAuthenticated = Boolean(accessToken);
+  const isOrganizer = isAuthenticated && normalizeRole(user?.role) === "ORGINIZER";
+  const { data: servicesData, isLoading: isLoadingServices } = useGetAllServicesQuery();
+  const [createOrganizerRequest, { isLoading: isSubmitting }] =
+    useCreateOrganizerRequestMutation();
+  const services = servicesData?.data ?? [];
 
   // Form states
   const [formData, setFormData] = useState({
@@ -16,10 +62,8 @@ export default function OnSiteRequestSection() {
     email: "",
     phone: "",
     businessName: "",
-    hasAccount: "no",
     medicalRequired: "",
     candidatesCount: "",
-    additionalServices: "",
     // Step 2 fields
     siteContact: "",
     siteContactPhone: "",
@@ -36,6 +80,21 @@ export default function OnSiteRequestSection() {
   // Validation errors
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  useEffect(() => {
+    if (!isOrganizer) return;
+
+    const draft = getOnSiteRequestDraft();
+    if (!draft) return;
+
+    setFormData((prev) => ({
+      ...prev,
+      ...draft,
+    }));
+    setStep(2);
+    setShowAuthPrompt(false);
+    window.scrollTo({ top: document.getElementById("request-form-section")?.offsetTop || 300, behavior: "smooth" });
+  }, [isOrganizer]);
+
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -48,10 +107,6 @@ export default function OnSiteRequestSection() {
         return copy;
       });
     }
-  };
-
-  const handleRadioChange = (value: string) => {
-    setFormData((prev) => ({ ...prev, hasAccount: value }));
   };
 
   const validateStep1 = () => {
@@ -90,10 +145,28 @@ export default function OnSiteRequestSection() {
 
   const handleNext = (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateStep1()) {
-      setStep(2);
-      window.scrollTo({ top: document.getElementById("request-form-section")?.offsetTop || 300, behavior: "smooth" });
+    if (!validateStep1()) return;
+
+    if (!isAuthenticated) {
+      saveOnSiteRequestDraft({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        businessName: formData.businessName,
+        medicalRequired: formData.medicalRequired,
+        candidatesCount: formData.candidatesCount,
+      });
+      setShowAuthPrompt(true);
+      return;
     }
+
+    if (!isOrganizer) {
+      toast.error("Only organizer accounts can submit on-site requests.");
+      return;
+    }
+
+    setStep(2);
+    window.scrollTo({ top: document.getElementById("request-form-section")?.offsetTop || 300, behavior: "smooth" });
   };
 
   const handleBack = () => {
@@ -103,13 +176,42 @@ export default function OnSiteRequestSection() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isOrganizer) {
+      toast.error("Only organizer accounts can submit on-site requests.");
+      return;
+    }
     if (validateStep2()) {
-      setIsSubmitting(true);
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      setIsSubmitting(false);
-      setIsSubmitted(true);
-      window.scrollTo({ top: document.getElementById("request-form-section")?.offsetTop || 300, behavior: "smooth" });
+      const siteAddress = [formData.siteAddressLine1.trim(), formData.siteAddressLine2.trim()]
+        .filter(Boolean)
+        .join(", ");
+      const dataOfService = toServiceDateTimeIso(formData.dateRequired, formData.startTimeRequired);
+
+      try {
+        await createOrganizerRequest({
+          serviceId: formData.medicalRequired,
+          companyName: formData.businessName.trim(),
+          email: formData.email.trim(),
+          phone: formData.phone.trim(),
+          location: formData.siteCityTown.trim(),
+          totalDriver: formData.candidatesCount.trim(),
+          siteContact: formData.siteContact.trim(),
+          siteContactPhone: formData.siteContactPhone.trim(),
+          siteAddress,
+          siteCity: formData.siteCityTown.trim(),
+          dataOfService,
+          startTime: formData.startTimeRequired.trim(),
+          isSizeRequired: formData.roomSizeMet === "yes",
+          isOnsiteParking: formData.parkingAvailable === "yes",
+          specialText: formData.specialRequirements.trim(),
+        }).unwrap();
+
+        clearOnSiteRequestResume();
+        toast.success("On-site request submitted successfully.");
+        setIsSubmitted(true);
+        window.scrollTo({ top: document.getElementById("request-form-section")?.offsetTop || 300, behavior: "smooth" });
+      } catch (error: any) {
+        toast.error(error?.data?.message || "Failed to submit on-site request.");
+      }
     }
   };
 
@@ -119,10 +221,8 @@ export default function OnSiteRequestSection() {
       email: "",
       phone: "",
       businessName: "",
-      hasAccount: "no",
       medicalRequired: "",
       candidatesCount: "",
-      additionalServices: "",
       siteContact: "",
       siteContactPhone: "",
       siteAddressLine1: "",
@@ -137,7 +237,22 @@ export default function OnSiteRequestSection() {
     setErrors({});
     setStep(1);
     setIsSubmitted(false);
+    clearOnSiteRequestResume();
   };
+
+  const goToAuth = (path: "/login" | "/register") => {
+    saveOnSiteRequestDraft({
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      businessName: formData.businessName,
+      medicalRequired: formData.medicalRequired,
+      candidatesCount: formData.candidatesCount,
+    });
+    router.push(path);
+  };
+
+  const isBlockedAuthenticatedUser = isAuthenticated && !isOrganizer;
 
   return (
     <section
@@ -156,7 +271,7 @@ export default function OnSiteRequestSection() {
             On-Site Request
           </h2>
 
-          {!isSubmitted && (
+          {!isSubmitted && !isBlockedAuthenticatedUser && (
             <>
               {/* Step indicator */}
               <p className="text-[#00B2D6] font-bold text-sm tracking-wider uppercase mb-3">
@@ -177,7 +292,23 @@ export default function OnSiteRequestSection() {
         {/* Form Container Card */}
         <div className="w-full max-w-[650px] bg-white rounded-3xl border border-slate-100 p-6 sm:p-10 shadow-[0_4px_30px_rgba(0,0,0,0.02)]">
           <AnimatePresence mode="wait">
-            {isSubmitted ? (
+            {isBlockedAuthenticatedUser ? (
+              <motion.div
+                key="organizer-only"
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.96 }}
+                transition={{ duration: 0.25 }}
+                className="text-center py-8 flex flex-col items-center"
+              >
+                <h3 className="text-2xl font-bold text-[#0F2E4A] mb-4">
+                  Organizer Access Required
+                </h3>
+                <p className="text-[#55697A] font-medium text-sm sm:text-base leading-relaxed max-w-md mx-auto">
+                  Please log in with an organizer account to submit an on-site request for your drivers.
+                </p>
+              </motion.div>
+            ) : isSubmitted ? (
               // Success Message State
               <motion.div
                 key="success"
@@ -288,50 +419,6 @@ export default function OnSiteRequestSection() {
                   {errors.businessName && <p className="text-red-500 text-xs mt-1.5 font-semibold">{errors.businessName}</p>}
                 </div>
 
-                {/* Account check radio field */}
-                <div>
-                  <label className="block text-[#0F2E4A] font-extrabold text-sm sm:text-[15px] mb-3">
-                    Do You have an account
-                  </label>
-                  <div className="flex items-center gap-6">
-                    <button
-                      type="button"
-                      onClick={() => handleRadioChange("yes")}
-                      className="flex items-center gap-2.5 group outline-none"
-                    >
-                      <div className={`w-5 h-5 rounded-full border ${formData.hasAccount === "yes"
-                          ? "border-[#00B2D6] bg-white flex items-center justify-center"
-                          : "border-slate-300 bg-white"
-                        } transition-all duration-200`}>
-                        {formData.hasAccount === "yes" && (
-                          <div className="w-2.5 h-2.5 rounded-full bg-[#00B2D6]" />
-                        )}
-                      </div>
-                      <span className="text-slate-600 font-bold text-sm sm:text-base group-hover:text-[#0F2E4A] transition-colors">
-                        Yes
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleRadioChange("no")}
-                      className="flex items-center gap-2.5 group outline-none"
-                    >
-                      <div className={`w-5 h-5 rounded-full border ${formData.hasAccount === "no"
-                          ? "border-[#00B2D6] bg-white flex items-center justify-center"
-                          : "border-slate-300 bg-white"
-                        } transition-all duration-200`}>
-                        {formData.hasAccount === "no" && (
-                          <div className="w-2.5 h-2.5 rounded-full bg-[#00B2D6]" />
-                        )}
-                      </div>
-                      <span className="text-slate-600 font-bold text-sm sm:text-base group-hover:text-[#0F2E4A] transition-colors">
-                        No
-                      </span>
-                    </button>
-                  </div>
-                </div>
-
                 {/* Medical Required field */}
                 <div>
                   <label htmlFor="medicalRequired" className="block text-[#0F2E4A] font-extrabold text-sm sm:text-[15px] mb-2">
@@ -342,19 +429,24 @@ export default function OnSiteRequestSection() {
                     name="medicalRequired"
                     value={formData.medicalRequired}
                     onChange={handleInputChange}
+                    disabled={isLoadingServices}
                     className={`w-full bg-white border ${errors.medicalRequired ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
-                      } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all appearance-none cursor-pointer`}
+                      } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all appearance-none cursor-pointer disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400`}
                   >
                     <option value="" disabled className="text-slate-400">
-                      Medical Required
+                      {isLoadingServices ? "Loading medical services..." : "Medical Required"}
                     </option>
-                    <option value="D4 Medicals">D4 Medicals (HGV/PCV)</option>
-                    <option value="Taxi Medicals">Taxi Medicals</option>
-                    <option value="Forklift Medicals">Forklift Medicals</option>
-                    <option value="Pre-Employment Medicals">Pre-Employment Medicals</option>
-                    <option value="Occupational Medicals">Occupational Medicals</option>
-                    <option value="Other Medicals">Other / Mixed Assessments</option>
+                    {services.map((service) => (
+                      <option key={service.id} value={service.id}>
+                        {service.title}
+                      </option>
+                    ))}
                   </select>
+                  {!isLoadingServices && services.length === 0 && (
+                    <p className="text-red-500 text-xs mt-1.5 font-semibold">
+                      No medical services are available right now.
+                    </p>
+                  )}
                   {errors.medicalRequired && <p className="text-red-500 text-xs mt-1.5 font-semibold">{errors.medicalRequired}</p>}
                 </div>
 
@@ -375,23 +467,6 @@ export default function OnSiteRequestSection() {
                       } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all`}
                   />
                   {errors.candidatesCount && <p className="text-red-500 text-xs mt-1.5 font-semibold">{errors.candidatesCount}</p>}
-                </div>
-
-                {/* Additional Services field */}
-                <div>
-                  <label htmlFor="additionalServices" className="block text-[#0F2E4A] font-extrabold text-sm sm:text-[15px] mb-2">
-                    Additional Services
-                  </label>
-                  <input
-                    type="text"
-                    id="additionalServices"
-                    name="additionalServices"
-                    value={formData.additionalServices}
-                    onChange={handleInputChange}
-                    placeholder="Additional Services"
-                    className={`w-full bg-white border ${errors.additionalServices ? "border-red-400 focus:border-[#00B2D6]/20" : "border-slate-200 focus:border-[#00B2D6] focus:ring-[#00B2D6]/10"
-                      } rounded-xl px-4 py-3 text-[#0F2E4A] font-medium placeholder-slate-400 text-sm sm:text-base outline-none transition-all`}
-                  />
                 </div>
 
                 {/* Button Next */}
@@ -680,6 +755,58 @@ export default function OnSiteRequestSection() {
         </div>
 
       </div>
+      <AnimatePresence>
+        {showAuthPrompt && (
+          <motion.div
+            key="onsite-auth-prompt"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F2E4A]/45 px-4 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="onsite-auth-title"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 12 }}
+              transition={{ duration: 0.2 }}
+              className="w-full max-w-[460px] rounded-3xl bg-white p-6 shadow-[0_20px_60px_rgba(15,46,74,0.18)] sm:p-8"
+            >
+              <h3 id="onsite-auth-title" className="mb-3 text-2xl font-extrabold text-[#0F2E4A]">
+                Continue as an organizer
+              </h3>
+              <p className="mb-6 text-sm font-medium leading-relaxed text-[#55697A] sm:text-base">
+                Your first step details are saved. Please log in or register as an organizer to continue to the site details step.
+              </p>
+              <div className="flex flex-col gap-3">
+                <button
+                  type="button"
+                  onClick={() => goToAuth("/login")}
+                  className="w-full rounded-full bg-[#00B2D6] py-3.5 text-sm font-bold text-white shadow-[0_4px_14px_rgba(0,178,214,0.15)] transition-all hover:bg-[#0092B3] sm:text-base"
+                >
+                  Log In
+                </button>
+                <button
+                  type="button"
+                  onClick={() => goToAuth("/register")}
+                  className="w-full rounded-full border border-[#00B2D6] py-3.5 text-sm font-bold text-[#00B2D6] transition-all hover:bg-[#00B2D6]/5 sm:text-base"
+                >
+                  Register
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAuthPrompt(false)}
+                  className="w-full rounded-full py-2.5 text-sm font-bold text-slate-500 transition-all hover:text-[#0F2E4A]"
+                >
+                  Continue Editing
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }

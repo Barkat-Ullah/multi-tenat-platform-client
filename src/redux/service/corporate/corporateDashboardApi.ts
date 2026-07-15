@@ -81,6 +81,15 @@ export interface CreateOrganizerRequestPayload {
   phone: string;
   location: string;
   totalDriver: string;
+  siteContact?: string;
+  siteContactPhone?: string;
+  siteAddress?: string;
+  siteCity?: string;
+  dataOfService?: string;
+  startTime?: string;
+  isSizeRequired?: boolean;
+  isOnsiteParking?: boolean;
+  specialText?: string;
 }
 
 export interface CreateOrganizerRequestResponse {
