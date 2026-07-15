@@ -250,7 +250,7 @@ export default function LocationsPageClient() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Enter Town & Postcode"
+                  placeholder="Enter Town"
                   className="w-full bg-transparent text-[#0F2E4A] placeholder-slate-400 focus:outline-none font-semibold text-sm sm:text-base"
                 />
                 {searchQuery && (

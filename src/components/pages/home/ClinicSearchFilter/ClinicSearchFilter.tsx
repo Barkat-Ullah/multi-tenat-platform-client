@@ -69,7 +69,7 @@ export default function ClinicSearchFilter() {
             <Search className="h-5 w-5 text-slate-400 group-focus-within:text-[#00B2D6] transition-colors flex-shrink-0" />
             <input
               type="text"
-              placeholder="Enter Town & Postcode"
+              placeholder="Enter Town"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-transparent border-none outline-none pl-3 text-[#0F2E4A] font-semibold placeholder-slate-400 text-sm md:text-base"

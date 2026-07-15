@@ -106,7 +106,7 @@ export default function Step2YourLocation({
               type="text"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Enter Town & Postcode"
+              placeholder="Enter Town"
               className="w-full rounded-full border border-slate-200 bg-white py-3.5 pl-12 pr-4 text-sm font-semibold text-[#0F2E4A] placeholder-slate-400 focus:border-[#00B2D6] focus:outline-none focus:ring-2 focus:ring-[#00B2D6]/40 sm:text-base"
             />
           </div>

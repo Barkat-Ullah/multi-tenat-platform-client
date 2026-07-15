@@ -143,49 +143,49 @@ export default function MedicalTypesSection() {
               ))}
             </div>
 
-            {otherServices.length > 0 && (
-              <div className="w-full">
-                <button
-                  type="button"
-                  onClick={() => setIsOpen(!isOpen)}
-                  className="group flex w-full items-start justify-between gap-3 rounded-2xl border border-[#00B2D6]/10 bg-white p-4 text-left shadow-sm transition-all duration-300 hover:border-[#00B2D6]/20 hover:shadow-md sm:items-center sm:p-5 md:p-6"
-                  aria-expanded={isOpen}
-                >
-                  <div className="flex min-w-0 items-start gap-3 sm:items-center sm:gap-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#EBFBFF] text-[#00B2D6] transition-transform duration-200 group-hover:scale-105">
-                      <ClipboardList size={22} />
-                    </div>
-                    <div className="min-w-0">
-                      <h4 className="text-base font-bold text-[#00B2D6] transition-colors group-hover:text-[#0092B3] sm:text-lg">
-                        Other Medicals
-                      </h4>
-                      <p className="mt-0.5 text-xs font-medium leading-relaxed text-[#55697A] sm:text-sm">
-                        View and book more medical services
-                      </p>
-                    </div>
+            <div className="w-full">
+              <button
+                type="button"
+                onClick={() => setIsOpen(!isOpen)}
+                className="group flex w-full items-start justify-between gap-3 rounded-2xl border border-[#00B2D6]/10 bg-white p-4 text-left shadow-sm transition-all duration-300 hover:border-[#00B2D6]/20 hover:shadow-md sm:items-center sm:p-5 md:p-6"
+                aria-expanded={isOpen}
+              >
+                <div className="flex min-w-0 items-start gap-3 sm:items-center sm:gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#EBFBFF] text-[#00B2D6] transition-transform duration-200 group-hover:scale-105">
+                    <ClipboardList size={22} />
                   </div>
-
-                  <div className="shrink-0 p-2 text-gray-400 transition-colors duration-200 hover:text-[#00B2D6]">
-                    {isOpen ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
+                  <div className="min-w-0">
+                    <h4 className="text-base font-bold text-[#00B2D6] transition-colors group-hover:text-[#0092B3] sm:text-lg">
+                      Other Medicals
+                    </h4>
+                    <p className="mt-0.5 text-xs font-medium leading-relaxed text-[#55697A] sm:text-sm">
+                      View more specialist medical services
+                    </p>
                   </div>
-                </button>
+                </div>
 
-                <AnimatePresence initial={false}>
-                  {isOpen && (
-                    <motion.div
-                      key="content"
-                      initial="collapsed"
-                      animate="open"
-                      exit="collapsed"
-                      variants={{
-                        open: { opacity: 1, height: "auto" },
-                        collapsed: { opacity: 0, height: 0 },
-                      }}
-                      transition={{ duration: 0.3, ease: "easeInOut" }}
-                      className="overflow-hidden"
-                    >
-                      <div className="mt-4 grid grid-cols-1 gap-4 rounded-2xl border border-[#00B2D6]/10 bg-gray-50/50 p-4 sm:p-6 md:grid-cols-2 lg:grid-cols-3">
-                        {otherServices.map((service) => (
+                <div className="shrink-0 p-2 text-gray-400 transition-colors duration-200 hover:text-[#00B2D6]">
+                  {isOpen ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
+                </div>
+              </button>
+
+              <AnimatePresence initial={false}>
+                {isOpen && (
+                  <motion.div
+                    key="content"
+                    initial="collapsed"
+                    animate="open"
+                    exit="collapsed"
+                    variants={{
+                      open: { opacity: 1, height: "auto" },
+                      collapsed: { opacity: 0, height: 0 },
+                    }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="overflow-hidden"
+                  >
+                    <div className="mt-4 grid grid-cols-1 gap-4 rounded-2xl border border-[#00B2D6]/10 bg-gray-50/50 p-4 sm:p-6 md:grid-cols-2 lg:grid-cols-3">
+                      {otherServices.length > 0 ? (
+                        otherServices.map((service) => (
                           <Link
                             key={service.id}
                             href={getServiceBookingHref(service)}
@@ -203,13 +203,19 @@ export default function MedicalTypesSection() {
                               <ArrowRight size={12} className="transition-transform duration-200 group-hover:translate-x-0.5" />
                             </span>
                           </Link>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            )}
+                        ))
+                      ) : (
+                        <div className="col-span-full rounded-xl border border-dashed border-slate-200 bg-white p-6 text-center">
+                          <p className="text-sm font-semibold text-slate-400">
+                            No other medical services are available right now.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </>
         )}
       </div>
