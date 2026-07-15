@@ -75,6 +75,13 @@ export interface ClinicPatientListResponse {
   data: ClinicPatientBooking[];
 }
 
+export interface UploadPatientRecordResponse {
+  success: boolean;
+  statusCode: number;
+  message: string;
+  data?: unknown;
+}
+
 const clinicPatientsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getClinicPatients: builder.query<
@@ -88,7 +95,21 @@ const clinicPatientsApi = baseApi.injectEndpoints({
       }),
       providesTags: ["bookings"],
     }),
+    uploadClinicPatientRecord: builder.mutation<
+      UploadPatientRecordResponse,
+      FormData
+    >({
+      query: (body) => ({
+        url: "/medical-records",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["medicalRecords", "bookings"],
+    }),
   }),
 });
 
-export const { useGetClinicPatientsQuery } = clinicPatientsApi;
+export const {
+  useGetClinicPatientsQuery,
+  useUploadClinicPatientRecordMutation,
+} = clinicPatientsApi;

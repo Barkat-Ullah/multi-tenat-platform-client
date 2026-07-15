@@ -1,14 +1,30 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, Upload, X } from "lucide-react";
+import { toast } from "sonner";
 import {
   type ClinicPatientBooking,
   useGetClinicPatientsQuery,
+  useUploadClinicPatientRecordMutation,
 } from "@/redux/service/clinic/clinicPatientsApi";
 
 const PAGE_LIMIT = 10;
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const ACCEPTED_FILE_TYPES = ["image/jpeg", "image/png", "application/pdf"];
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (typeof error !== "object" || error === null) return fallback;
+
+  const apiError = error as {
+    data?: { message?: string };
+    error?: string;
+    message?: string;
+  };
+
+  return apiError.data?.message || apiError.error || apiError.message || fallback;
+};
 
 const formatAppointmentTime = (scheduledAt?: string) => {
   if (!scheduledAt) return "N/A";
@@ -70,6 +86,9 @@ const PatientsTableSkeleton = () => (
         <td className="px-6 py-5 text-center">
           <div className="mx-auto h-6 w-20 rounded-full bg-slate-200" />
         </td>
+        <td className="px-6 py-5 text-center">
+          <div className="mx-auto h-7 w-24 rounded-full bg-slate-200" />
+        </td>
       </tr>
     ))}
   </tbody>
@@ -80,7 +99,11 @@ export default function ClinicPatientsView() {
   const [page, setPage] = useState(1);
   const [viewingPatient, setViewingPatient] =
     useState<ClinicPatientBooking | null>(null);
+  const [uploadingPatient, setUploadingPatient] =
+    useState<ClinicPatientBooking | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [mounted, setMounted] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     data: patientsResponse,
@@ -89,6 +112,8 @@ export default function ClinicPatientsView() {
     isError,
     refetch,
   } = useGetClinicPatientsQuery({ page, limit: PAGE_LIMIT });
+  const [uploadClinicPatientRecord, { isLoading: isUploading }] =
+    useUploadClinicPatientRecordMutation();
 
   useEffect(() => {
     setMounted(true);
@@ -117,6 +142,52 @@ export default function ClinicPatientsView() {
     { length: Math.min(5, totalPages) },
     (_, index) => firstVisiblePage + index,
   );
+
+  const closeUploadModal = () => {
+    setUploadingPatient(null);
+    setSelectedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!ACCEPTED_FILE_TYPES.includes(file.type)) {
+      toast.error("Only JPG, PNG, and PDF files are allowed.");
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error("File is too large. Maximum size is 5MB.");
+      event.target.value = "";
+      return;
+    }
+
+    setSelectedFile(file);
+  };
+
+  const handleUpload = async () => {
+    if (!uploadingPatient) return;
+
+    if (!selectedFile) {
+      toast.error("Please select a document file to upload.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("data", JSON.stringify({ bookingId: uploadingPatient.id }));
+    formData.append("files", selectedFile);
+
+    try {
+      const response = await uploadClinicPatientRecord(formData).unwrap();
+      toast.success(response.message || "Medical record uploaded successfully.");
+      closeUploadModal();
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, "Failed to upload medical record."));
+    }
+  };
 
   return (
     <div className="w-full space-y-6 p-4 md:p-6 lg:p-8">
@@ -151,26 +222,29 @@ export default function ClinicPatientsView() {
 
         <div className="overflow-hidden rounded-[24px] border border-slate-100/90 bg-white shadow-[0_4px_25px_rgba(0,0,0,0.01)]">
           <div className="w-full overflow-x-auto">
-            <table className="w-full min-w-[1000px] border-collapse text-left">
+            <table className="w-full min-w-[1180px] border-collapse text-left">
               <thead>
                 <tr className="border-b border-[#00B2D6] bg-white">
-                  <th className="w-[18%] px-6 py-4 font-poppins text-xs font-bold text-[#0F2E4A] sm:text-sm">
+                  <th className="w-[16%] px-6 py-4 font-poppins text-xs font-bold text-[#0F2E4A] sm:text-sm">
                     Patient Name
                   </th>
-                  <th className="w-[22%] px-6 py-4 font-poppins text-xs font-bold text-[#0F2E4A] sm:text-sm">
+                  <th className="w-[20%] px-6 py-4 font-poppins text-xs font-bold text-[#0F2E4A] sm:text-sm">
                     Patient Email
                   </th>
-                  <th className="w-[18%] px-6 py-4 font-poppins text-xs font-bold text-[#0F2E4A] sm:text-sm">
+                  <th className="w-[16%] px-6 py-4 font-poppins text-xs font-bold text-[#0F2E4A] sm:text-sm">
                     Service Type
                   </th>
-                  <th className="w-[20%] px-6 py-4 font-poppins text-xs font-bold text-[#0F2E4A] sm:text-sm">
+                  <th className="w-[18%] px-6 py-4 font-poppins text-xs font-bold text-[#0F2E4A] sm:text-sm">
                     Appointment Time
                   </th>
-                  <th className="w-[12%] px-6 py-4 font-poppins text-xs font-bold text-[#0F2E4A] sm:text-sm">
+                  <th className="w-[10%] px-6 py-4 font-poppins text-xs font-bold text-[#0F2E4A] sm:text-sm">
                     Location
                   </th>
                   <th className="w-[10%] px-6 py-4 text-center font-poppins text-xs font-bold text-[#0F2E4A] sm:text-sm">
                     Status
+                  </th>
+                  <th className="w-[10%] px-6 py-4 text-center font-poppins text-xs font-bold text-[#0F2E4A] sm:text-sm">
+                    Upload Document
                   </th>
                 </tr>
               </thead>
@@ -206,6 +280,19 @@ export default function ClinicPatientsView() {
                         >
                           {formatStatus(booking.status)}
                         </span>
+                      </td>
+                      <td className="px-6 py-3.5 text-center">
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setUploadingPatient(booking);
+                          }}
+                          className="inline-flex items-center justify-center gap-1.5 rounded-full bg-amber-50 px-4 py-1.5 text-[10px] font-bold text-amber-600 transition-colors hover:bg-amber-100 sm:text-xs"
+                        >
+                          <Upload size={13} />
+                          Upload
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -287,6 +374,80 @@ export default function ClinicPatientsView() {
           </div>
         )}
       </div>
+
+      {uploadingPatient &&
+        mounted &&
+        createPortal(
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+            <button
+              type="button"
+              aria-label="Close upload dialog"
+              className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
+              onClick={closeUploadModal}
+            />
+
+            <div className="relative z-10 w-full max-w-[560px] rounded-[32px] border border-slate-100 bg-white p-7 shadow-[0_20px_50px_rgba(0,0,0,0.1)] animate-in fade-in zoom-in-95 sm:p-9">
+              <div className="flex items-center justify-between pb-5">
+                <div>
+                  <h2 className="font-poppins text-xl font-extrabold text-[#0F2E4A] sm:text-2xl">
+                    Upload Document
+                  </h2>
+                  <p className="mt-1 text-xs font-semibold text-slate-400">
+                    {uploadingPatient.driver?.fullName || "Patient"} - {uploadingPatient.service?.title || "Medical record"}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeUploadModal}
+                  aria-label="Close upload dialog"
+                  title="Close"
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-red-50 text-red-500 transition-colors hover:bg-red-100"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex min-h-[220px] w-full flex-col items-center justify-center gap-4 rounded-3xl border border-dashed border-slate-300 bg-slate-50/40 p-8 text-center transition-colors hover:border-[#00B2D6] hover:bg-cyan-50/30"
+              >
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-cyan-50 text-[#00B2D6]">
+                  <Upload size={23} />
+                </span>
+                <span className="text-sm font-bold text-[#0F2E4A]">
+                  Choose Patient Document
+                </span>
+                {selectedFile ? (
+                  <span className="max-w-full truncate rounded-full bg-cyan-50 px-3.5 py-1 text-xs font-bold text-[#00B2D6]">
+                    {selectedFile.name}
+                  </span>
+                ) : (
+                  <span className="text-xs font-semibold text-slate-400">
+                    JPG, PNG or PDF, maximum 5MB
+                  </span>
+                )}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,application/pdf"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+
+              <button
+                type="button"
+                onClick={handleUpload}
+                disabled={isUploading}
+                className="mt-6 w-full rounded-full bg-[#00B2D6] py-3.5 text-sm font-bold text-white shadow-md shadow-cyan-100 transition-colors hover:bg-[#009cb9] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isUploading ? "Uploading..." : "Submit"}
+              </button>
+            </div>
+          </div>,
+          document.body,
+        )}
 
       {viewingPatient &&
         mounted &&
