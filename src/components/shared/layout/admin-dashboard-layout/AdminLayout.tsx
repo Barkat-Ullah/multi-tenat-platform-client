@@ -9,6 +9,7 @@ import {
   MapPin,
   FileText,
   Calendar,
+  CalendarPlus,
   Stethoscope,
   Building2,
   HeartPulse,
@@ -43,6 +44,11 @@ const navItems = [
     key: "/dashboard/admin/calender",
     label: <Link href="/dashboard/admin/calender">Calender</Link>,
     icon: <Calendar size={18} />,
+  },
+  {
+    key: "/dashboard/admin/schedule-slots",
+    label: <Link href="/dashboard/admin/schedule-slots">Schedule Slots</Link>,
+    icon: <CalendarPlus size={18} />,
   },
   {
     key: "/dashboard/admin/clinicians",

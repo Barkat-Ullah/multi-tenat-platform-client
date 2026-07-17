@@ -31,6 +31,10 @@ import {
 } from "@/utils/bookingResume";
 
 const DEFAULT_BOOKING_PRICE = 49.99;
+const BOOKING_ALLOWED_ROLES = new Set(["USER", "ADMIN", "SUPERADMIN"]);
+
+const canCompleteBooking = (role?: string | null) =>
+  Boolean(role && BOOKING_ALLOWED_ROLES.has(role));
 
 const getTypeSlug = (title: string) =>
   title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -427,9 +431,9 @@ function BookingFlowCoordinator() {
 
     setResumeDraftLoaded(true);
 
-    if (authUser.role !== "USER") {
+    if (!canCompleteBooking(authUser.role)) {
       clearBookingResume();
-      toast.error("Only drivers can complete a medical booking.");
+      toast.error("Only drivers, admins, and super admins can complete a medical booking.");
       return;
     }
 
@@ -588,8 +592,8 @@ function BookingFlowCoordinator() {
       return;
     }
 
-    if (authUser.role !== "USER") {
-      toast.error("Only drivers can complete a medical booking.");
+    if (!canCompleteBooking(authUser.role)) {
+      toast.error("Only drivers, admins, and super admins can complete a medical booking.");
       return;
     }
 
@@ -605,13 +609,13 @@ function BookingFlowCoordinator() {
     event.preventDefault();
 
     if (!accessToken || !authUser) {
-      toast.error("Please log in as a driver before booking.");
+      toast.error("Please log in before booking.");
       window.location.href = "/login?booking=1";
       return;
     }
 
-    if (authUser.role !== "USER") {
-      toast.error("Only drivers can complete a medical booking.");
+    if (!canCompleteBooking(authUser.role)) {
+      toast.error("Only drivers, admins, and super admins can complete a medical booking.");
       return;
     }
 
@@ -815,7 +819,7 @@ function BookingFlowCoordinator() {
               Continue Your Booking
             </h2>
             <p className="mx-auto mt-3 max-w-sm text-sm font-semibold leading-relaxed text-[#55697A]">
-              Log in or create a Driver account to continue with your selected appointment.
+              Log in to continue with your selected appointment, or create a Driver account.
             </p>
 
             <div className="mt-7 grid grid-cols-1 gap-3 sm:grid-cols-2">

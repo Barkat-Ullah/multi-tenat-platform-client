@@ -1,17 +1,20 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import dayjs, { type Dayjs } from "dayjs";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import {
   type ClinicAvailability,
   type ClinicTimeSlot,
-  type ClinicTimeSlotListResponse,
   useCreateClinicScheduleMutation,
   useGetClinicAvailabilityByMonthQuery,
   useGetClinicTimeSlotsQuery,
 } from "@/redux/service/clinic/clinicScheduleApi";
+import {
+  useGetBookingSlotsQuery,
+  useLazyGetBookingSlotsQuery,
+} from "@/redux/service/user/userBookingFlowApi";
 
 const daysOfWeek = ["S", "M", "T", "W", "T", "F", "S"];
 
@@ -57,39 +60,89 @@ const getErrorMessage = (error: unknown, fallback: string) => {
   return apiError.data?.message || apiError.error || apiError.message || fallback;
 };
 
-const getTimeSlots = (response?: ClinicTimeSlotListResponse): ClinicTimeSlot[] => {
-  const data = response?.data;
-  if (!data) return [];
+type UnknownRecord = Record<string, unknown>;
 
-  if (!Array.isArray(data)) {
-    return data.timeSlots || data.slots || [];
+const isRecord = (value: unknown): value is UnknownRecord =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const asString = (value: unknown) => (typeof value === "string" ? value : undefined);
+const asNumber = (value: unknown) => (typeof value === "number" ? value : undefined);
+const asBoolean = (value: unknown) => (typeof value === "boolean" ? value : undefined);
+
+const normalizeTimeSlot = (
+  value: UnknownRecord,
+  parent?: UnknownRecord,
+): ClinicTimeSlot | null => {
+  const startTime = asString(value.startTime);
+  const endTime = asString(value.endTime);
+  const date =
+    asString(value.date) ||
+    asString(value.slotDate) ||
+    asString(parent?.date) ||
+    asString(parent?.slotDate);
+
+  if (!startTime || !endTime) return null;
+
+  return {
+    id:
+      asString(value.id) ||
+      `${date || "slot"}-${startTime}-${endTime}`,
+    availabilityId:
+      asString(value.availabilityId) ||
+      asString(parent?.availabilityId) ||
+      asString(parent?.id),
+    clinicId: asString(value.clinicId) || asString(parent?.clinicId),
+    date,
+    duration: asNumber(value.duration),
+    startTime,
+    endTime,
+    capacity: asNumber(value.capacity),
+    booked: asNumber(value.booked),
+    isBooked: asBoolean(value.isBooked),
+    availabilityIsActive:
+      asBoolean(value.availabilityIsActive) ?? asBoolean(parent?.isActive),
+    status: asString(value.status) || "Active",
+  };
+};
+
+const collectTimeSlots = (
+  value: unknown,
+  parent?: UnknownRecord,
+): ClinicTimeSlot[] => {
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => collectTimeSlots(item, parent));
   }
 
-  return data.flatMap((item) => {
-    if ("slotDate" in item) {
-      const availability = item as ClinicAvailability;
-      return (availability.timeSlots || []).map((slot) => ({
-        ...slot,
-        availabilityId: slot.availabilityId || availability.id,
-        clinicId: slot.clinicId || availability.clinicId,
-        date: slot.date || availability.slotDate,
-        availabilityIsActive: availability.isActive,
-      }));
-    }
-    return item as ClinicTimeSlot;
-  });
+  if (!isRecord(value)) return [];
+
+  const normalizedSlot = normalizeTimeSlot(value, parent);
+  if (normalizedSlot) return [normalizedSlot];
+
+  const nestedParent =
+    "slotDate" in value || "date" in value || "clinicId" in value || "isActive" in value
+      ? value
+      : parent;
+
+  return ["timeSlots", "slots", "data", "items", "result"].flatMap((key) =>
+    collectTimeSlots(value[key], nestedParent),
+  );
 };
 
 const getAvailabilities = (
-  response?: ClinicTimeSlotListResponse,
+  response?: unknown,
 ): ClinicAvailability[] => {
-  const data = response?.data;
+  if (!isRecord(response)) return [];
+
+  const data = response.data;
   if (!Array.isArray(data)) return [];
 
   return data.filter(
     (item): item is ClinicAvailability => "slotDate" in item,
   );
 };
+
+const getTimeSlots = (response?: unknown): ClinicTimeSlot[] =>
+  collectTimeSlots(response);
 
 const timeToMinutes = (time: string) => {
   const [clock, meridiem] = time.trim().split(/\s+/);
@@ -102,7 +155,62 @@ const timeToMinutes = (time: string) => {
   return hours * 60 + minutes;
 };
 
-export default function CreateScheduleView() {
+const minutesToTime = (value: number) =>
+  `${String(Math.floor(value / 60)).padStart(2, "0")}:${String(value % 60).padStart(2, "0")}`;
+
+const buildGeneratedSlots = ({
+  clinicId,
+  date,
+  startTime,
+  endTime,
+}: {
+  clinicId?: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+}): ClinicTimeSlot[] => {
+  const start = timeToMinutes(startTime);
+  const end = timeToMinutes(endTime);
+  const duration = 30;
+
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return [];
+
+  const slots: ClinicTimeSlot[] = [];
+  for (let current = start; current < end; current += duration) {
+    const next = Math.min(current + duration, end);
+    const slotStart = minutesToTime(current);
+    const slotEnd = minutesToTime(next);
+
+    slots.push({
+      id: `created-${clinicId || "clinic"}-${date}-${slotStart}-${slotEnd}`,
+      clinicId,
+      date,
+      startTime: slotStart,
+      endTime: slotEnd,
+      duration: next - current,
+      booked: 0,
+      isBooked: false,
+      availabilityIsActive: true,
+      status: "Active",
+    });
+  }
+
+  return slots;
+};
+
+interface CreateScheduleViewProps {
+  clinicId?: string;
+  clinicName?: string;
+  serviceId?: string;
+  requiresClinicSelection?: boolean;
+}
+
+export default function CreateScheduleView({
+  clinicId,
+  clinicName,
+  serviceId,
+  requiresClinicSelection = false,
+}: CreateScheduleViewProps) {
   const today = dayjs().startOf("day");
   const [selectedDate, setSelectedDate] = useState<Dayjs>(() =>
     dayjs().startOf("day"),
@@ -112,27 +220,138 @@ export default function CreateScheduleView() {
   );
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("13:00");
+  const [createdSlots, setCreatedSlots] = useState<ClinicTimeSlot[]>([]);
+  const [monthDateSlots, setMonthDateSlots] = useState<ClinicTimeSlot[]>([]);
+  const [isFetchingMonthDateSlots, setIsFetchingMonthDateSlots] = useState(false);
 
   const month = visibleMonth.format("YYYY-MM");
+  const shouldSkipScheduleQueries = requiresClinicSelection && !clinicId;
   const {
     data: availabilityResponse,
     isFetching: isFetchingAvailability,
     isError: isAvailabilityError,
     refetch: refetchAvailability,
-  } = useGetClinicAvailabilityByMonthQuery(month);
+  } = useGetClinicAvailabilityByMonthQuery(
+    { month, clinicId },
+    { skip: shouldSkipScheduleQueries },
+  );
   const {
     data: timeSlotResponse,
     isLoading: isLoadingSlots,
     isFetching: isFetchingSlots,
     isError: isTimeSlotError,
     refetch: refetchTimeSlots,
-  } = useGetClinicTimeSlotsQuery();
+  } = useGetClinicTimeSlotsQuery(
+    clinicId ? { clinicId } : undefined,
+    { skip: shouldSkipScheduleQueries },
+  );
+  const selectedDateParam = selectedDate.format("YYYY-MM-DD");
+  const {
+    data: bookingSlotsResponse,
+    isFetching: isFetchingBookingSlots,
+  } = useGetBookingSlotsQuery(
+    {
+      serviceId: serviceId || "",
+      clinicId: clinicId || "",
+      date: selectedDateParam,
+    },
+    {
+      skip: !serviceId || !clinicId || shouldSkipScheduleQueries,
+    },
+  );
   const [createClinicSchedule, { isLoading: isCreatingSchedule }] =
     useCreateClinicScheduleMutation();
+  const [loadBookingSlotsForDate] = useLazyGetBookingSlotsQuery();
+
+  useEffect(() => {
+    setCreatedSlots([]);
+    setMonthDateSlots([]);
+  }, [clinicId]);
+
+  useEffect(() => {
+    if (!clinicId || !serviceId || shouldSkipScheduleQueries) {
+      setMonthDateSlots([]);
+      return;
+    }
+
+    let isCancelled = false;
+    const dates = Array.from({ length: visibleMonth.daysInMonth() }, (_, index) =>
+      visibleMonth.date(index + 1).format("YYYY-MM-DD"),
+    );
+
+    setIsFetchingMonthDateSlots(true);
+
+    Promise.all(
+      dates.map(async (date) => {
+        try {
+          const response = await loadBookingSlotsForDate(
+            { serviceId, clinicId, date },
+            true,
+          ).unwrap();
+
+          return response.data.slots.map((slot) => ({
+            ...slot,
+            clinicId,
+            date: response.data.date || date,
+          }));
+        } catch {
+          return [];
+        }
+      }),
+    )
+      .then((slotsByDate) => {
+        if (!isCancelled) {
+          setMonthDateSlots(slotsByDate.flat());
+        }
+      })
+      .finally(() => {
+        if (!isCancelled) {
+          setIsFetchingMonthDateSlots(false);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [
+    clinicId,
+    loadBookingSlotsForDate,
+    serviceId,
+    shouldSkipScheduleQueries,
+    visibleMonth,
+  ]);
 
   const monthSlots = useMemo(
-    () => getTimeSlots(timeSlotResponse),
-    [timeSlotResponse],
+    () => {
+      const fetchedSlots = getTimeSlots(timeSlotResponse);
+      const dateSpecificSlots =
+        bookingSlotsResponse?.data?.slots.map((slot) => ({
+          ...slot,
+          clinicId,
+          date: bookingSlotsResponse.data.date || selectedDateParam,
+        })) || [];
+      const slotMap = new Map<string, ClinicTimeSlot>();
+
+      [
+        ...fetchedSlots,
+        ...monthDateSlots,
+        ...dateSpecificSlots,
+        ...createdSlots,
+      ].forEach((slot) => {
+        const key = slot.id || `${slot.date}-${slot.startTime}-${slot.endTime}`;
+        slotMap.set(key, slot);
+      });
+
+      return Array.from(slotMap.values());
+    },
+    [
+      bookingSlotsResponse,
+      clinicId,
+      createdSlots,
+      monthDateSlots,
+      selectedDateParam,
+      timeSlotResponse,
+    ],
   );
   const clinicAvailabilities = useMemo(
     () => getAvailabilities(timeSlotResponse),
@@ -147,10 +366,19 @@ export default function CreateScheduleView() {
   );
   const selectedDateIsPast = selectedDate.isBefore(today, "day");
   const isCurrentMonth = visibleMonth.isSame(today, "month");
+  const selectedDateHasCreatedSlots = createdSlots.some(
+    (slot) => slot.date && dayjs(slot.date).isSame(selectedDate, "day"),
+  );
   const selectedDateHasSchedule =
-    Boolean(selectedAvailability) || selectedMonthAvailability?.isActive === true;
+    Boolean(selectedAvailability) ||
+    selectedMonthAvailability?.isActive === true ||
+    selectedDateHasCreatedSlots;
   const isScheduleDataLoading =
-    isLoadingSlots || isFetchingSlots || isFetchingAvailability;
+    isLoadingSlots ||
+    isFetchingSlots ||
+    isFetchingAvailability ||
+    isFetchingMonthDateSlots ||
+    isFetchingBookingSlots;
   const isScheduleDataUnavailable = isTimeSlotError || isAvailabilityError;
   const selectedDateSlots = useMemo(
     () =>
@@ -187,6 +415,11 @@ export default function CreateScheduleView() {
       return;
     }
 
+    if (requiresClinicSelection && !clinicId) {
+      toast.error("Please select a clinic before creating slots.");
+      return;
+    }
+
     if (isScheduleDataUnavailable) {
       toast.error("Schedule data is unavailable. Please try again.");
       return;
@@ -208,11 +441,34 @@ export default function CreateScheduleView() {
     }
 
     try {
+      const slotDate = selectedDate.format("YYYY-MM-DD");
       const response = await createClinicSchedule({
-        slotDate: selectedDate.format("YYYY-MM-DD"),
+        ...(clinicId ? { clinicId } : {}),
+        slotDate,
         startTime,
         endTime,
       }).unwrap();
+      const responseSlots = getTimeSlots(response);
+      const nextSlots =
+        responseSlots.length > 0
+          ? responseSlots
+          : buildGeneratedSlots({
+              clinicId,
+              date: slotDate,
+              startTime,
+              endTime,
+            });
+
+      setCreatedSlots((currentSlots) => {
+        const slotMap = new Map<string, ClinicTimeSlot>();
+        [...currentSlots, ...nextSlots].forEach((slot) => {
+          const key = slot.id || `${slot.date}-${slot.startTime}-${slot.endTime}`;
+          slotMap.set(key, slot);
+        });
+        return Array.from(slotMap.values());
+      });
+      void refetchTimeSlots();
+      void refetchAvailability();
       toast.success(response.message || "Schedule created successfully.");
     } catch (error: unknown) {
       toast.error(getErrorMessage(error, "Failed to create schedule."));
@@ -224,6 +480,11 @@ export default function CreateScheduleView() {
       <h1 className="font-poppins text-2xl font-extrabold tracking-tight text-[#0F2E4A] sm:text-3xl">
         Create Schedule
       </h1>
+      {clinicName && (
+        <p className="-mt-4 text-sm font-semibold text-slate-500">
+          Creating slots for <span className="text-[#0F2E4A]">{clinicName}</span>
+        </p>
+      )}
 
       <div className="w-full rounded-[32px] border border-slate-100 bg-white p-6 shadow-[0_4px_25px_rgba(0,0,0,0.015)] sm:p-8 md:p-10">
         <div className="grid grid-cols-1 items-start gap-12 lg:grid-cols-2">
@@ -285,7 +546,11 @@ export default function CreateScheduleView() {
                   const dayAvailability = monthAvailability.find(
                     (item) => item.date === date.format("YYYY-MM-DD"),
                   );
-                  const isAvailable = dayAvailability?.isActive === true;
+                  const hasSlotsForDate = monthSlots.some(
+                    (slot) => slot.date && dayjs(slot.date).isSame(date, "day"),
+                  );
+                  const isAvailable =
+                    dayAvailability?.isActive === true || hasSlotsForDate;
 
                   return (
                     <button
@@ -392,6 +657,7 @@ export default function CreateScheduleView() {
                 type="submit"
                 disabled={
                   isCreatingSchedule ||
+                  shouldSkipScheduleQueries ||
                   isScheduleDataLoading ||
                   isScheduleDataUnavailable ||
                   selectedDateIsPast ||
@@ -401,6 +667,8 @@ export default function CreateScheduleView() {
               >
                 {isCreatingSchedule
                   ? "Generating..."
+                  : shouldSkipScheduleQueries
+                    ? "Select Clinic"
                   : selectedDateIsPast
                     ? "Past Date"
                     : selectedDateHasSchedule

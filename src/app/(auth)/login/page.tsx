@@ -32,6 +32,11 @@ interface UserType {
   exp: number;
 }
 
+const BOOKING_ALLOWED_ROLES = new Set(["USER", "ADMIN", "SUPERADMIN"]);
+
+const canCompleteBooking = (role?: string | null) =>
+  Boolean(role && BOOKING_ALLOWED_ROLES.has(role));
+
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -114,7 +119,7 @@ const LoginPage = () => {
         }
 
         if (bookingReturn) {
-          if (decodedUser.role === "USER") {
+          if (canCompleteBooking(decodedUser.role)) {
             sessionStorage.removeItem(BOOKING_AUTH_RETURN_KEY);
             toast.success(res.message || "You have successfully logged in.");
             router.push(bookingReturn);
@@ -122,7 +127,7 @@ const LoginPage = () => {
           }
 
           clearBookingResume();
-          toast.error("Only drivers can complete a medical booking.");
+          toast.error("Only drivers, admins, and super admins can complete a medical booking.");
           router.push(getDashboardPathByRole(decodedUser.role));
           return;
         }

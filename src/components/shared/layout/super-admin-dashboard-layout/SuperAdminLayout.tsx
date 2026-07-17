@@ -9,6 +9,7 @@ import {
   MapPin,
   Stethoscope,
   Calendar,
+  CalendarPlus,
   Building,
   Heart,
   HelpCircle,
@@ -49,6 +50,12 @@ const navItems = [
     key: "/dashboard/super-admin/calendar",
     label: <Link href="/dashboard/super-admin/calendar">Calendar</Link>,
     icon: <Calendar size={18} />,
+    className: "hover:bg-gray-100",
+  },
+  {
+    key: "/dashboard/super-admin/schedule-slots",
+    label: <Link href="/dashboard/super-admin/schedule-slots">Schedule Slots</Link>,
+    icon: <CalendarPlus size={18} />,
     className: "hover:bg-gray-100",
   },
   {

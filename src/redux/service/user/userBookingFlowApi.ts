@@ -214,6 +214,7 @@ export const {
   useGetBookingServicesQuery,
   useGetBookingServiceDetailsQuery,
   useGetBookingSlotsQuery,
+  useLazyGetBookingSlotsQuery,
   useGetDriverBookingDetailsQuery,
   useCreateDriverBookingMutation,
 } = userBookingFlowApi;

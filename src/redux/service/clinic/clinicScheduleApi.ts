@@ -57,28 +57,42 @@ export interface ClinicMonthlyAvailabilityResponse {
 }
 
 export interface CreateClinicScheduleRequest {
+  clinicId?: string;
   slotDate: string;
   startTime: string;
   endTime: string;
+}
+
+export interface ClinicMonthlyAvailabilityParams {
+  month: string;
+  clinicId?: string;
+}
+
+export interface ClinicTimeSlotListParams {
+  clinicId?: string;
 }
 
 const clinicScheduleApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getClinicAvailabilityByMonth: builder.query<
       ClinicMonthlyAvailabilityResponse,
-      string
+      ClinicMonthlyAvailabilityParams
     >({
-      query: (month) => ({
+      query: ({ month, clinicId }) => ({
         url: "/timeslots/month",
         method: "GET",
-        params: { month },
+        params: { month, clinicId },
       }),
       providesTags: ["timeslots"],
     }),
-    getClinicTimeSlots: builder.query<ClinicTimeSlotListResponse, void>({
-      query: () => ({
+    getClinicTimeSlots: builder.query<
+      ClinicTimeSlotListResponse,
+      ClinicTimeSlotListParams | void
+    >({
+      query: (params) => ({
         url: "/timeslots/my",
         method: "GET",
+        params: params || undefined,
       }),
       providesTags: ["timeslots"],
     }),
