@@ -170,10 +170,14 @@ const userDashboardApi = baseApi.injectEndpoints({
       }),
       providesTags: ["bookings"],
     }),
-    cancelMyBooking: builder.mutation<{ success: boolean; message?: string }, string>({
-      query: (id) => ({
+    cancelMyBooking: builder.mutation<
+      { success: boolean; message?: string },
+      { id: string; reason: string }
+    >({
+      query: ({ id, reason }) => ({
         url: `/bookings/cancel/${id}`,
         method: "PATCH",
+        body: { reason },
       }),
       invalidatesTags: ["bookings", "dashboard"],
     }),
