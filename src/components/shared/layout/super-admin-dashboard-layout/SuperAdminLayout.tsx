@@ -16,7 +16,8 @@ import {
   CreditCard,
   ShieldCheck,
   FileText,
-  Settings
+  Settings,
+  LifeBuoy
 } from "lucide-react";
 
 const navItems = [
@@ -66,6 +67,12 @@ const navItems = [
     key: "/dashboard/super-admin/add-faq",
     label: <Link href="/dashboard/super-admin/add-faq">Add FAQ</Link>,
     icon: <HelpCircle size={18} />,
+    className: "hover:bg-gray-100",
+  },
+  {
+    key: "/dashboard/super-admin/support-center",
+    label: <Link href="/dashboard/super-admin/support-center">Support Center</Link>,
+    icon: <LifeBuoy size={18} />,
     className: "hover:bg-gray-100",
   },
   {

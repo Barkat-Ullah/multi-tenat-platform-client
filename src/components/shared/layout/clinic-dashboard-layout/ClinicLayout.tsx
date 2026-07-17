@@ -11,6 +11,7 @@ import {
   Building2,
   FileText,
   Folder,
+  LifeBuoy,
   Settings,
 } from "lucide-react";
 
@@ -49,6 +50,11 @@ const navItems = [
     key: "/dashboard/clinic/documents",
     label: <Link href="/dashboard/clinic/documents">Docoments</Link>,
     icon: <Folder size={18} />,
+  },
+  {
+    key: "/dashboard/clinic/support-center",
+    label: <Link href="/dashboard/clinic/support-center">Support Center</Link>,
+    icon: <LifeBuoy size={18} />,
   },
   {
     key: "/dashboard/clinic/settings",

@@ -9,6 +9,7 @@ import {
   Calendar,
   ClipboardPlus,
   FileText,
+  LifeBuoy,
   Settings,
 } from "lucide-react";
 
@@ -37,6 +38,11 @@ const navItems = [
     key: "/dashboard/orginizer/reports",
     label: <Link href="/dashboard/orginizer/reports">Reports</Link>,
     icon: <FileText size={18} />,
+  },
+  {
+    key: "/dashboard/orginizer/support-center",
+    label: <Link href="/dashboard/orginizer/support-center">Support Center</Link>,
+    icon: <LifeBuoy size={18} />,
   },
   {
     key: "/dashboard/orginizer/settings",

@@ -7,6 +7,7 @@ import {
   LayoutGrid,
   Calendar,
   FileText,
+  LifeBuoy,
   Settings,
 } from "lucide-react";
 
@@ -25,6 +26,11 @@ const navItems = [
     key: "/dashboard/user/reports",
     label: <Link href="/dashboard/user/reports">Reports</Link>,
     icon: <FileText size={18} />,
+  },
+  {
+    key: "/dashboard/user/support-center",
+    label: <Link href="/dashboard/user/support-center">Support Center</Link>,
+    icon: <LifeBuoy size={18} />,
   },
   {
     key: "/dashboard/user/setting",

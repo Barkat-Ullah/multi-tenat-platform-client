@@ -13,6 +13,7 @@ import {
   Building2,
   HeartPulse,
   HelpCircle,
+  LifeBuoy,
   ShieldCheck,
   Settings,
 } from "lucide-react";
@@ -62,6 +63,11 @@ const navItems = [
     key: "/dashboard/admin/add-faq",
     label: <Link href="/dashboard/admin/add-faq">Add FAQ</Link>,
     icon: <HelpCircle size={18} />,
+  },
+  {
+    key: "/dashboard/admin/support-center",
+    label: <Link href="/dashboard/admin/support-center">Support Center</Link>,
+    icon: <LifeBuoy size={18} />,
   },
   {
     key: "/dashboard/admin/privacy-policy",
