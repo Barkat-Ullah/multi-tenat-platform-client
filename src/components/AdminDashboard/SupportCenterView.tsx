@@ -228,7 +228,7 @@ const SupportCenterSkeleton = () => (
   <div className="space-y-5">
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {Array.from({ length: 3 }).map((_, index) => (
-        <div key={index} className="h-[120px] animate-pulse rounded-2xl bg-slate-100" />
+        <div key={index} className="h-[104px] animate-pulse rounded-2xl bg-slate-100 sm:h-[120px]" />
       ))}
     </div>
     <div className="grid grid-cols-1 gap-5 xl:grid-cols-[430px_minmax(0,1fr)]">
@@ -440,7 +440,7 @@ export default function SupportCenterView({ mode = "admin" }: SupportCenterViewP
     isTicketDetailsFetching && !selectedTicketResponse?.data && messages.length === 0;
 
   return (
-    <div className="w-full space-y-6 p-4 sm:p-6 lg:p-8">
+    <div className="w-full min-w-0 space-y-5 p-3 sm:space-y-6 sm:p-6 lg:p-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-extrabold tracking-tight text-[#0F2E4A] sm:text-3xl">
           Support Center
@@ -449,7 +449,7 @@ export default function SupportCenterView({ mode = "admin" }: SupportCenterViewP
           <button
             type="button"
             onClick={() => setIsCreateModalOpen(true)}
-            className="inline-flex items-center justify-center gap-3 rounded-full bg-[#00B2D6] px-7 py-3.5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(0,178,214,0.18)] transition-colors hover:bg-[#0092B3] sm:text-base"
+            className="inline-flex w-full items-center justify-center gap-3 rounded-full bg-[#00B2D6] px-6 py-3 text-sm font-bold text-white shadow-[0_8px_20px_rgba(0,178,214,0.18)] transition-colors hover:bg-[#0092B3] sm:w-auto sm:px-7 sm:py-3.5 sm:text-base"
           >
             New Ticket
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white text-[#00B2D6]">
@@ -478,30 +478,30 @@ export default function SupportCenterView({ mode = "admin" }: SupportCenterViewP
             {visibleStats.map((stat) => (
               <div
                 key={stat.label}
-                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_4px_20px_rgba(15,46,74,0.03)]"
+                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_4px_20px_rgba(15,46,74,0.03)] sm:p-5"
               >
                 <p className="text-sm font-semibold text-[#0F2E4A] sm:text-base">{stat.label}</p>
-                <p className="mt-8 text-3xl font-extrabold text-slate-950">{stat.value}</p>
+                <p className="mt-5 text-3xl font-extrabold text-slate-950 sm:mt-8">{stat.value}</p>
               </div>
             ))}
           </div>
 
-          <div className="grid grid-cols-1 gap-5 xl:grid-cols-[430px_minmax(0,1fr)]">
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_4px_20px_rgba(15,46,74,0.03)]">
+          <div className="grid min-w-0 grid-cols-1 gap-5 xl:grid-cols-[430px_minmax(0,1fr)]">
+            <div className="min-w-0 rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_4px_20px_rgba(15,46,74,0.03)] sm:p-4">
               <div className="mb-3 flex gap-3">
-                <div className="flex min-w-0 flex-1 items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4">
+                <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 sm:gap-3 sm:px-4">
                   <Search className="h-5 w-5 shrink-0 text-[#00B2D6]" />
                   <input
                     value={searchTerm}
                     onChange={(event) => setSearchTerm(event.target.value)}
                     placeholder="Search ticket"
-                    className="h-14 min-w-0 flex-1 bg-transparent text-base font-medium text-[#0F2E4A] outline-none placeholder:text-slate-500"
+                    className="h-12 min-w-0 flex-1 bg-transparent text-sm font-medium text-[#0F2E4A] outline-none placeholder:text-slate-500 sm:h-14 sm:text-base"
                   />
                 </div>
                 <button
                   type="button"
                   aria-label="Filter tickets"
-                  className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-400 transition-colors hover:text-[#00B2D6]"
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-400 transition-colors hover:text-[#00B2D6] sm:h-14 sm:w-14"
                 >
                   <SlidersHorizontal className="h-6 w-6" />
                 </button>
@@ -517,7 +517,7 @@ export default function SupportCenterView({ mode = "admin" }: SupportCenterViewP
                         key={getTicketId(ticket)}
                         type="button"
                         onClick={() => setSelectedTicketId(getTicketId(ticket))}
-                        className={`w-full rounded-xl border p-4 text-left transition-all ${
+                        className={`w-full rounded-xl border p-3 text-left transition-all sm:p-4 ${
                           selectedTicket && getTicketId(selectedTicket) === getTicketId(ticket)
                             ? "border-[#00B2D6] bg-[#F2FCFF]"
                             : "border-slate-200 bg-white hover:border-[#00B2D6]/50"
@@ -530,7 +530,7 @@ export default function SupportCenterView({ mode = "admin" }: SupportCenterViewP
                           </span>
                         </div>
                         <h2 className="line-clamp-2 text-sm font-extrabold text-slate-950">{getTicketSubject(ticket)}</h2>
-                        <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
+                        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                           <span className={`rounded px-2 py-1 font-bold ${priorityClasses[priority] || "bg-slate-100 text-slate-600"}`}>
                             {formatLabel(priority).toUpperCase()}
                           </span>
@@ -558,14 +558,14 @@ export default function SupportCenterView({ mode = "admin" }: SupportCenterViewP
               )}
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_4px_20px_rgba(15,46,74,0.03)] sm:p-5">
+            <div className="min-w-0 rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_4px_20px_rgba(15,46,74,0.03)] sm:p-5">
               {selectedTicket ? (
                 <>
                   <div className="border-b border-slate-200 pb-4">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-xs font-semibold text-blue-600">{getTicketCode(selectedTicket)}</p>
-                        <h2 className="mt-2 text-xl font-extrabold text-slate-950">{getTicketSubject(selectedTicket)}</h2>
+                        <h2 className="mt-2 break-words text-lg font-extrabold text-slate-950 sm:text-xl">{getTicketSubject(selectedTicket)}</h2>
                         <div className="mt-3 flex flex-wrap gap-2">
                           <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClasses[normalizeEnum(selectedTicket.status, "OPEN")] || "bg-slate-100 text-slate-600"}`}>
                             {formatLabel(selectedTicket.status || "OPEN")}
@@ -634,7 +634,7 @@ export default function SupportCenterView({ mode = "admin" }: SupportCenterViewP
                               </p>
                             )}
                             <div
-                              className={`max-w-[720px] rounded-xl px-4 py-3 text-sm font-medium leading-relaxed ${
+                              className={`max-w-[calc(100vw-3.5rem)] break-words rounded-xl px-3 py-2.5 text-sm font-medium leading-relaxed sm:max-w-[720px] sm:px-4 sm:py-3 ${
                                 alignRight
                                   ? "bg-[#0F172A] text-white"
                                   : "border border-slate-200 bg-white text-slate-700"
@@ -666,10 +666,10 @@ export default function SupportCenterView({ mode = "admin" }: SupportCenterViewP
                                           <img
                                             src={fileUrl}
                                             alt={fileName}
-                                            className="h-28 w-36 object-cover"
+                                            className="h-24 w-32 object-cover sm:h-28 sm:w-36"
                                           />
                                         ) : (
-                                          <span className="flex max-w-[220px] items-center gap-2 px-3 py-2">
+                                          <span className="flex max-w-[180px] items-center gap-2 px-3 py-2 sm:max-w-[220px]">
                                             <Paperclip className="h-3.5 w-3.5 shrink-0" />
                                             <span className="truncate">{fileName}</span>
                                           </span>
@@ -686,7 +686,7 @@ export default function SupportCenterView({ mode = "admin" }: SupportCenterViewP
                     </div>
                   )}
 
-                  <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-4">
                     <div className="flex items-start gap-3">
                       <input
                         ref={replyFileInputRef}
@@ -716,10 +716,10 @@ export default function SupportCenterView({ mode = "admin" }: SupportCenterViewP
                             {replyFiles.map((file) => (
                               <span
                                 key={`${file.name}-${file.size}`}
-                                className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600"
+                                className="inline-flex max-w-full items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600"
                               >
                                 <Paperclip className="h-3 w-3" />
-                                {file.name}
+                                <span className="truncate">{file.name}</span>
                               </span>
                             ))}
                           </div>
@@ -732,7 +732,7 @@ export default function SupportCenterView({ mode = "admin" }: SupportCenterViewP
                       type="button"
                       onClick={handleSendMessage}
                       disabled={!reply.trim() || isSendingMessage}
-                      className="inline-flex items-center gap-2 rounded-xl bg-slate-100 px-6 py-3 text-sm font-semibold text-slate-500 transition-colors hover:bg-[#00B2D6] hover:text-white disabled:cursor-not-allowed disabled:hover:bg-slate-100 disabled:hover:text-slate-500"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-100 px-6 py-3 text-sm font-semibold text-slate-500 transition-colors hover:bg-[#00B2D6] hover:text-white disabled:cursor-not-allowed disabled:hover:bg-slate-100 disabled:hover:text-slate-500 sm:w-auto"
                     >
                       {isSendingMessage && <Loader2 className="h-4 w-4 animate-spin" />}
                       Send reply
@@ -750,7 +750,7 @@ export default function SupportCenterView({ mode = "admin" }: SupportCenterViewP
       )}
 
       {isCreateModalOpen && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto p-3 sm:p-4">
           <button
             type="button"
             aria-label="Close new ticket modal"
@@ -759,7 +759,7 @@ export default function SupportCenterView({ mode = "admin" }: SupportCenterViewP
           />
           <form
             onSubmit={handleCreateTicket}
-            className="relative z-10 w-full max-w-[560px] rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_20px_50px_rgba(15,46,74,0.18)]"
+            className="relative z-10 my-4 max-h-[calc(100vh-2rem)] w-full max-w-[560px] overflow-y-auto rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_20px_50px_rgba(15,46,74,0.18)] sm:rounded-3xl sm:p-6"
           >
             <div className="mb-5 flex items-center justify-between">
               <h2 className="text-xl font-extrabold text-[#0F2E4A]">New Support Ticket</h2>
