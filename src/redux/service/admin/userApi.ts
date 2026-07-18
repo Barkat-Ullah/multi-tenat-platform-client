@@ -8,6 +8,44 @@ import type { BackendRole } from "@/utils/roles";
 // ===== USER LISTING =====
 
 // ===== USER LISTING =====
+export interface RoleSpecificData {
+  location?: {
+    id: string;
+    locationName: string;
+    totalBookings?: number;
+  } | null;
+  services?: Array<{
+    id: string;
+    title: string;
+  }>;
+  bookings?: Array<{
+    id: string;
+    scheduledAt: string;
+    status: string;
+    createdAt: string;
+    driver?: {
+      id: string;
+      fullName?: string | null;
+      email?: string | null;
+    } | null;
+    service?: {
+      id: string;
+      title?: string | null;
+    } | null;
+    timeSlot?: {
+      date?: string;
+      startTime?: string;
+      endTime?: string;
+    } | null;
+  }>;
+  timeSlots?: any[];
+  medicalRecords?: any[];
+  organizerRequests?: any[];
+  bookingCount?: number;
+  timeSlotCount?: number;
+  medicalRecordCount?: number;
+}
+
 export interface User {
   id: string;
   fullName?: string | null;
@@ -26,6 +64,19 @@ export interface User {
   joinDate?: string;
   createdAt?: string;
   updatedAt?: string;
+  dob?: string | null;
+  dateOfBirth?: string | null;
+  licenseNo?: string | null;
+  medicalStatus?: string | null;
+  medicalExpiry?: string | null;
+  clinicGmcNumber?: string | null;
+  isParking?: boolean;
+  offDays?: string[];
+  locationId?: string | null;
+  companyLocation?: string | null;
+  organizerId?: string | null;
+  createdById?: string | null;
+  roleSpecificData?: RoleSpecificData | null;
 }
 
 export interface UpdateClientInfoPayload {
@@ -84,9 +135,12 @@ const userApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["user"],
     }),
-    getSingleUser: builder.query({
+    getSingleUser: builder.query<
+      { success: boolean; statusCode: number; message: string; data: User },
+      string
+    >({
       query: (id) => ({
-        url: `/users/${id}`,
+        url: `/user/${id}`,
         method: "GET",
       }),
       providesTags: ["user"],

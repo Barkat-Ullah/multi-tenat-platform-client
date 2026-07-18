@@ -3,9 +3,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Dropdown } from "antd";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Check,
-  Eye,
   Mail,
   MoreVertical,
   Pencil,
@@ -96,12 +96,17 @@ const TableSkeleton = () => (
 );
 
 export default function SuperAdminManageUsersView() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const basePath = pathname?.startsWith("/dashboard/admin")
+    ? "/dashboard/admin"
+    : "/dashboard/super-admin";
+
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
   const [editTarget, setEditTarget] = useState<User | null>(null);
   const [sendEmailTarget, setSendEmailTarget] = useState<User | null>(null);
-  const [viewTarget, setViewTarget] = useState<User | null>(null);
   const [emailSubject, setEmailSubject] = useState("");
   const [emailMessage, setEmailMessage] = useState("");
   const [editForm, setEditForm] = useState({
@@ -192,13 +197,13 @@ export default function SuperAdminManageUsersView() {
   }, [editTarget]);
 
   useEffect(() => {
-    if (!deleteTarget && !editTarget && !sendEmailTarget && !viewTarget) return;
+    if (!deleteTarget && !editTarget && !sendEmailTarget) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = previousOverflow;
     };
-  }, [deleteTarget, editTarget, sendEmailTarget, viewTarget]);
+  }, [deleteTarget, editTarget, sendEmailTarget]);
 
   const handleToggleStatus = async (user: User) => {
     const nextStatus: UserStatus =
@@ -294,7 +299,7 @@ export default function SuperAdminManageUsersView() {
           View Details
         </span>
       ),
-      onClick: () => setViewTarget(user),
+      onClick: () => router.push(`${basePath}/manage-user/${user.id}`),
     },
     {
       key: "send-email",
@@ -801,141 +806,6 @@ export default function SuperAdminManageUsersView() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>,
-        document.body,
-      )}
-
-      {/* View User Details Modal */}
-      {viewTarget && mounted && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-          <button
-            type="button"
-            aria-label="Close view user details modal"
-            className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
-            onClick={() => setViewTarget(null)}
-          />
-          <div className="relative z-10 w-full max-w-[540px] max-h-[90vh] overflow-y-auto rounded-[28px] border border-slate-100 bg-white p-6 shadow-[0_20px_50px_rgba(0,0,0,0.12)] sm:p-8">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-              <h3 className="font-poppins text-xl font-extrabold text-[#0F2E4A]">
-                User Details
-              </h3>
-              <button
-                type="button"
-                onClick={() => setViewTarget(null)}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200"
-                aria-label="Close modal"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="mt-6 space-y-6">
-              {/* User Header Profile */}
-              <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4">
-                <div className="min-w-0 flex-1">
-                  <h4 className="truncate font-poppins text-base font-extrabold text-[#0F2E4A]">
-                    {getUserName(viewTarget)}
-                  </h4>
-                  <p className="truncate text-xs font-semibold text-slate-500">
-                    {viewTarget.email}
-                  </p>
-                  <div className="mt-2 flex items-center gap-2">
-                    <span className="inline-block rounded-full bg-[#E6FAFF] px-3 py-0.5 font-poppins text-xs font-bold text-[#00B2D6]">
-                      {viewTarget.role}
-                    </span>
-                    <span
-                      className={`inline-block rounded-full px-3 py-0.5 font-poppins text-xs font-bold ${
-                        normalizeStatus(viewTarget.status) === "Active"
-                          ? "bg-[#E8F8F5] text-[#10B981]"
-                          : "bg-[#FDF2F2] text-[#E53E3E]"
-                      }`}
-                    >
-                      {normalizeStatus(viewTarget.status)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Grid Information */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="rounded-xl border border-slate-100 bg-white p-3.5">
-                  <span className="block text-[11px] font-bold text-slate-400">
-                    Phone Number
-                  </span>
-                  <span className="mt-1 block text-xs font-semibold text-[#0F2E4A]">
-                    {viewTarget.phoneNumber || "N/A"}
-                  </span>
-                </div>
-
-                <div className="rounded-xl border border-slate-100 bg-white p-3.5">
-                  <span className="block text-[11px] font-bold text-slate-400">
-                    Join Date
-                  </span>
-                  <span className="mt-1 block text-xs font-semibold text-[#0F2E4A]">
-                    {formatDate(viewTarget.joinDate || viewTarget.createdAt)}
-                  </span>
-                </div>
-
-                <div className="rounded-xl border border-slate-100 bg-white p-3.5">
-                  <span className="block text-[11px] font-bold text-slate-400">
-                    City
-                  </span>
-                  <span className="mt-1 block text-xs font-semibold text-[#0F2E4A]">
-                    {viewTarget.city || "N/A"}
-                  </span>
-                </div>
-
-                <div className="rounded-xl border border-slate-100 bg-white p-3.5">
-                  <span className="block text-[11px] font-bold text-slate-400">
-                    Address
-                  </span>
-                  <span className="mt-1 block text-xs font-semibold text-[#0F2E4A]">
-                    {viewTarget.address || "N/A"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Description / Bio */}
-              {viewTarget.describe && (
-                <div className="rounded-xl border border-slate-100 bg-white p-4">
-                  <span className="block text-[11px] font-bold text-slate-400 mb-1">
-                    Description / Bio
-                  </span>
-                  <p className="text-xs font-semibold leading-relaxed text-slate-700 whitespace-pre-wrap">
-                    {viewTarget.describe}
-                  </p>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const target = viewTarget;
-                    setViewTarget(null);
-                    setEditTarget(target);
-                  }}
-                  className="rounded-full border border-slate-200 px-5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
-                >
-                  Edit Info
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const target = viewTarget;
-                    setViewTarget(null);
-                    setSendEmailTarget(target);
-                    setEmailSubject("");
-                    setEmailMessage("");
-                  }}
-                  className="flex items-center gap-1.5 rounded-full bg-[#00B2D6] px-5 py-2 text-xs font-bold text-white hover:bg-[#009cb9] transition-colors"
-                >
-                  <Mail size={14} /> Send Email
-                </button>
-              </div>
-            </div>
           </div>
         </div>,
         document.body,

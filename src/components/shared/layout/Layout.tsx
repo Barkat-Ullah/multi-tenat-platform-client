@@ -56,10 +56,23 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, menu }) => {
 
 
   const menuToRender = menu || [];
-  const selectedKey =
-    menuToRender.find((item) => item.key === pathname)?.key ||
-    menuToRender[0]?.key ||
-    "/dashboard/admin";
+  const selectedKey = useMemo(() => {
+    if (!menuToRender.length) return "";
+
+    const exactMatch = menuToRender.find((item) => item.key === pathname);
+    if (exactMatch) return exactMatch.key;
+
+    const nestedMatch = menuToRender.find((item) => {
+      if (item.key === "/dashboard/admin" || item.key === "/dashboard/super-admin") {
+        return false;
+      }
+      return pathname.startsWith(`${item.key}/`) || pathname.startsWith(`${item.key}?`);
+    });
+
+    if (nestedMatch) return nestedMatch.key;
+
+    return menuToRender[0]?.key || "/dashboard/admin";
+  }, [menuToRender, pathname]);
 
   const dispatch = useDispatch();
   const handleLogout = () => {

@@ -5,13 +5,14 @@ import Spinner from "../ui/Spinner";
 import { normalizeRole } from "@/utils/roles";
 
 const ViewDetails = () => {
-    const id = useParams().id
-    const { data, isLoading } = useGetSingleUserQuery(id)
+    const params = useParams();
+    const id = (Array.isArray(params?.id) ? params.id[0] : params?.id) || "";
+    const { data, isLoading } = useGetSingleUserQuery(id, { skip: !id });
 
-    if (isLoading) return <Spinner />
+    if (isLoading) return <Spinner />;
     
     // Extract user data from the response
-    const userData = data?.data || data?.user || data
+    const userData: any = (data as any)?.data || (data as any)?.user || data;
     const role = normalizeRole(userData?.role);
     
     if (!userData) return <div>No user data found</div>
