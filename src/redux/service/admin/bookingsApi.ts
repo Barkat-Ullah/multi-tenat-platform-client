@@ -105,6 +105,17 @@ export interface AdminBookingCalendarResponse {
   };
 }
 
+export interface CancelAdminBookingRequest {
+  id: string;
+  reason: string;
+}
+
+export interface CancelAdminBookingResponse {
+  success: boolean;
+  statusCode?: number;
+  message?: string;
+}
+
 export interface AdminBookingCalendarEvent {
   type: "booking" | "organizerRequest" | string;
   id: string;
@@ -173,8 +184,22 @@ const adminBookingsApi = baseApi.injectEndpoints({
       }),
       providesTags: ["bookings"],
     }),
+    cancelAdminBooking: builder.mutation<
+      CancelAdminBookingResponse,
+      CancelAdminBookingRequest
+    >({
+      query: ({ id, reason }) => ({
+        url: `/bookings/cancel/${id}`,
+        method: "PATCH",
+        body: { reason },
+      }),
+      invalidatesTags: ["bookings", "dashboard"],
+    }),
   }),
 });
 
-export const { useGetAdminBookingsQuery, useGetAdminBookingsCalendarQuery } =
-  adminBookingsApi;
+export const {
+  useGetAdminBookingsQuery,
+  useGetAdminBookingsCalendarQuery,
+  useCancelAdminBookingMutation,
+} = adminBookingsApi;

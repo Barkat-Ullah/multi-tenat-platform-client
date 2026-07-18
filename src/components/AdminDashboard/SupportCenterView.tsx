@@ -5,10 +5,14 @@ import { createPortal } from "react-dom";
 import { Loader2, Paperclip, Plus, Search, SlidersHorizontal, X } from "lucide-react";
 import { toast } from "sonner";
 import Pagination from "@/components/AdminDashboard/Pagination";
+import { useGetAllUsersQuery } from "@/redux/service/admin/userApi";
 import {
   SupportTicketAttachment,
   SupportTicket,
   SupportTicketAnalytics,
+  TicketCategory,
+  TicketPriority,
+  TicketStatus,
   SupportTicketMessage,
   useCreateSupportTicketMessageMutation,
   useCreateSupportTicketMutation,
@@ -25,23 +29,36 @@ interface SupportCenterViewProps {
 }
 
 const PAGE_LIMIT = 15;
+const USER_SELECT_LIMIT = 1000;
 
-const statusOptions = [
+const createEmptyTicket = () => ({
+  subject: "",
+  description: "",
+  category: "OTHER" as TicketCategory,
+  priority: "MEDIUM" as TicketPriority,
+  createdById: "",
+});
+
+const statusOptions: Array<{ value: TicketStatus; label: string }> = [
   { value: "OPEN", label: "Open" },
   { value: "IN_PROGRESS", label: "In Progress" },
+  { value: "PENDING_CUSTOMER", label: "Pending Customer" },
   { value: "RESOLVED", label: "Resolved" },
   { value: "CLOSED", label: "Closed" },
+  { value: "REOPENED", label: "Reopened" },
 ];
 
-const categoryOptions = [
-  { value: "OTHER", label: "Other" },
-  { value: "ACCOUNT_ISSUE", label: "Account Issue" },
+const categoryOptions: Array<{ value: TicketCategory; label: string }> = [
   { value: "BOOKING_ISSUE", label: "Booking Issue" },
-  { value: "MEDICAL_RECORD_ISSUE", label: "Medical Record Issue" },
   { value: "PAYMENT_ISSUE", label: "Payment Issue" },
+  { value: "MEDICAL_RECORD_ISSUE", label: "Medical Record Issue" },
+  { value: "ACCOUNT_ISSUE", label: "Account Issue" },
+  { value: "CLINIC_ISSUE", label: "Clinic Issue" },
+  { value: "TECHNICAL_ISSUE", label: "Technical Issue" },
+  { value: "OTHER", label: "Other" },
 ];
 
-const priorityOptions = [
+const priorityOptions: Array<{ value: TicketPriority; label: string }> = [
   { value: "LOW", label: "Low" },
   { value: "MEDIUM", label: "Medium" },
   { value: "HIGH", label: "High" },
@@ -51,8 +68,10 @@ const priorityOptions = [
 const statusClasses: Record<string, string> = {
   OPEN: "bg-blue-100 text-blue-700",
   IN_PROGRESS: "bg-amber-100 text-amber-700",
+  PENDING_CUSTOMER: "bg-purple-100 text-purple-700",
   RESOLVED: "bg-emerald-100 text-emerald-700",
   CLOSED: "bg-slate-100 text-slate-700",
+  REOPENED: "bg-cyan-100 text-cyan-700",
 };
 
 const priorityClasses: Record<string, string> = {
@@ -245,15 +264,11 @@ export default function SupportCenterView({ mode = "admin" }: SupportCenterViewP
   const [reply, setReply] = useState("");
   const [replyFiles, setReplyFiles] = useState<File[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [newTicket, setNewTicket] = useState({
-    subject: "",
-    description: "",
-    category: "OTHER",
-    priority: "MEDIUM",
-  });
+  const [newTicket, setNewTicket] = useState(createEmptyTicket);
 
   const replyFileInputRef = useRef<HTMLInputElement | null>(null);
   const isRequesterMode = mode === "requester";
+  const isAdminMode = !isRequesterMode;
 
   const {
     data: ticketsResponse,
@@ -273,6 +288,16 @@ export default function SupportCenterView({ mode = "admin" }: SupportCenterViewP
     pollingInterval: 60000,
     skipPollingIfUnfocused: true,
   });
+  const {
+    data: usersResponse,
+    isLoading: isUsersLoading,
+    isFetching: isUsersFetching,
+    isError: isUsersError,
+    refetch: refetchUsers,
+  } = useGetAllUsersQuery(
+    { page: 1, limit: USER_SELECT_LIMIT },
+    { skip: isRequesterMode || !isCreateModalOpen },
+  );
   const { data: selectedTicketResponse, isFetching: isTicketDetailsFetching } =
     useGetSupportTicketQuery(selectedTicketId, {
       skip: !selectedTicketId,
@@ -285,6 +310,7 @@ export default function SupportCenterView({ mode = "admin" }: SupportCenterViewP
   const [updateStatus, { isLoading: isUpdatingStatus }] = useUpdateSupportTicketStatusMutation();
 
   const tickets = ticketsResponse?.data ?? [];
+  const users = usersResponse?.data || [];
   const selectedTicket =
     selectedTicketResponse?.data ||
     tickets.find((ticket) => getTicketId(ticket) === selectedTicketId) ||
@@ -322,7 +348,7 @@ export default function SupportCenterView({ mode = "admin" }: SupportCenterViewP
   const analytics = analyticsResponse?.data;
   const analyticsTotal = getTotalFromDistribution(analytics);
   const pendingFallback = tickets.filter((ticket) =>
-    ["OPEN", "IN_PROGRESS"].includes(normalizeEnum(ticket.status)),
+    ["OPEN", "IN_PROGRESS", "PENDING_CUSTOMER", "REOPENED"].includes(normalizeEnum(ticket.status)),
   ).length;
   const resolvedFallback = tickets.filter((ticket) => normalizeEnum(ticket.status) === "RESOLVED").length;
 
@@ -339,7 +365,7 @@ export default function SupportCenterView({ mode = "admin" }: SupportCenterViewP
       label: "Pending Support Ticket",
       value: getStatusDistributionCount(
         analytics,
-        ["OPEN", "IN_PROGRESS"],
+        ["OPEN", "IN_PROGRESS", "PENDING_CUSTOMER", "REOPENED"],
         getAnalyticsCount(
           analytics,
           ["pending", "pendingTicket", "pendingSupportTicket", "open", "inProgress", "in_progress"],
@@ -388,17 +414,23 @@ export default function SupportCenterView({ mode = "admin" }: SupportCenterViewP
       return;
     }
 
+    if (isAdminMode && !newTicket.createdById) {
+      toast.error("Please select the user for this support ticket.");
+      return;
+    }
+
     try {
       const response = await createTicket({
         subject: newTicket.subject.trim(),
         description: newTicket.description.trim(),
         category: newTicket.category,
         priority: newTicket.priority,
+        ...(isAdminMode ? { createdById: newTicket.createdById } : {}),
       }).unwrap();
 
       toast.success(response?.message || "Support ticket created successfully.");
       setIsCreateModalOpen(false);
-      setNewTicket({ subject: "", description: "", category: "OTHER", priority: "MEDIUM" });
+      setNewTicket(createEmptyTicket());
       const createdTicketId = getTicketId(response.data);
       if (createdTicketId) setSelectedTicketId(createdTicketId);
     } catch (error: any) {
@@ -412,7 +444,7 @@ export default function SupportCenterView({ mode = "admin" }: SupportCenterViewP
     if (!id) return;
 
     try {
-      await updateStatus({ id, status }).unwrap();
+      await updateStatus({ id, status: status as TicketStatus }).unwrap();
       toast.success("Ticket status updated.");
     } catch (error: any) {
       toast.error(error?.data?.message || "Failed to update ticket status.");
@@ -445,18 +477,16 @@ export default function SupportCenterView({ mode = "admin" }: SupportCenterViewP
         <h1 className="text-2xl font-extrabold tracking-tight text-[#0F2E4A] sm:text-3xl">
           Support Center
         </h1>
-        {isRequesterMode && (
-          <button
-            type="button"
-            onClick={() => setIsCreateModalOpen(true)}
-            className="inline-flex w-full items-center justify-center gap-3 rounded-full bg-[#00B2D6] px-6 py-3 text-sm font-bold text-white shadow-[0_8px_20px_rgba(0,178,214,0.18)] transition-colors hover:bg-[#0092B3] sm:w-auto sm:px-7 sm:py-3.5 sm:text-base"
-          >
-            New Ticket
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white text-[#00B2D6]">
-              <Plus className="h-4 w-4" />
-            </span>
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={() => setIsCreateModalOpen(true)}
+          className="inline-flex w-full items-center justify-center gap-3 rounded-full bg-[#00B2D6] px-6 py-3 text-sm font-bold text-white shadow-[0_8px_20px_rgba(0,178,214,0.18)] transition-colors hover:bg-[#0092B3] sm:w-auto sm:px-7 sm:py-3.5 sm:text-base"
+        >
+          New Ticket
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white text-[#00B2D6]">
+            <Plus className="h-4 w-4" />
+          </span>
+        </button>
       </div>
 
       {showInitialSkeleton ? (
@@ -507,7 +537,7 @@ export default function SupportCenterView({ mode = "admin" }: SupportCenterViewP
                 </button>
               </div>
 
-              <div className="space-y-3">
+              <div className="max-h-[524px] space-y-3 overflow-y-auto pr-1">
                 {filteredTickets.length > 0 ? (
                   filteredTickets.map((ticket) => {
                     const status = normalizeEnum(ticket.status, "OPEN");
@@ -774,6 +804,46 @@ export default function SupportCenterView({ mode = "admin" }: SupportCenterViewP
             </div>
 
             <div className="space-y-4">
+              {isAdminMode && (
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-[#0F2E4A]">
+                    User
+                  </label>
+                  <select
+                    value={newTicket.createdById}
+                    onChange={(event) =>
+                      setNewTicket((prev) => ({
+                        ...prev,
+                        createdById: event.target.value,
+                      }))
+                    }
+                    disabled={isUsersLoading || isUsersFetching || isUsersError}
+                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-[#0F2E4A] outline-none focus:border-[#00B2D6] disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+                    required
+                  >
+                    <option value="">
+                      {isUsersLoading || isUsersFetching
+                        ? "Loading users..."
+                        : "Select user"}
+                    </option>
+                    {users.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.fullName || user.email} - {user.role}
+                      </option>
+                    ))}
+                  </select>
+                  {isUsersError && (
+                    <button
+                      type="button"
+                      onClick={() => refetchUsers()}
+                      className="mt-2 text-xs font-bold text-[#00B2D6] hover:text-[#0092B3]"
+                    >
+                      Retry loading users
+                    </button>
+                  )}
+                </div>
+              )}
+
               <div>
                 <label className="mb-2 block text-sm font-bold text-[#0F2E4A]">Subject</label>
                 <input
@@ -800,7 +870,12 @@ export default function SupportCenterView({ mode = "admin" }: SupportCenterViewP
                   <label className="mb-2 block text-sm font-bold text-[#0F2E4A]">Category</label>
                   <select
                     value={newTicket.category}
-                    onChange={(event) => setNewTicket((prev) => ({ ...prev, category: event.target.value }))}
+                    onChange={(event) =>
+                      setNewTicket((prev) => ({
+                        ...prev,
+                        category: event.target.value as TicketCategory,
+                      }))
+                    }
                     className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-[#0F2E4A] outline-none focus:border-[#00B2D6]"
                   >
                     {categoryOptions.map((category) => (
@@ -814,7 +889,12 @@ export default function SupportCenterView({ mode = "admin" }: SupportCenterViewP
                   <label className="mb-2 block text-sm font-bold text-[#0F2E4A]">Priority</label>
                   <select
                     value={newTicket.priority}
-                    onChange={(event) => setNewTicket((prev) => ({ ...prev, priority: event.target.value }))}
+                    onChange={(event) =>
+                      setNewTicket((prev) => ({
+                        ...prev,
+                        priority: event.target.value as TicketPriority,
+                      }))
+                    }
                     className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-[#0F2E4A] outline-none focus:border-[#00B2D6]"
                   >
                     {priorityOptions.map((priority) => (

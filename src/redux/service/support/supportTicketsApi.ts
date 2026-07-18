@@ -1,5 +1,24 @@
 import baseApi from "@/redux/api/baseApi";
 
+export type TicketStatus =
+  | "OPEN"
+  | "IN_PROGRESS"
+  | "PENDING_CUSTOMER"
+  | "RESOLVED"
+  | "CLOSED"
+  | "REOPENED";
+
+export type TicketPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+
+export type TicketCategory =
+  | "BOOKING_ISSUE"
+  | "PAYMENT_ISSUE"
+  | "MEDICAL_RECORD_ISSUE"
+  | "ACCOUNT_ISSUE"
+  | "CLINIC_ISSUE"
+  | "TECHNICAL_ISSUE"
+  | "OTHER";
+
 export interface SupportTicketListParams {
   page?: number;
   limit?: number;
@@ -54,9 +73,9 @@ export interface SupportTicket {
   subject?: string | null;
   title?: string | null;
   description?: string | null;
-  category?: string | null;
-  priority?: string | null;
-  status?: string | null;
+  category?: TicketCategory | string | null;
+  priority?: TicketPriority | string | null;
+  status?: TicketStatus | string | null;
   relatedBookingId?: string | null;
   createdById?: string | null;
   userId?: string | null;
@@ -140,14 +159,15 @@ export interface SupportTicketAnalyticsResponse {
 export interface CreateSupportTicketPayload {
   subject: string;
   description: string;
-  category?: string;
-  priority?: string;
+  category?: TicketCategory;
+  priority?: TicketPriority;
   relatedBookingId?: string;
+  createdById?: string;
 }
 
 export interface UpdateSupportTicketStatusPayload {
   id: string;
-  status: string;
+  status: TicketStatus;
   note?: string;
 }
 

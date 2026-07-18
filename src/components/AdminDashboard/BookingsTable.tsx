@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import { Eye } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { MoreVertical } from "lucide-react";
 import type { AdminBooking } from "@/redux/service/admin/bookingsApi";
 
 interface BookingsTableProps {
@@ -10,6 +10,7 @@ interface BookingsTableProps {
   isError: boolean;
   onRetry: () => void;
   onViewDetails: (booking: AdminBooking) => void;
+  onCancelBooking: (booking: AdminBooking) => void;
 }
 
 const formatDateTime = (value?: string) => {
@@ -41,6 +42,11 @@ const getStatusClassName = (status: string) => {
   }
 };
 
+const canCancelBooking = (status: string) => {
+  const normalized = status.trim().toUpperCase();
+  return normalized !== "COMPLETED" && normalized !== "CANCELLED" && normalized !== "CANCELED";
+};
+
 const BookingsTableSkeleton = () => (
   <tbody className="divide-y divide-slate-100/80" aria-label="Loading bookings">
     {Array.from({ length: 7 }, (_, rowIndex) => (
@@ -66,7 +72,27 @@ export default function BookingsTable({
   isError,
   onRetry,
   onViewDetails,
+  onCancelBooking,
 }: BookingsTableProps) {
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!openMenuId) return;
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node)
+      ) {
+        setOpenMenuId(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [openMenuId]);
+
   return (
     <div className="w-full overflow-hidden rounded-2xl border border-slate-100 bg-white">
       <div className="w-full overflow-x-auto">
@@ -102,15 +128,52 @@ export default function BookingsTable({
                     </span>
                   </td>
                   <td className="px-4 py-4 text-center">
-                    <button
-                      type="button"
-                      onClick={() => onViewDetails(booking)}
-                      className="mx-auto flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
-                      aria-label="View booking details"
-                      title="View details"
+                    <div
+                      ref={openMenuId === booking.id ? menuRef : null}
+                      className="relative inline-flex justify-center"
                     >
-                      <Eye size={18} />
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setOpenMenuId((current) =>
+                            current === booking.id ? null : booking.id,
+                          )
+                        }
+                        className="mx-auto flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                        aria-label="Open booking actions"
+                        title="Actions"
+                        aria-expanded={openMenuId === booking.id}
+                      >
+                        <MoreVertical size={18} />
+                      </button>
+
+                      {openMenuId === booking.id && (
+                        <div className="absolute right-0 top-9 z-20 w-44 overflow-hidden rounded-2xl border border-slate-100 bg-white py-1.5 text-left shadow-[0_18px_45px_rgba(15,46,74,0.14)]">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setOpenMenuId(null);
+                              onViewDetails(booking);
+                            }}
+                            className="block w-full px-4 py-2.5 text-left text-xs font-bold text-[#0F2E4A] transition-colors hover:bg-slate-50"
+                          >
+                            View Details
+                          </button>
+                          {canCancelBooking(booking.status) && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setOpenMenuId(null);
+                                onCancelBooking(booking);
+                              }}
+                              className="block w-full px-4 py-2.5 text-left text-xs font-bold text-red-600 transition-colors hover:bg-red-50"
+                            >
+                              Cancel Booking
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

@@ -1,12 +1,15 @@
 "use client";
 
 import React, { useState } from "react";
+import { toast } from "sonner";
+import CancelBookingModal from "@/components/AdminDashboard/CancelBookingModal";
 import BookingDetailsModal from "@/components/AdminDashboard/BookingDetailsModal";
 import BookingStatsCards from "@/components/AdminDashboard/BookingStatsCards";
 import BookingsTable from "@/components/AdminDashboard/BookingsTable";
 import Pagination from "@/components/AdminDashboard/Pagination";
 import {
   type AdminBooking,
+  useCancelAdminBookingMutation,
   useGetAdminBookingsQuery,
 } from "@/redux/service/admin/bookingsApi";
 
@@ -15,6 +18,9 @@ const PAGE_LIMIT = 10;
 export default function SuperAdminBookingsView() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedBooking, setSelectedBooking] = useState<AdminBooking | null>(
+    null,
+  );
+  const [bookingToCancel, setBookingToCancel] = useState<AdminBooking | null>(
     null,
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -26,6 +32,8 @@ export default function SuperAdminBookingsView() {
     isError,
     refetch,
   } = useGetAdminBookingsQuery({ page: currentPage, limit: PAGE_LIMIT });
+  const [cancelBooking, { isLoading: isCancellingBooking }] =
+    useCancelAdminBookingMutation();
 
   const bookings = bookingsResponse?.data || [];
   const totalPages = Math.max(
@@ -37,6 +45,32 @@ export default function SuperAdminBookingsView() {
   const handleViewDetails = (booking: AdminBooking) => {
     setSelectedBooking(booking);
     setIsModalOpen(true);
+  };
+
+  const handleCancelBooking = async (reason: string) => {
+    if (!bookingToCancel) return;
+
+    const trimmedReason = reason.trim();
+    if (!trimmedReason) {
+      toast.error("Please enter a cancellation reason.");
+      return;
+    }
+
+    try {
+      const response = await cancelBooking({
+        id: bookingToCancel.id,
+        reason: trimmedReason,
+      }).unwrap();
+
+      toast.success(response.message || "Booking cancelled successfully.");
+      setBookingToCancel(null);
+    } catch (error) {
+      const message =
+        (error as { data?: { message?: string }; message?: string })?.data?.message ||
+        (error as { message?: string })?.message ||
+        "Failed to cancel booking.";
+      toast.error(message);
+    }
   };
 
   return (
@@ -61,6 +95,7 @@ export default function SuperAdminBookingsView() {
           isError={isError}
           onRetry={refetch}
           onViewDetails={handleViewDetails}
+          onCancelBooking={setBookingToCancel}
         />
       </div>
 
@@ -79,6 +114,15 @@ export default function SuperAdminBookingsView() {
           setSelectedBooking(null);
         }}
         booking={selectedBooking}
+      />
+
+      <CancelBookingModal
+        booking={bookingToCancel}
+        isSubmitting={isCancellingBooking}
+        onClose={() => {
+          if (!isCancellingBooking) setBookingToCancel(null);
+        }}
+        onSubmit={handleCancelBooking}
       />
     </div>
   );
