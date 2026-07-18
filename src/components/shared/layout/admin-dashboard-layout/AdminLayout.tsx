@@ -15,6 +15,7 @@ import {
   HeartPulse,
   HelpCircle,
   LifeBuoy,
+  Users,
   ShieldCheck,
   Settings,
 } from "lucide-react";
@@ -74,6 +75,11 @@ const navItems = [
     key: "/dashboard/admin/support-center",
     label: <Link href="/dashboard/admin/support-center">Support Center</Link>,
     icon: <LifeBuoy size={18} />,
+  },
+  {
+    key: "/dashboard/admin/manage-user",
+    label: <Link href="/dashboard/admin/manage-user">Manage User</Link>,
+    icon: <Users size={18} />,
   },
   {
     key: "/dashboard/admin/privacy-policy",
