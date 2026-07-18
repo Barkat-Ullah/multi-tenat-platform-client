@@ -16,6 +16,7 @@ import {
   HelpCircle,
   LifeBuoy,
   Users,
+  Mail,
   ShieldCheck,
   Settings,
 } from "lucide-react";
@@ -80,6 +81,11 @@ const navItems = [
     key: "/dashboard/admin/manage-user",
     label: <Link href="/dashboard/admin/manage-user">Manage User</Link>,
     icon: <Users size={18} />,
+  },
+  {
+    key: "/dashboard/admin/send-email",
+    label: <Link href="/dashboard/admin/send-email">Send Email</Link>,
+    icon: <Mail size={18} />,
   },
   {
     key: "/dashboard/admin/privacy-policy",

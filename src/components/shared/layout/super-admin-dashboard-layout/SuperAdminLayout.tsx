@@ -14,6 +14,7 @@ import {
   Heart,
   HelpCircle,
   Users,
+  Mail,
   CreditCard,
   ShieldCheck,
   FileText,
@@ -86,6 +87,12 @@ const navItems = [
     key: "/dashboard/super-admin/manage-user",
     label: <Link href="/dashboard/super-admin/manage-user">Manage User</Link>,
     icon: <Users size={18} />,
+    className: "hover:bg-gray-100",
+  },
+  {
+    key: "/dashboard/super-admin/send-email",
+    label: <Link href="/dashboard/super-admin/send-email">Send Email</Link>,
+    icon: <Mail size={18} />,
     className: "hover:bg-gray-100",
   },
   {

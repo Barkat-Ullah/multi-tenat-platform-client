@@ -6,12 +6,17 @@ import baseApi from "@/redux/api/baseApi";
 import type { BackendRole } from "@/utils/roles";
 
 // ===== USER LISTING =====
+
+// ===== USER LISTING =====
 export interface User {
   id: string;
   fullName?: string | null;
   email: string;
   image?: string | null;
   phoneNumber?: string | null;
+  describe?: string | null;
+  city?: string | null;
+  address?: string | null;
   verified?: boolean;
   role: BackendRole;
   status: UserStatus;
@@ -21,6 +26,20 @@ export interface User {
   joinDate?: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface UpdateClientInfoPayload {
+  fullName?: string;
+  phoneNumber?: string;
+  describe?: string;
+  city?: string;
+  address?: string;
+  image?: string;
+}
+
+export interface SendManualEmailPayload {
+  subject: string;
+  message: string;
 }
 
 export interface UsersMeta {
@@ -82,6 +101,27 @@ const userApi = baseApi.injectEndpoints({
         invalidatesTags: ["user"],
       },
     ),
+    updateClientInfo: builder.mutation<
+      any,
+      { id: string; body: UpdateClientInfoPayload }
+    >({
+      query: ({ id, body }) => ({
+        url: `/user/update-client-info/${id}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["user"],
+    }),
+    sendManualEmail: builder.mutation<
+      any,
+      { id: string; body: SendManualEmailPayload }
+    >({
+      query: ({ id, body }) => ({
+        url: `/user/send-email/${id}`,
+        method: "POST",
+        body,
+      }),
+    }),
   }),
 });
 
@@ -90,4 +130,6 @@ export const {
   useGetSingleUserQuery,
   useUpdateUserStatusMutation,
   useDeleteUserMutation,
+  useUpdateClientInfoMutation,
+  useSendManualEmailMutation,
 } = userApi;
