@@ -25,6 +25,7 @@ export interface AdminBooking {
   scheduledAt: string;
   status: "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED" | string;
   createdAt?: string;
+  bookedBy?: string | null;
   driver?: {
     id: string;
     fullName: string;
@@ -160,6 +161,18 @@ export interface AdminBookingCalendarEvent {
   };
 }
 
+export interface RescheduleAdminBookingRequest {
+  id: string;
+  newTimeSlotId: string;
+  newScheduledAt: string;
+}
+
+export interface RescheduleAdminBookingResponse {
+  success: boolean;
+  statusCode?: number;
+  message?: string;
+}
+
 const adminBookingsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAdminBookings: builder.query<
@@ -195,6 +208,17 @@ const adminBookingsApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["bookings", "dashboard"],
     }),
+    rescheduleAdminBooking: builder.mutation<
+      RescheduleAdminBookingResponse,
+      RescheduleAdminBookingRequest
+    >({
+      query: ({ id, newTimeSlotId, newScheduledAt }) => ({
+        url: `/bookings/reschedule/${id}`,
+        method: "PATCH",
+        body: { newTimeSlotId, newScheduledAt },
+      }),
+      invalidatesTags: ["bookings", "dashboard", "timeslots"],
+    }),
   }),
 });
 
@@ -202,4 +226,5 @@ export const {
   useGetAdminBookingsQuery,
   useGetAdminBookingsCalendarQuery,
   useCancelAdminBookingMutation,
+  useRescheduleAdminBookingMutation,
 } = adminBookingsApi;

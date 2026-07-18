@@ -7,10 +7,12 @@ import BookingDetailsModal from "@/components/AdminDashboard/BookingDetailsModal
 import BookingStatsCards from "@/components/AdminDashboard/BookingStatsCards";
 import BookingsTable from "@/components/AdminDashboard/BookingsTable";
 import Pagination from "@/components/AdminDashboard/Pagination";
+import RescheduleBookingModal from "@/components/AdminDashboard/RescheduleBookingModal";
 import {
   type AdminBooking,
   useCancelAdminBookingMutation,
   useGetAdminBookingsQuery,
+  useRescheduleAdminBookingMutation,
 } from "@/redux/service/admin/bookingsApi";
 
 const PAGE_LIMIT = 10;
@@ -23,6 +25,8 @@ export default function SuperAdminBookingsView() {
   const [bookingToCancel, setBookingToCancel] = useState<AdminBooking | null>(
     null,
   );
+  const [bookingToReschedule, setBookingToReschedule] =
+    useState<AdminBooking | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const {
@@ -34,6 +38,8 @@ export default function SuperAdminBookingsView() {
   } = useGetAdminBookingsQuery({ page: currentPage, limit: PAGE_LIMIT });
   const [cancelBooking, { isLoading: isCancellingBooking }] =
     useCancelAdminBookingMutation();
+  const [rescheduleBooking, { isLoading: isReschedulingBooking }] =
+    useRescheduleAdminBookingMutation();
 
   const bookings = bookingsResponse?.data || [];
   const totalPages = Math.max(
@@ -73,6 +79,24 @@ export default function SuperAdminBookingsView() {
     }
   };
 
+  const handleRescheduleBooking = async (payload: {
+    id: string;
+    newTimeSlotId: string;
+    newScheduledAt: string;
+  }) => {
+    try {
+      const response = await rescheduleBooking(payload).unwrap();
+      toast.success(response.message || "Appointment rescheduled successfully.");
+      setBookingToReschedule(null);
+    } catch (error) {
+      const message =
+        (error as { data?: { message?: string }; message?: string })?.data?.message ||
+        (error as { message?: string })?.message ||
+        "Failed to reschedule booking.";
+      toast.error(message);
+    }
+  };
+
   return (
     <div className="w-full space-y-8 p-4 md:p-6 lg:p-8">
       <h1 className="font-poppins text-2xl font-extrabold tracking-tight text-[#0F2E4A] sm:text-3xl">
@@ -96,6 +120,7 @@ export default function SuperAdminBookingsView() {
           onRetry={refetch}
           onViewDetails={handleViewDetails}
           onCancelBooking={setBookingToCancel}
+          onRescheduleBooking={setBookingToReschedule}
         />
       </div>
 
@@ -123,6 +148,15 @@ export default function SuperAdminBookingsView() {
           if (!isCancellingBooking) setBookingToCancel(null);
         }}
         onSubmit={handleCancelBooking}
+      />
+
+      <RescheduleBookingModal
+        booking={bookingToReschedule}
+        isSubmitting={isReschedulingBooking}
+        onClose={() => {
+          if (!isReschedulingBooking) setBookingToReschedule(null);
+        }}
+        onSubmit={handleRescheduleBooking}
       />
     </div>
   );

@@ -11,21 +11,46 @@ interface BookingsTableProps {
   onRetry: () => void;
   onViewDetails: (booking: AdminBooking) => void;
   onCancelBooking: (booking: AdminBooking) => void;
+  onRescheduleBooking?: (booking: AdminBooking) => void;
 }
 
-const formatDateTime = (value?: string) => {
-  if (!value) return "N/A";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "N/A";
+const format12HourTime = (time24?: string) => {
+  if (!time24) return "";
+  const [hStr, mStr] = time24.split(":");
+  const h = parseInt(hStr, 10);
+  if (isNaN(h)) return time24;
+  const m = mStr || "00";
+  const period = h >= 12 ? "pm" : "am";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${m} ${period}`;
+};
 
-  return new Intl.DateTimeFormat("en-GB", {
+const formatBookingAppointment = (booking: AdminBooking) => {
+  const dateValue = booking.timeSlot?.date || booking.scheduledAt;
+  if (!dateValue) return "N/A";
+
+  const dateObj = new Date(dateValue);
+  if (Number.isNaN(dateObj.getTime())) return "N/A";
+
+  const dateFormatted = new Intl.DateTimeFormat("en-GB", {
     day: "2-digit",
     month: "short",
     year: "numeric",
+    timeZone: "UTC",
+  }).format(dateObj);
+
+  if (booking.timeSlot?.startTime) {
+    return `${dateFormatted}, ${format12HourTime(booking.timeSlot.startTime)}`;
+  }
+
+  const timeFormatted = new Intl.DateTimeFormat("en-GB", {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
-  }).format(date);
+    timeZone: "UTC",
+  }).format(dateObj);
+
+  return `${dateFormatted}, ${timeFormatted}`;
 };
 
 const getStatusClassName = (status: string) => {
@@ -73,6 +98,7 @@ export default function BookingsTable({
   onRetry,
   onViewDetails,
   onCancelBooking,
+  onRescheduleBooking,
 }: BookingsTableProps) {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -94,7 +120,7 @@ export default function BookingsTable({
   }, [openMenuId]);
 
   return (
-    <div className="w-full overflow-hidden rounded-2xl border border-slate-100 bg-white">
+    <div className="w-full overflow-hidden rounded-2xl border border-[#00B2D6]/20 bg-white">
       <div className="w-full overflow-x-auto">
         <table className="w-full min-w-[1150px] border-collapse text-left">
           <thead>
@@ -121,7 +147,7 @@ export default function BookingsTable({
                   <td className="px-4 py-4 text-xs font-semibold text-slate-500 sm:text-sm">{booking.service?.title || "N/A"}</td>
                   <td className="px-4 py-4 text-xs font-medium text-slate-400 sm:text-sm">{booking.clinic?.fullName || "N/A"}</td>
                   <td className="px-4 py-4 text-xs font-medium text-slate-400 sm:text-sm">{booking.clinic?.location?.locationName || "N/A"}</td>
-                  <td className="px-4 py-4 text-xs font-semibold text-slate-400 sm:text-sm">{formatDateTime(booking.scheduledAt)}</td>
+                  <td className="px-4 py-4 text-xs font-semibold text-slate-400 sm:text-sm">{formatBookingAppointment(booking)}</td>
                   <td className="px-4 py-4 text-center">
                     <span className={`inline-flex rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wide ${getStatusClassName(booking.status)}`}>
                       {booking.status}
@@ -148,7 +174,7 @@ export default function BookingsTable({
                       </button>
 
                       {openMenuId === booking.id && (
-                        <div className="absolute right-0 top-9 z-20 w-44 overflow-hidden rounded-2xl border border-slate-100 bg-white py-1.5 text-left shadow-[0_18px_45px_rgba(15,46,74,0.14)]">
+                        <div className="absolute right-0 top-9 z-20 w-48 overflow-hidden rounded-2xl border border-slate-100 bg-white py-1.5 text-left shadow-[0_18px_45px_rgba(15,46,74,0.14)]">
                           <button
                             type="button"
                             onClick={() => {
@@ -159,6 +185,18 @@ export default function BookingsTable({
                           >
                             View Details
                           </button>
+                          {canCancelBooking(booking.status) && onRescheduleBooking && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setOpenMenuId(null);
+                                onRescheduleBooking(booking);
+                              }}
+                              className="block w-full px-4 py-2.5 text-left text-xs font-bold text-[#00B2D6] transition-colors hover:bg-[#E6FAFF]"
+                            >
+                              Reschedule Appointment
+                            </button>
+                          )}
                           {canCancelBooking(booking.status) && (
                             <button
                               type="button"

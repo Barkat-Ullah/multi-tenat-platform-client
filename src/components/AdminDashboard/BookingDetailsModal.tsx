@@ -11,20 +11,44 @@ interface BookingDetailsModalProps {
   booking: AdminBooking | null;
 }
 
-const formatDateTime = (value?: string) => {
-  if (!value) return "N/A";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "N/A";
+const format12HourTime = (time24?: string) => {
+  if (!time24) return "";
+  const [hStr, mStr] = time24.split(":");
+  const h = parseInt(hStr, 10);
+  if (isNaN(h)) return time24;
+  const m = mStr || "00";
+  const period = h >= 12 ? "pm" : "am";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${m} ${period}`;
+};
 
-  return new Intl.DateTimeFormat("en-GB", {
+const formatBookingAppointment = (booking: AdminBooking) => {
+  const dateValue = booking.timeSlot?.date || booking.scheduledAt;
+  if (!dateValue) return "N/A";
+
+  const dateObj = new Date(dateValue);
+  if (Number.isNaN(dateObj.getTime())) return "N/A";
+
+  const dateFormatted = new Intl.DateTimeFormat("en-GB", {
     weekday: "short",
     day: "2-digit",
     month: "short",
     year: "numeric",
+    timeZone: "UTC",
+  }).format(dateObj);
+
+  if (booking.timeSlot?.startTime) {
+    return `${dateFormatted}, ${format12HourTime(booking.timeSlot.startTime)}`;
+  }
+
+  const timeFormatted = new Intl.DateTimeFormat("en-GB", {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
-  }).format(date);
+    timeZone: "UTC",
+  }).format(dateObj);
+
+  return `${dateFormatted}, ${timeFormatted}`;
 };
 
 const formatAmount = (amount?: number) =>
@@ -97,7 +121,7 @@ export default function BookingDetailsModal({
           <Detail label="Service" value={booking.service?.title} />
           <Detail label="Clinic" value={booking.clinic?.fullName} />
           <Detail label="Location" value={booking.clinic?.location?.locationName} />
-          <Detail label="Appointment" value={formatDateTime(booking.scheduledAt)} />
+          <Detail label="Appointment" value={formatBookingAppointment(booking)} />
           <Detail
             label="Time Slot"
             value={
@@ -107,6 +131,7 @@ export default function BookingDetailsModal({
             }
           />
           <Detail label="Booking Status" value={booking.status} />
+          <Detail label="Booked By" value={booking.bookedBy} />
           <Detail label="Payment Method" value={booking.method?.type} />
           <Detail label="Payment Status" value={booking.payment?.status} />
           <Detail label="Amount" value={formatAmount(booking.payment?.amount)} />
