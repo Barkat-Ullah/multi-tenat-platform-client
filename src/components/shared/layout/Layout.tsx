@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Layout, Menu, Spin, Dropdown } from "antd";
 import Link from "next/link";
 import Image from "next/image";
-import { LogOut, Bell } from "lucide-react";
+import { LogOut, Bell, Menu as LucideMenu } from "lucide-react";
 import Cookies from "js-cookie";
 import logo from "@/assets/logo/logo.png";
 import { logout } from "@/redux/features/auth";
@@ -152,6 +152,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, menu }) => {
       <Sider
         width={240}
         collapsedWidth={0}
+        trigger={null}
         breakpoint="lg"
         collapsed={false}
         theme="light"
@@ -205,19 +206,21 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, menu }) => {
           style={{ padding: "0px 20px", height: "64px", lineHeight: "56px" }}
           className="bg-white shadow-md flex items-center justify-between z-10"
         >
-          <h2 className="text-lg md:text-xl font-semibold text-gray-800 truncate max-w-[150px] sm:max-w-none">
-            <span className="hidden xs:inline">Welcome Back, </span>
-            <span className="xs:hidden">Hi, </span>
-            {displayName}!
-          </h2>
+          <div className="flex items-center gap-2.5 min-w-0">
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="lg:hidden p-1.5 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors focus:outline-none flex items-center justify-center"
+              aria-label="Toggle menu"
+            >
+              <LucideMenu size={22} />
+            </button>
 
-          <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="lg:hidden block text-2xl text-gray-700 focus:outline-none"
-            aria-label="Toggle menu"
-          >
-            ☰
-          </button>
+            <h2 className="text-lg md:text-xl font-semibold text-gray-800 truncate max-w-[160px] sm:max-w-none">
+              <span className="hidden xs:inline">Welcome Back, </span>
+              <span className="xs:hidden">Hi, </span>
+              {displayName}!
+            </h2>
+          </div>
 
           {/* Right Action Bar containing Bell Notification & Profile Dropdown */}
           <div className="flex items-center gap-2 lg:gap-4">
@@ -319,6 +322,9 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, menu }) => {
           }
           .ant-dropdown-menu-item-danger {
             color: #ff4d4f !important;
+          }
+          .ant-layout-sider-zero-width-trigger {
+            display: none !important;
           }
         `}</style>
       </Layout>

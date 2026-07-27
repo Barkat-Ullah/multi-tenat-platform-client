@@ -21,6 +21,7 @@ import {
   Pencil,
   Trash2,
   Check,
+  ArrowLeft,
 } from "lucide-react";
 
 interface MessagingViewProps {
@@ -297,14 +298,14 @@ export default function MessagingView({ role }: MessagingViewProps) {
   return (
     <div suppressHydrationWarning className="flex flex-col h-[calc(100vh-120px)] max-h-[850px] bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
       {/* Top Header / Connection Banner */}
-      <div className="flex items-center justify-between px-6 py-3 border-b border-gray-200 bg-gray-50">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-[#E6FAFF] text-[#00B2D6] rounded-lg">
-            <MessageSquare size={20} />
+      <div className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3 border-b border-gray-200 bg-gray-50">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 pr-2">
+          <div className="p-1.5 sm:p-2 bg-[#E6FAFF] text-[#00B2D6] rounded-lg shrink-0">
+            <MessageSquare size={18} className="sm:w-5 sm:h-5" />
           </div>
-          <div>
-            <h1 className="text-lg font-semibold text-gray-900">Messages & Support Chat</h1>
-            <p className="text-xs text-gray-500">
+          <div className="min-w-0">
+            <h1 className="text-sm sm:text-lg font-semibold text-gray-900 truncate leading-tight">Messages & Support Chat</h1>
+            <p className="hidden sm:block text-xs text-gray-500">
               {isAdminOrSuperAdmin
                 ? "Send direct messages to users, drivers, clinics, or organizers"
                 : "View and reply to incoming messages"}
@@ -313,15 +314,15 @@ export default function MessagingView({ role }: MessagingViewProps) {
         </div>
 
         {/* Connection Indicator */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {isConnected ? (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
-              <Wifi size={14} className="text-green-600" />
+            <span className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+              <Wifi size={13} className="text-green-600 sm:w-3.5 sm:h-3.5" />
               Connected
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
-              <WifiOff size={14} className="text-amber-600" />
+            <span className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+              <WifiOff size={13} className="text-amber-600 sm:w-3.5 sm:h-3.5" />
               Connecting...
             </span>
           )}
@@ -331,7 +332,7 @@ export default function MessagingView({ role }: MessagingViewProps) {
       {/* Main Container */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left Sidebar - Conversation List */}
-        <div className="w-80 md:w-96 border-r border-gray-200 flex flex-col bg-white">
+        <div className={`${selectedReceiverId ? "hidden md:flex" : "flex"} w-full md:w-80 lg:w-96 border-r border-gray-200 flex-col bg-white`}>
           {/* Action Header & Search */}
           <div className="p-4 border-b border-gray-200 space-y-3">
             {isAdminOrSuperAdmin && (
@@ -456,12 +457,21 @@ export default function MessagingView({ role }: MessagingViewProps) {
         </div>
 
         {/* Right Active Chat Pane */}
-        <div className="flex-1 flex flex-col bg-slate-50/50">
+        <div className={`${selectedReceiverId ? "flex" : "hidden md:flex"} flex-1 flex-col bg-slate-50/50`}>
           {selectedReceiverId ? (
             <>
               {/* Active Receiver Header */}
               <div className="p-4 bg-white border-b border-gray-200 flex items-center justify-between shadow-xs">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedReceiverId(null)}
+                    className="md:hidden p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="Back to conversations"
+                  >
+                    <ArrowLeft size={18} />
+                  </button>
+
                   <div className="relative">
                     {recipientUser?.image ? (
                       <img
