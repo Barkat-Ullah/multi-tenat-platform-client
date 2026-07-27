@@ -18,6 +18,9 @@ import {
   Wifi,
   WifiOff,
   User as UserIcon,
+  Pencil,
+  Trash2,
+  Check,
 } from "lucide-react";
 
 interface MessagingViewProps {
@@ -41,6 +44,16 @@ function getDisplayName(userObj: any): string {
   if (!userObj) return "User";
   if (typeof userObj === "string") return userObj;
   return userObj.fullName || userObj.name || userObj.email || "User";
+}
+
+function getRoleBadgeStyle(role?: string): string {
+  if (!role) return "bg-gray-100 text-gray-600 border-gray-200";
+  const r = role.toUpperCase();
+  if (r.includes("ADMIN")) return "bg-purple-50 text-purple-700 border-purple-200/80";
+  if (r.includes("DRIVER")) return "bg-amber-50 text-amber-700 border-amber-200/80";
+  if (r.includes("CLINIC")) return "bg-emerald-50 text-emerald-700 border-emerald-200/80";
+  if (r.includes("ORGANIZER")) return "bg-indigo-50 text-indigo-700 border-indigo-200/80";
+  return "bg-blue-50 text-blue-700 border-blue-200/80";
 }
 
 function getOtherUser(conv: ConversationItem, currentUserId?: string): ConversationUser | undefined {
@@ -97,49 +110,6 @@ function checkIsOnline(targetUser: any, targetId: string | null, onlineList: any
   return false;
 }
 
-export default function MessagingView({ role }: MessagingViewProps) {
-  const currentUser = useAppSelector((state) => state.auth?.user);
-  const userRole = role || currentUser?.role || "USER";
-  const isAdminOrSuperAdmin =
-    userRole.toUpperCase() === "ADMIN" ||
-    userRole.toUpperCase() === "SUPERADMIN" ||
-    userRole.toUpperCase() === "SUPER_ADMIN";
-
-  const {
-    isConnected,
-    isLoadingConversations,
-    isLoadingChats,
-    conversations,
-    currentMessages,
-    onlineUsers,
-    selectedReceiverId,
-    setSelectedReceiverId,
-    sendMessage,
-  } = useWebSocketChat();
-
-  // Search & Filter states
-  const [searchQuery, setSearchQuery] = useState("");
-  const [messageInput, setMessageInput] = useState("");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-
-  // New Chat Modal state (Admin/Super Admin only)
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [userSearchTerm, setUserSearchTerm] = useState("");
-
-  // Fetch users for Admin "New Chat" modal
-  const { data: usersData, isLoading: isUsersLoading } = useGetAllUsersQuery(
-    { page: 1, limit: 100, search: userSearchTerm },
-    { skip: !isModalOpen || !isAdminOrSuperAdmin }
-  );
-
-  const messageEndRef = useRef<HTMLDivElement | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  // Auto-scroll to bottom of chat window
-  useEffect(() => {
-    messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [currentMessages]);
-
 const readFileAsDataURL = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -163,6 +133,79 @@ const isImageFile = (url?: string, name?: string): boolean => {
   );
 };
 
+export default function MessagingView({ role }: MessagingViewProps) {
+  const currentUser = useAppSelector((state) => state.auth?.user);
+  const userRole = role || currentUser?.role || "USER";
+  const isAdminOrSuperAdmin =
+    userRole.toUpperCase() === "ADMIN" ||
+    userRole.toUpperCase() === "SUPERADMIN" ||
+    userRole.toUpperCase() === "SUPER_ADMIN";
+
+  const {
+    isConnected,
+    isLoadingConversations,
+    isLoadingChats,
+    conversations,
+    currentMessages,
+    onlineUsers,
+    selectedReceiverId,
+    setSelectedReceiverId,
+    sendMessage,
+    editMessage,
+    deleteMessage,
+  } = useWebSocketChat();
+
+  // Hydration & Mount state to prevent browser extension mismatch (e.g. Bitwarden bis_skin_checked)
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Search, Filter & Editing states
+  const [searchQuery, setSearchQuery] = useState("");
+  const [messageInput, setMessageInput] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [editingMessage, setEditingMessage] = useState<ChatMessage | null>(null);
+
+  // New Chat Modal state (Admin/Super Admin only)
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [userSearchTerm, setUserSearchTerm] = useState("");
+
+  // Fetch users for Admin "New Chat" modal
+  const { data: usersData, isLoading: isUsersLoading } = useGetAllUsersQuery(
+    { page: 1, limit: 100, search: userSearchTerm },
+    { skip: !isModalOpen || !isAdminOrSuperAdmin }
+  );
+
+  const messageEndRef = useRef<HTMLDivElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Auto-scroll to bottom of chat window
+  useEffect(() => {
+    messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [currentMessages]);
+
+  // Edit & Delete handlers
+  const handleStartEdit = (msg: ChatMessage) => {
+    setEditingMessage(msg);
+    setMessageInput(formatMessageContent(msg.message));
+  };
+
+  const handleCancelEdit = () => {
+    setEditingMessage(null);
+    setMessageInput("");
+  };
+
+  const handleDeleteMsg = (msg: ChatMessage) => {
+    const messageId = msg.id || (msg as any)._id;
+    if (!messageId) {
+      toast.error("Unable to delete message.");
+      return;
+    }
+    deleteMessage({ messageId });
+    toast.success("Message deleted");
+  };
+
   // Handle File Selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -184,6 +227,21 @@ const isImageFile = (url?: string, name?: string): boolean => {
     }
 
     if (!messageInput.trim() && !selectedFile) {
+      return;
+    }
+
+    // Handle Editing existing message
+    if (editingMessage) {
+      const messageId = editingMessage.id || (editingMessage as any)._id;
+      if (messageId) {
+        editMessage({
+          messageId,
+          message: messageInput.trim(),
+        });
+        toast.success("Message updated");
+      }
+      setEditingMessage(null);
+      setMessageInput("");
       return;
     }
 
@@ -237,11 +295,11 @@ const isImageFile = (url?: string, name?: string): boolean => {
   const isSelectedUserOnline = checkIsOnline(recipientUser, selectedReceiverId, onlineUsers);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-120px)] max-h-[850px] bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+    <div suppressHydrationWarning className="flex flex-col h-[calc(100vh-120px)] max-h-[850px] bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
       {/* Top Header / Connection Banner */}
       <div className="flex items-center justify-between px-6 py-3 border-b border-gray-200 bg-gray-50">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
+          <div className="p-2 bg-[#E6FAFF] text-[#00B2D6] rounded-lg">
             <MessageSquare size={20} />
           </div>
           <div>
@@ -279,7 +337,7 @@ const isImageFile = (url?: string, name?: string): boolean => {
             {isAdminOrSuperAdmin && (
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+                className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-[#00B2D6] hover:bg-[#009cb9] text-white rounded-lg text-sm font-medium transition-colors shadow-sm shadow-cyan-100"
               >
                 <UserPlus size={16} />
                 <span>New Conversation</span>
@@ -293,7 +351,7 @@ const isImageFile = (url?: string, name?: string): boolean => {
                 placeholder="Search conversations..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
+                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#00B2D6] focus:border-[#00B2D6] bg-gray-50"
               />
             </div>
           </div>
@@ -315,7 +373,9 @@ const isImageFile = (url?: string, name?: string): boolean => {
                   </div>
                 ))}
               </div>
-            ) : filteredConversations.length === 0 ? (
+            ) : null}
+
+            {!isLoadingConversations && filteredConversations.length === 0 && (
               <div className="p-8 text-center text-gray-500">
                 <MessageSquare size={32} className="mx-auto text-gray-300 mb-2" />
                 <p className="text-sm font-medium text-gray-700">No conversations</p>
@@ -325,7 +385,10 @@ const isImageFile = (url?: string, name?: string): boolean => {
                     : "Messages sent to you will appear here so you can reply."}
                 </p>
               </div>
-            ) : (
+            )}
+
+            {!isLoadingConversations &&
+              filteredConversations.length > 0 &&
               filteredConversations.map((conv, idx) => {
                 const targetUser = getOtherUser(conv, currentUser?.id);
                 const targetId =
@@ -337,13 +400,14 @@ const isImageFile = (url?: string, name?: string): boolean => {
                   `conv-${idx}`;
                 const isSelected = selectedReceiverId === targetId;
                 const isOnline = checkIsOnline(targetUser, targetId, onlineUsers);
+                const roleText = targetUser?.role || (conv as any)?.role || (targetUser as any)?.userRole || (targetUser as any)?.type;
 
                 return (
                   <button
                     key={targetId || idx}
                     onClick={() => setSelectedReceiverId(targetId)}
                     className={`w-full text-left p-4 flex items-start gap-3 transition-colors hover:bg-gray-50 ${
-                      isSelected ? "bg-blue-50/70 border-l-4 border-blue-600" : ""
+                      isSelected ? "bg-[#E6FAFF]/80 border-l-4 border-[#00B2D6]" : ""
                     }`}
                   >
                     <div className="relative flex-shrink-0">
@@ -354,7 +418,7 @@ const isImageFile = (url?: string, name?: string): boolean => {
                           className="w-10 h-10 rounded-full object-cover border border-gray-200"
                         />
                       ) : (
-                        <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-semibold text-sm">
+                        <div className="w-10 h-10 rounded-full bg-[#E6FAFF] text-[#00B2D6] border border-[#B2ECF7] flex items-center justify-center font-semibold text-sm">
                           {getDisplayName(targetUser).charAt(0).toUpperCase()}
                         </div>
                       )}
@@ -365,11 +429,18 @@ const isImageFile = (url?: string, name?: string): boolean => {
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
-                        <h3 className="text-sm font-semibold text-gray-900 truncate">
-                          {getDisplayName(targetUser)}
-                        </h3>
+                        <div className="flex items-center gap-1.5 min-w-0 pr-1">
+                          <h3 className="text-sm font-semibold text-gray-900 truncate leading-none">
+                            {getDisplayName(targetUser)}
+                          </h3>
+                          {roleText && (
+                            <span className={`text-[9px] font-semibold px-1.5 mb-1 py-0.5 rounded-full border uppercase tracking-wider shrink-0 leading-none ${getRoleBadgeStyle(roleText)}`}>
+                              {roleText}
+                            </span>
+                          )}
+                        </div>
                         {conv.updatedAt && (
-                          <span className="text-[10px] text-gray-400">
+                          <span className="text-[10px] text-gray-400 shrink-0">
                             {new Date(conv.updatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                           </span>
                         )}
@@ -380,8 +451,7 @@ const isImageFile = (url?: string, name?: string): boolean => {
                     </div>
                   </button>
                 );
-              })
-            )}
+              })}
           </div>
         </div>
 
@@ -400,7 +470,7 @@ const isImageFile = (url?: string, name?: string): boolean => {
                         className="w-10 h-10 rounded-full object-cover border border-gray-200"
                       />
                     ) : (
-                      <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm">
+                      <div className="w-10 h-10 rounded-full bg-[#00B2D6] text-white flex items-center justify-center font-bold text-sm">
                         {getDisplayName(recipientUser).charAt(0).toUpperCase()}
                       </div>
                     )}
@@ -409,9 +479,16 @@ const isImageFile = (url?: string, name?: string): boolean => {
                     )}
                   </div>
                   <div>
-                    <h2 className="text-sm font-semibold text-gray-900">
-                      {getDisplayName(recipientUser)}
-                    </h2>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-sm font-semibold text-gray-900 leading-none">
+                        {getDisplayName(recipientUser)}
+                      </h2>
+                      {(recipientUser?.role || (recipientUser as any)?.userRole || (selectedConversation as any)?.role) && (
+                        <span className={`text-[9px] font-semibold px-1.5 mb-1 py-0.5 rounded-full border uppercase tracking-wider leading-none ${getRoleBadgeStyle(recipientUser?.role || (recipientUser as any)?.userRole || (selectedConversation as any)?.role)}`}>
+                          {recipientUser?.role || (recipientUser as any)?.userRole || (selectedConversation as any)?.role}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-gray-500 flex items-center gap-2">
                       <span>{recipientUser?.email || ""}</span>
                       {isSelectedUserOnline ? (
@@ -482,13 +559,18 @@ const isImageFile = (url?: string, name?: string): boolean => {
                       <div className="h-2 w-10 bg-gray-200 rounded-full mr-1" />
                     </div>
                   </div>
-                ) : currentMessages.length === 0 ? (
+                ) : null}
+
+                {!isLoadingChats && currentMessages.length === 0 && (
                   <div className="h-full flex flex-col items-center justify-center text-gray-400">
                     <MessageSquare size={40} className="mb-2 text-gray-300" />
                     <p className="text-sm font-medium text-gray-600">No messages yet</p>
                     <p className="text-xs text-gray-400">Type a message below to start the conversation.</p>
                   </div>
-                ) : (
+                )}
+
+                {!isLoadingChats &&
+                  currentMessages.length > 0 &&
                   currentMessages.map((msg, index) => {
                     const getSenderId = (m: ChatMessage) => {
                       if (!m) return undefined;
@@ -507,84 +589,123 @@ const isImageFile = (url?: string, name?: string): boolean => {
                     return (
                       <div
                         key={msg.id || index}
-                        className={`flex flex-col ${isSelf ? "items-end" : "items-start"}`}
+                        className={`group flex flex-col ${isSelf ? "items-end" : "items-start"}`}
                       >
-                        <div
-                          className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-xs text-sm ${
-                            isSelf
-                              ? "bg-blue-600 text-white rounded-br-none"
-                              : "bg-white text-gray-800 border border-gray-200 rounded-bl-none"
-                          }`}
-                        >
-                          {Boolean(formatMessageContent(msg.message)) && (
-                            <p className="leading-relaxed whitespace-pre-wrap">{formatMessageContent(msg.message)}</p>
-                          )}
-
-                          {msg.fileUrl && (
-                            <div className="mt-2 space-y-2">
-                              {isImageFile(msg.fileUrl, msg.fileName) ? (
-                                <div className="overflow-hidden rounded-lg border border-black/10">
-                                  <img
-                                    src={msg.fileUrl}
-                                    alt={msg.fileName || "Image attachment"}
-                                    className="max-w-xs max-h-60 object-cover rounded-lg"
-                                  />
-                                  <div className="flex justify-end p-1">
-                                    <a
-                                      href={msg.fileUrl}
-                                      download={msg.fileName || "image.png"}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="text-[11px] underline font-semibold opacity-90 hover:opacity-100 px-1"
-                                    >
-                                      Download ({msg.fileName || "image"})
-                                    </a>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div
-                                  className={`flex items-center gap-2 p-2.5 rounded-lg border ${
-                                    isSelf
-                                      ? "bg-blue-700/50 border-blue-500 text-white"
-                                      : "bg-gray-50 border-gray-200 text-gray-800"
-                                  }`}
-                                >
-                                  <FileText size={18} />
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-xs font-medium truncate">{msg.fileName || "Attachment"}</p>
-                                  </div>
-                                  <a
-                                    href={msg.fileUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    download={msg.fileName || "attachment"}
-                                    className="text-xs underline font-semibold hover:opacity-80"
-                                  >
-                                    Download
-                                  </a>
-                                </div>
-                              )}
+                        <div className="flex items-center gap-1.5 max-w-full">
+                          {isSelf && (
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 px-1">
+                              <button
+                                type="button"
+                                onClick={() => handleStartEdit(msg)}
+                                className="p-1 text-gray-400 hover:text-blue-600 hover:bg-gray-100 rounded-md transition-colors"
+                                title="Edit message"
+                              >
+                                <Pencil size={13} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteMsg(msg)}
+                                className="p-1 text-gray-400 hover:text-red-600 hover:bg-gray-100 rounded-md transition-colors"
+                                title="Delete message"
+                              >
+                                <Trash2 size={13} />
+                              </button>
                             </div>
                           )}
+
+                          <div
+                            className={`w-fit min-w-[4.5rem] max-w-[75%] rounded-2xl px-2 py-1.5 shadow-xs text-sm break-words ${
+                              isSelf
+                                ? "bg-[#00B2D6] text-white rounded-br-none"
+                                : "bg-white text-gray-800 border border-gray-200 rounded-bl-none shadow-2xs"
+                            }`}
+                          >
+                            {Boolean(formatMessageContent(msg.message)) && (
+                              <p className="leading-relaxed whitespace-pre-wrap break-words">{formatMessageContent(msg.message)}</p>
+                            )}
+
+                            {msg.fileUrl && (
+                              <div className="mt-2 space-y-2">
+                                {isImageFile(msg.fileUrl, msg.fileName) ? (
+                                  <div className="overflow-hidden rounded-lg border border-black/10">
+                                    <img
+                                      src={msg.fileUrl}
+                                      alt={msg.fileName || "Image attachment"}
+                                      className="max-w-xs max-h-60 object-cover rounded-lg"
+                                    />
+                                    <div className="flex justify-end p-1">
+                                      <a
+                                        href={msg.fileUrl}
+                                        download={msg.fileName || "image.png"}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-[11px] underline font-semibold opacity-90 hover:opacity-100 px-1"
+                                      >
+                                        Download ({msg.fileName || "image"})
+                                      </a>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div
+                                    className={`flex items-center gap-2 p-2.5 rounded-lg border ${
+                                      isSelf
+                                        ? "bg-[#009cb9] border-[#008ba5] text-white"
+                                        : "bg-gray-50 border-gray-200 text-gray-800"
+                                    }`}
+                                  >
+                                    <FileText size={18} />
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-xs font-medium truncate">{msg.fileName || "Attachment"}</p>
+                                    </div>
+                                    <a
+                                      href={msg.fileUrl}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      download={msg.fileName || "attachment"}
+                                      className="text-xs underline font-semibold hover:opacity-80"
+                                    >
+                                      Download
+                                    </a>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
 
-                        <span className="text-[10px] text-gray-400 mt-1 px-1">
+                        <span className="text-[10px] text-gray-400 mt-1 px-1 flex items-center gap-1">
                           {msg.createdAt
                             ? new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
                             : "Just now"}
+                          {msg.isEdited && <span className="italic text-gray-400 font-normal">(edited)</span>}
                         </span>
                       </div>
                     );
-                  })
-                )}
+                  })}
                 <div ref={messageEndRef} />
               </div>
 
               {/* Message Input Form */}
               <div className="p-3 bg-white border-t border-gray-200">
+                {editingMessage && (
+                  <div className="mb-2 flex items-center justify-between bg-amber-50 text-amber-800 text-xs px-3 py-1.5 rounded-lg border border-amber-200">
+                    <span className="flex items-center gap-1.5 font-medium truncate">
+                      <Pencil size={14} className="text-amber-600" />
+                      Editing message...
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleCancelEdit}
+                      className="text-amber-600 hover:text-amber-800 font-semibold text-xs flex items-center gap-1"
+                    >
+                      Cancel <X size={13} />
+                    </button>
+                  </div>
+                )}
+
                 {selectedFile && (
-                  <div className="mb-2 flex items-center justify-between bg-blue-50 text-blue-700 text-xs px-3 py-1.5 rounded-lg border border-blue-200">
-                    <span className="flex items-center gap-1.5 truncate">
+                  <div className="mb-2 flex items-center justify-between bg-[#E6FAFF] text-[#00B2D6] text-xs px-3 py-1.5 rounded-lg border border-[#B2ECF7]">
+                    <span className="flex items-center gap-1.5 truncate font-medium">
                       <FileText size={14} />
                       {selectedFile.name}
                     </span>
@@ -594,7 +715,7 @@ const isImageFile = (url?: string, name?: string): boolean => {
                         setSelectedFile(null);
                         if (fileInputRef.current) fileInputRef.current.value = "";
                       }}
-                      className="text-blue-500 hover:text-blue-700"
+                      className="text-[#00B2D6] hover:text-[#0092B0]"
                     >
                       <X size={14} />
                     </button>
@@ -612,7 +733,7 @@ const isImageFile = (url?: string, name?: string): boolean => {
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="p-2 text-gray-500 hover:text-blue-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-2 text-gray-500 hover:text-[#00B2D6] hover:bg-[#E6FAFF] rounded-lg transition-colors"
                     title="Attach file"
                   >
                     <Paperclip size={18} />
@@ -622,23 +743,26 @@ const isImageFile = (url?: string, name?: string): boolean => {
                     type="text"
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
-                    placeholder="Type your message..."
-                    className="flex-1 py-2 px-4 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder={editingMessage ? "Edit your message..." : "Type your message..."}
+                    className="flex-1 py-2 px-4 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#00B2D6] focus:border-[#00B2D6]"
                   />
 
                   <button
                     type="submit"
                     disabled={!messageInput.trim() && !selectedFile}
-                    className="p-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white rounded-lg transition-colors shadow-sm"
+                    className={`p-2.5 text-white rounded-lg transition-colors shadow-sm disabled:bg-gray-300 ${
+                      editingMessage ? "bg-amber-600 hover:bg-amber-700" : "bg-[#00B2D6] hover:bg-[#009cb9]"
+                    }`}
+                    title={editingMessage ? "Save edit" : "Send message"}
                   >
-                    <Send size={16} />
+                    {editingMessage ? <Check size={16} /> : <Send size={16} />}
                   </button>
                 </form>
               </div>
             </>
           ) : (
             <div className="h-full flex flex-col items-center justify-center p-8 text-center text-gray-400">
-              <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-4">
+              <div className="w-16 h-16 bg-[#E6FAFF] text-[#00B2D6] rounded-full flex items-center justify-center mb-4 border border-[#B2ECF7]">
                 <MessageSquare size={32} />
               </div>
               <h3 className="text-base font-semibold text-gray-800">Select a conversation</h3>
@@ -652,8 +776,10 @@ const isImageFile = (url?: string, name?: string): boolean => {
       </div>
 
       {/* Admin New Conversation Modal */}
-      {isModalOpen &&
+      {isMounted &&
+        isModalOpen &&
         isAdminOrSuperAdmin &&
+        typeof window !== "undefined" &&
         createPortal(
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
             <div className="bg-white w-full max-w-md rounded-xl shadow-xl overflow-hidden flex flex-col max-h-[80vh]">
@@ -675,17 +801,21 @@ const isImageFile = (url?: string, name?: string): boolean => {
                     placeholder="Search users by name or email..."
                     value={userSearchTerm}
                     onChange={(e) => setUserSearchTerm(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#00B2D6] focus:border-[#00B2D6]"
                   />
                 </div>
               </div>
 
               <div className="flex-1 overflow-y-auto p-2 divide-y divide-gray-100">
-                {isUsersLoading ? (
+                {isUsersLoading && (
                   <div className="p-8 text-center text-sm text-gray-500">Loading users...</div>
-                ) : !usersData?.data || usersData.data.length === 0 ? (
+                )}
+                {!isUsersLoading && (!usersData?.data || usersData.data.length === 0) && (
                   <div className="p-8 text-center text-sm text-gray-500">No users found</div>
-                ) : (
+                )}
+                {!isUsersLoading &&
+                  usersData?.data &&
+                  usersData.data.length > 0 &&
                   usersData.data.map((u: APIUser) => (
                     <button
                       key={u.id}
@@ -693,7 +823,7 @@ const isImageFile = (url?: string, name?: string): boolean => {
                         setSelectedReceiverId(u.id);
                         setIsModalOpen(false);
                       }}
-                      className="w-full text-left p-3 flex items-center justify-between hover:bg-blue-50 rounded-lg transition-colors"
+                      className="w-full text-left p-3 flex items-center justify-between hover:bg-[#E6FAFF] rounded-lg transition-colors"
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center font-semibold text-xs">
@@ -708,8 +838,7 @@ const isImageFile = (url?: string, name?: string): boolean => {
                         {u.role}
                       </span>
                     </button>
-                  ))
-                )}
+                  ))}
               </div>
             </div>
           </div>,

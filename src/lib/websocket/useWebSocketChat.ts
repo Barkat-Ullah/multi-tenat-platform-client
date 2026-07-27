@@ -13,6 +13,7 @@ export interface ChatMessage {
   fileName?: string;
   createdAt?: string;
   updatedAt?: string;
+  isEdited?: boolean;
   sender?: {
     id?: string;
     fullName?: string;
@@ -64,6 +65,8 @@ export interface UseWebSocketChatReturn {
   selectedReceiverId: string | null;
   setSelectedReceiverId: (id: string | null) => void;
   sendMessage: (payload: { receiverId: string; message: string; fileUrl?: string; fileName?: string }) => void;
+  editMessage: (payload: { messageId: string; message: string }) => void;
+  deleteMessage: (payload: { messageId: string }) => void;
   fetchChats: (receiverId: string) => void;
   fetchMessageList: () => void;
   fetchOnlineUsers: () => void;
@@ -181,6 +184,49 @@ export function useWebSocketChat(): UseWebSocketChatReturn {
     });
   }, [sendEvent, currentUser?.id]);
 
+  const editMessage = useCallback(
+    ({ messageId, message }: { messageId: string; message: string }) => {
+      sendEvent({
+        event: "editMessage",
+        messageId,
+        message,
+      });
+
+      // Optimistically update message in local state
+      setMessagesMap((prev) => {
+        const updated: Record<string, ChatMessage[]> = {};
+        for (const [key, list] of Object.entries(prev)) {
+          updated[key] = list.map((m) =>
+            m.id === messageId || (m as any)._id === messageId
+              ? { ...m, message, isEdited: true, updatedAt: new Date().toISOString() }
+              : m
+          );
+        }
+        return updated;
+      });
+    },
+    [sendEvent]
+  );
+
+  const deleteMessage = useCallback(
+    ({ messageId }: { messageId: string }) => {
+      sendEvent({
+        event: "deleteMessage",
+        messageId,
+      });
+
+      // Optimistically remove message from local state
+      setMessagesMap((prev) => {
+        const updated: Record<string, ChatMessage[]> = {};
+        for (const [key, list] of Object.entries(prev)) {
+          updated[key] = list.filter((m) => m.id !== messageId && (m as any)._id !== messageId);
+        }
+        return updated;
+      });
+    },
+    [sendEvent]
+  );
+
   useEffect(() => {
     const token = getAuthToken();
     let wsUrl = process.env.NEXT_PUBLIC_WS_URL || "ws://multitinent.barkatullah.dev";
@@ -276,11 +322,78 @@ export function useWebSocketChat(): UseWebSocketChatReturn {
           }
           setIsLoadingChats(false);
         } else if (
+          eventType === "editMessage" ||
+          eventType === "messageEdited" ||
+          data.event === "editMessage" ||
+          data.editedMessage ||
+          data.action === "editMessage"
+        ) {
+          const targetId = data.messageId || data.data?.messageId || data.id || data._id || data.data?.id;
+          let newMsg = data.message || data.data?.message || data.updatedMessage || data.text;
+          if (typeof newMsg === "object" && newMsg !== null) {
+            newMsg = newMsg.message || newMsg.text || newMsg.content || "";
+          }
+
+          if (targetId && newMsg) {
+            setMessagesMap((prev) => {
+              const updated: Record<string, ChatMessage[]> = {};
+              for (const [key, list] of Object.entries(prev)) {
+                updated[key] = list.map((m) => {
+                  const mId = m.id || (m as any)._id;
+                  if (mId && (mId === targetId || mId.toString() === targetId.toString())) {
+                    return {
+                      ...m,
+                      message: newMsg,
+                      isEdited: true,
+                      updatedAt: new Date().toISOString(),
+                    };
+                  }
+                  return m;
+                });
+              }
+              return updated;
+            });
+
+            setConversations((prev) =>
+              prev.map((c) => {
+                const lastMsgId = (c.lastMessage as any)?.id || (c.lastMessage as any)?._id;
+                if (lastMsgId && (lastMsgId === targetId || lastMsgId.toString() === targetId.toString())) {
+                  return {
+                    ...c,
+                    lastMessage: newMsg,
+                    updatedAt: new Date().toISOString(),
+                  };
+                }
+                return c;
+              })
+            );
+          }
+        } else if (
+          eventType === "deleteMessage" ||
+          eventType === "messageDeleted" ||
+          data.event === "deleteMessage" ||
+          data.deletedMessage ||
+          data.action === "deleteMessage"
+        ) {
+          const targetId = data.messageId || data.data?.messageId || data.id || data._id || data.data?.id;
+          if (targetId) {
+            setMessagesMap((prev) => {
+              const updated: Record<string, ChatMessage[]> = {};
+              for (const [key, list] of Object.entries(prev)) {
+                updated[key] = list.filter((m) => {
+                  const mId = m.id || (m as any)._id;
+                  return !(mId && (mId === targetId || mId.toString() === targetId.toString()));
+                });
+              }
+              return updated;
+            });
+          }
+        } else if (
           eventType === "message" ||
           eventType === "newMessage" ||
           data.messageObj ||
-          data.message ||
-          data.data?.message
+          (data.message && typeof data.message === "object") ||
+          data.data?.messageObj
         ) {
           const msgObj: any = data.data || data.messageObj || data;
           
@@ -330,9 +443,6 @@ export function useWebSocketChat(): UseWebSocketChatReturn {
               };
             });
           }
-
-          // Refresh sidebar conversation list
-          fetchMessageList();
         } else if (eventType === "onlineUsers" || data.onlineUsers || data.users) {
           const users = data.onlineUsers || data.data?.onlineUsers || data.data || data.users;
           setOnlineUsers(users || []);
@@ -385,6 +495,8 @@ export function useWebSocketChat(): UseWebSocketChatReturn {
     selectedReceiverId,
     setSelectedReceiverId,
     sendMessage,
+    editMessage,
+    deleteMessage,
     fetchChats,
     fetchMessageList,
     fetchOnlineUsers,
