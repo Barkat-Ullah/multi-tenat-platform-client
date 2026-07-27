@@ -176,6 +176,17 @@ const userApi = baseApi.injectEndpoints({
         body,
       }),
     }),
+    createAdmin: builder.mutation<
+      { success: boolean; message: string; data?: any },
+      { fullName: string; email: string; phoneNumber?: string; password?: string }
+    >({
+      query: (body) => ({
+        url: "/user/create-admin",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["user"],
+    }),
   }),
 });
 
@@ -186,4 +197,5 @@ export const {
   useDeleteUserMutation,
   useUpdateClientInfoMutation,
   useSendManualEmailMutation,
+  useCreateAdminMutation,
 } = userApi;

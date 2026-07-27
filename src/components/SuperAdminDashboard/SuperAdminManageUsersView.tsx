@@ -11,6 +11,7 @@ import {
   Pencil,
   Search,
   Send,
+  UserPlus,
   Users,
   X,
   XCircle,
@@ -20,6 +21,7 @@ import { toast } from "sonner";
 import Pagination from "@/components/AdminDashboard/Pagination";
 import {
   type User,
+  useCreateAdminMutation,
   useDeleteUserMutation,
   useGetAllUsersQuery,
   useSendManualEmailMutation,
@@ -117,6 +119,13 @@ export default function SuperAdminManageUsersView() {
     address: "",
     image: "",
   });
+  const [isCreateAdminOpen, setIsCreateAdminOpen] = useState(false);
+  const [createAdminForm, setCreateAdminForm] = useState({
+    fullName: "",
+    email: "",
+    phoneNumber: "",
+    password: "123456",
+  });
   const [mounted, setMounted] = useState(false);
   const trimmedSearch = searchTerm.trim().toLowerCase();
   const isSearching = trimmedSearch.length > 0;
@@ -138,6 +147,34 @@ export default function SuperAdminManageUsersView() {
     useUpdateClientInfoMutation();
   const [sendManualEmail, { isLoading: isSendingEmail }] =
     useSendManualEmailMutation();
+  const [createAdmin, { isLoading: isCreatingAdmin }] = useCreateAdminMutation();
+
+  const handleCreateAdminSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!createAdminForm.fullName.trim()) {
+      toast.error("Please enter full name.");
+      return;
+    }
+    if (!createAdminForm.email.trim()) {
+      toast.error("Please enter email address.");
+      return;
+    }
+
+    try {
+      const response = await createAdmin({
+        fullName: createAdminForm.fullName.trim(),
+        email: createAdminForm.email.trim(),
+        phoneNumber: createAdminForm.phoneNumber.trim() || undefined,
+        password: createAdminForm.password.trim() || "123456",
+      }).unwrap();
+
+      toast.success(response?.message || "Admin created successfully.");
+      setIsCreateAdminOpen(false);
+      setCreateAdminForm({ fullName: "", email: "", phoneNumber: "", password: "123456" });
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to create admin."));
+    }
+  };
 
   const users = usersResponse?.data || [];
   const filteredUsers = useMemo(() => {
@@ -426,9 +463,20 @@ export default function SuperAdminManageUsersView() {
       </div>
 
       <div className="space-y-4 pt-2">
-        <h2 className="font-poppins text-xl font-extrabold tracking-tight text-[#0F2E4A] sm:text-2xl">
-          Users
-        </h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <h2 className="font-poppins text-xl font-extrabold tracking-tight text-[#0F2E4A] sm:text-2xl">
+            Users
+          </h2>
+
+          <button
+            type="button"
+            onClick={() => setIsCreateAdminOpen(true)}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#00B2D6] hover:bg-[#009cb9] text-white font-poppins text-xs sm:text-sm font-bold shadow-sm shadow-cyan-100 transition-colors w-fit"
+          >
+            <UserPlus size={18} />
+            <span>Create Admin</span>
+          </button>
+        </div>
 
         <div className="overflow-hidden rounded-[24px] border border-slate-100/90 bg-white shadow-[0_4px_25px_rgba(0,0,0,0.01)]">
           <div className="w-full overflow-x-auto">
@@ -810,6 +858,125 @@ export default function SuperAdminManageUsersView() {
         </div>,
         document.body,
       )}
+
+      {/* Create Admin Modal */}
+      {mounted &&
+        isCreateAdminOpen &&
+        typeof window !== "undefined" &&
+        createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
+            <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 bg-[#E6FAFF] text-[#00B2D6] rounded-xl">
+                    <UserPlus size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-poppins text-base font-bold text-[#0F2E4A]">
+                      Create New Admin
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Add a new administrative account
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsCreateAdminOpen(false)}
+                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateAdminSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-[#0F2E4A] mb-1.5">
+                    Full Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Admin User"
+                    value={createAdminForm.fullName}
+                    onChange={(e) =>
+                      setCreateAdminForm({ ...createAdminForm, fullName: e.target.value })
+                    }
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-xs sm:text-sm text-[#0F2E4A] transition-all placeholder-slate-400 focus:border-[#00B2D6] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#00B2D6]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#0F2E4A] mb-1.5">
+                    Email Address <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="e.g. admin@compliancemed.co.uk"
+                    value={createAdminForm.email}
+                    onChange={(e) =>
+                      setCreateAdminForm({ ...createAdminForm, email: e.target.value })
+                    }
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-xs sm:text-sm text-[#0F2E4A] transition-all placeholder-slate-400 focus:border-[#00B2D6] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#00B2D6]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#0F2E4A] mb-1.5">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="e.g. +44 7123 456789"
+                    value={createAdminForm.phoneNumber}
+                    onChange={(e) =>
+                      setCreateAdminForm({ ...createAdminForm, phoneNumber: e.target.value })
+                    }
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-xs sm:text-sm text-[#0F2E4A] transition-all placeholder-slate-400 focus:border-[#00B2D6] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#00B2D6]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#0F2E4A] mb-1.5">
+                    Password
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Default: 123456"
+                    value={createAdminForm.password}
+                    onChange={(e) =>
+                      setCreateAdminForm({ ...createAdminForm, password: e.target.value })
+                    }
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-xs sm:text-sm text-[#0F2E4A] transition-all placeholder-slate-400 focus:border-[#00B2D6] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#00B2D6]"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Defaults to 123456 if left blank.
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setIsCreateAdminOpen(false)}
+                    disabled={isCreatingAdmin}
+                    className="rounded-full border border-slate-200 px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isCreatingAdmin}
+                    className="rounded-full bg-[#00B2D6] hover:bg-[#009cb9] px-6 py-2.5 text-xs font-bold text-white transition-all disabled:opacity-50"
+                  >
+                    {isCreatingAdmin ? "Creating..." : "Create Admin"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
