@@ -19,7 +19,8 @@ import {
   ShieldCheck,
   FileText,
   Settings,
-  LifeBuoy
+  LifeBuoy,
+  MessageSquare
 } from "lucide-react";
 
 const navItems = [
@@ -81,6 +82,12 @@ const navItems = [
     key: "/dashboard/super-admin/support-center",
     label: <Link href="/dashboard/super-admin/support-center">Support Center</Link>,
     icon: <LifeBuoy size={18} />,
+    className: "hover:bg-gray-100",
+  },
+  {
+    key: "/dashboard/super-admin/messages",
+    label: <Link href="/dashboard/super-admin/messages">Messages</Link>,
+    icon: <MessageSquare size={18} />,
     className: "hover:bg-gray-100",
   },
   {

@@ -8,6 +8,7 @@ import {
   Calendar,
   FileText,
   LifeBuoy,
+  MessageSquare,
   Settings,
 } from "lucide-react";
 
@@ -31,6 +32,11 @@ const navItems = [
     key: "/dashboard/user/support-center",
     label: <Link href="/dashboard/user/support-center">Support Center</Link>,
     icon: <LifeBuoy size={18} />,
+  },
+  {
+    key: "/dashboard/user/messages",
+    label: <Link href="/dashboard/user/messages">Messages</Link>,
+    icon: <MessageSquare size={18} />,
   },
   {
     key: "/dashboard/user/setting",

@@ -15,6 +15,7 @@ import {
   HeartPulse,
   HelpCircle,
   LifeBuoy,
+  MessageSquare,
   Users,
   Mail,
   ShieldCheck,
@@ -76,6 +77,11 @@ const navItems = [
     key: "/dashboard/admin/support-center",
     label: <Link href="/dashboard/admin/support-center">Support Center</Link>,
     icon: <LifeBuoy size={18} />,
+  },
+  {
+    key: "/dashboard/admin/messages",
+    label: <Link href="/dashboard/admin/messages">Messages</Link>,
+    icon: <MessageSquare size={18} />,
   },
   {
     key: "/dashboard/admin/manage-user",

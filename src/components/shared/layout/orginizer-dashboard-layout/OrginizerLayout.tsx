@@ -10,6 +10,7 @@ import {
   ClipboardPlus,
   FileText,
   LifeBuoy,
+  MessageSquare,
   Settings,
 } from "lucide-react";
 
@@ -43,6 +44,11 @@ const navItems = [
     key: "/dashboard/orginizer/support-center",
     label: <Link href="/dashboard/orginizer/support-center">Support Center</Link>,
     icon: <LifeBuoy size={18} />,
+  },
+  {
+    key: "/dashboard/orginizer/messages",
+    label: <Link href="/dashboard/orginizer/messages">Messages</Link>,
+    icon: <MessageSquare size={18} />,
   },
   {
     key: "/dashboard/orginizer/settings",

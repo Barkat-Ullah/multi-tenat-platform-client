@@ -12,6 +12,7 @@ import {
   FileText,
   Folder,
   LifeBuoy,
+  MessageSquare,
   Settings,
 } from "lucide-react";
 
@@ -55,6 +56,11 @@ const navItems = [
     key: "/dashboard/clinic/support-center",
     label: <Link href="/dashboard/clinic/support-center">Support Center</Link>,
     icon: <LifeBuoy size={18} />,
+  },
+  {
+    key: "/dashboard/clinic/messages",
+    label: <Link href="/dashboard/clinic/messages">Messages</Link>,
+    icon: <MessageSquare size={18} />,
   },
   {
     key: "/dashboard/clinic/settings",
