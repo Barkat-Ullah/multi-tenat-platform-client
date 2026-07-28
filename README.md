@@ -1,4 +1,4 @@
-# MedComply — Multi-Tenant Medical Compliance Platform (Frontend)
+# MedComply — Multi-Tenant Medical Platform (Frontend)
 
 > **Enterprise-grade multi-tenant frontend** for medical compliance management — connecting patients, clinics, organizers, and administrators in a unified ecosystem with secure document handling, real-time communication, and intelligent scheduling.
 
