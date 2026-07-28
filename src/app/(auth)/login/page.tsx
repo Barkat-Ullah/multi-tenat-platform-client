@@ -174,6 +174,29 @@ const LoginPage = () => {
             Welcome Back
           </h1>
 
+          {/* Demo Quick Login Badges */}
+          <div className="flex flex-wrap gap-2 mb-5 justify-center">
+            {[
+              { label: "Driver", email: "driver@demo.com", password: "Demo@123", color: "bg-primary-light hover:bg-primary-dark" },
+              { label: "Clinic", email: "clinic@demo.com", password: "Demo@123", color: "bg-primary-light hover:bg-primary-dark" },
+              { label: "Organizer", email: "organizer@demo.com", password: "Demo@123", color: "bg-primary-light hover:bg-primary-dark" },
+              { label: "Admin", email: "admin@demo.com", password: "Demo@123", color: "bg-primary-light hover:bg-primary-dark" },
+              { label: "Super Admin", email: "superadmin@demo.com", password: "Demo@123", color: "bg-primary-light hover:bg-primary-dark" },
+            ].map((demo) => (
+              <button
+                key={demo.label}
+                type="button"
+                onClick={() => {
+                  setEmail(demo.email);
+                  setPassword(demo.password);
+                }}
+                className={`px-3 py-1 rounded-full text-xs font-bold text-white transition-all shadow-sm hover:shadow-md active:scale-95 ${demo.color}`}
+              >
+                {demo.label}
+              </button>
+            ))}
+          </div>
+
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email Field */}
