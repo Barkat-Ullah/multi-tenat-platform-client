@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useAppSelector } from "@/redux/store";
+import { toast } from "sonner";
 
 export interface ChatMessage {
   id?: string;
@@ -14,6 +15,8 @@ export interface ChatMessage {
   createdAt?: string;
   updatedAt?: string;
   isEdited?: boolean;
+  isDeleted?: boolean;
+  editedAt?: string;
   sender?: {
     id?: string;
     fullName?: string;
@@ -43,32 +46,78 @@ export interface ConversationUser {
 
 export interface ConversationItem {
   id?: string;
+  roomId?: string;
   userId?: string;
   user?: ConversationUser;
   receiverId?: string;
   receiver?: ConversationUser;
   senderId?: string;
   sender?: ConversationUser;
-  lastMessage?: string;
+  lastMessage?: string | ChatMessage;
   lastMessageAt?: string;
   unreadCount?: number;
   updatedAt?: string;
+}
+
+function getConversationKey(c: ConversationItem): string {
+  return (
+    (c as any).roomId ||
+    c.id ||
+    c.userId ||
+    c.receiverId ||
+    c.senderId ||
+    JSON.stringify(c)
+  );
+}
+
+// Merge a freshly-paged conversation list with what is already loaded.
+// - Append mode (infinite scroll): just dedupe-append the older page.
+// - Refresh mode (initial load / 15s poll / focus): the server returns the
+//   newest page; keep it first and retain any older conversations we have
+//   already loaded so paginated data survives the periodic refresh.
+function mergeConversations(
+  prev: ConversationItem[],
+  incoming: ConversationItem[],
+  isAppend: boolean
+): ConversationItem[] {
+  if (isAppend) {
+    const seen = new Set(prev.map(getConversationKey));
+    const merged = [...prev];
+    for (const c of incoming) {
+      const k = getConversationKey(c);
+      if (!seen.has(k)) {
+        merged.push(c);
+        seen.add(k);
+      }
+    }
+    return merged;
+  }
+
+  const seen = new Set(incoming.map(getConversationKey));
+  const older = prev.filter((c) => !seen.has(getConversationKey(c)));
+  return [...incoming, ...older];
 }
 
 export interface UseWebSocketChatReturn {
   isConnected: boolean;
   isLoadingConversations: boolean;
   isLoadingChats: boolean;
+  isLoadingOlderChats: boolean;
+  chatHasMore: boolean;
   conversations: ConversationItem[];
   currentMessages: ChatMessage[];
   onlineUsers: any;
   selectedReceiverId: string | null;
   setSelectedReceiverId: (id: string | null) => void;
   sendMessage: (payload: { receiverId: string; message: string; fileUrl?: string; fileName?: string }) => void;
-  editMessage: (payload: { messageId: string; message: string }) => void;
-  deleteMessage: (payload: { messageId: string }) => void;
+  editMessage: (payload: { messageId: string; message: string; original?: ChatMessage }) => void;
+  deleteMessage: (payload: { messageId: string; original?: ChatMessage }) => void;
   fetchChats: (receiverId: string) => void;
+  loadOlderChats: (receiverId: string) => void;
   fetchMessageList: () => void;
+  fetchMoreConversations: () => void;
+  hasMoreConversations: boolean;
+  isLoadingMoreConversations: boolean;
   fetchOnlineUsers: () => void;
   fetchUnreadMessages: (receiverId: string) => void;
 }
@@ -80,6 +129,8 @@ export function useWebSocketChat(): UseWebSocketChatReturn {
   const [isConnected, setIsConnected] = useState(false);
   const [isLoadingConversations, setIsLoadingConversations] = useState(true);
   const [isLoadingChats, setIsLoadingChats] = useState(false);
+  const [isLoadingOlderChats, setIsLoadingOlderChats] = useState(false);
+  const [chatHasMore, setChatHasMore] = useState(false);
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [messagesMap, setMessagesMap] = useState<Record<string, ChatMessage[]>>({});
   const [onlineUsers, setOnlineUsers] = useState<any>([]);
@@ -89,6 +140,29 @@ export function useWebSocketChat(): UseWebSocketChatReturn {
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const selectedReceiverIdRef = useRef<string | null>(selectedReceiverId);
   selectedReceiverIdRef.current = selectedReceiverId;
+
+  // Snapshots for optimistic edit/delete so an `error` event (which carries no
+  // message id) can revert the last pending action back to its original text.
+  const editPendingRef = useRef<{ messageId: string; original: ChatMessage | null } | null>(null);
+  const deletePendingRef = useRef<{ messageId: string; original: ChatMessage | null } | null>(null);
+
+  // Per-room chat pagination: source of truth is chatPaginationRef; the
+  // selected room's hasMore is mirrored to state for the UI.
+  const chatPaginationRef = useRef<Record<string, { hasMore: boolean; nextCursor: string | null }>>({});
+  const chatRequestModeRef = useRef<Record<string, "initial" | "older">>({});
+  const isLoadingOlderChatsRef = useRef(false);
+
+  // Conversation sidebar pagination.
+  const conversationPaginationRef = useRef<{ hasMore: boolean; nextCursor: string | null }>({
+    hasMore: false,
+    nextCursor: null,
+  });
+  const [hasMoreConversations, setHasMoreConversations] = useState(false);
+  const [isLoadingMoreConversations, setIsLoadingMoreConversations] = useState(false);
+  const isLoadingMoreConversationsRef = useRef(false);
+  // Tracks an in-flight messageList request so the response handler knows
+  // whether it was a refresh (null) or an append for older pages (cursor).
+  const messageListRequestCursorRef = useRef<string | null | undefined>(undefined);
 
   // Retrieve token from Redux or Cookies fallback
   const getAuthToken = useCallback(() => {
@@ -108,15 +182,53 @@ export function useWebSocketChat(): UseWebSocketChatReturn {
 
   const fetchChats = useCallback((receiverId: string) => {
     setIsLoadingChats(true);
+    chatRequestModeRef.current[receiverId] = "initial";
     sendEvent({
       event: "fetchChats",
       receiverId,
+      limit: 50,
     });
   }, [sendEvent]);
 
+  const loadOlderChats = useCallback(
+    (receiverId: string) => {
+      const pagination = chatPaginationRef.current[receiverId];
+      if (!receiverId || !pagination?.hasMore || !pagination.nextCursor) return;
+      if (isLoadingOlderChatsRef.current) return;
+      isLoadingOlderChatsRef.current = true;
+      setIsLoadingOlderChats(true);
+      chatRequestModeRef.current[receiverId] = "older";
+      sendEvent({
+        event: "fetchChats",
+        receiverId,
+        cursor: pagination.nextCursor,
+        limit: 50,
+      });
+    },
+    [sendEvent]
+  );
+
   const fetchMessageList = useCallback(() => {
+    // Don't let a periodic refresh race an in-flight append request; the
+    // refresh would overwrite the request-mode ref and confuse the handler.
+    if (isLoadingMoreConversationsRef.current) return;
+    messageListRequestCursorRef.current = null;
     sendEvent({
       event: "messageList",
+    });
+  }, [sendEvent]);
+
+  const fetchMoreConversations = useCallback(() => {
+    const { hasMore, nextCursor } = conversationPaginationRef.current;
+    if (!hasMore || !nextCursor) return;
+    if (isLoadingMoreConversationsRef.current) return;
+    isLoadingMoreConversationsRef.current = true;
+    setIsLoadingMoreConversations(true);
+    messageListRequestCursorRef.current = nextCursor;
+    sendEvent({
+      event: "messageList",
+      cursor: nextCursor,
+      limit: 50,
     });
   }, [sendEvent]);
 
@@ -185,12 +297,17 @@ export function useWebSocketChat(): UseWebSocketChatReturn {
   }, [sendEvent, currentUser?.id]);
 
   const editMessage = useCallback(
-    ({ messageId, message }: { messageId: string; message: string }) => {
+    ({ messageId, message, original }: { messageId: string; message: string; original?: ChatMessage }) => {
       sendEvent({
         event: "editMessage",
         messageId,
         message,
       });
+
+      // Snapshot the original so an error response can revert the bubble.
+      if (original) {
+        editPendingRef.current = { messageId, original };
+      }
 
       // Optimistically update message in local state
       setMessagesMap((prev) => {
@@ -198,31 +315,81 @@ export function useWebSocketChat(): UseWebSocketChatReturn {
         for (const [key, list] of Object.entries(prev)) {
           updated[key] = list.map((m) =>
             m.id === messageId || (m as any)._id === messageId
-              ? { ...m, message, isEdited: true, updatedAt: new Date().toISOString() }
+              ? {
+                  ...m,
+                  message,
+                  isEdited: true,
+                  editedAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                }
               : m
           );
         }
         return updated;
       });
+
+      // Keep the sidebar "last message" preview in sync if this is the
+      // room's latest message.
+      setConversations((prev) =>
+        prev.map((c) => {
+          const lastMsgId = (c.lastMessage as any)?.id || (c.lastMessage as any)?._id;
+          if (lastMsgId && String(lastMsgId) === String(messageId)) {
+            const existing =
+              c.lastMessage && typeof c.lastMessage === "object" ? (c.lastMessage as any) : {};
+            return {
+              ...c,
+              lastMessage: { ...existing, id: lastMsgId, message, isEdited: true },
+              updatedAt: new Date().toISOString(),
+            };
+          }
+          return c;
+        })
+      );
     },
     [sendEvent]
   );
 
   const deleteMessage = useCallback(
-    ({ messageId }: { messageId: string }) => {
+    ({ messageId, original }: { messageId: string; original?: ChatMessage }) => {
       sendEvent({
         event: "deleteMessage",
         messageId,
       });
 
-      // Optimistically remove message from local state
+      // Snapshot the original so an error response can restore the bubble.
+      if (original) {
+        deletePendingRef.current = { messageId, original };
+      }
+
+      // Optimistically soft-delete: keep the record but clear its content.
       setMessagesMap((prev) => {
         const updated: Record<string, ChatMessage[]> = {};
         for (const [key, list] of Object.entries(prev)) {
-          updated[key] = list.filter((m) => m.id !== messageId && (m as any)._id !== messageId);
+          updated[key] = list.map((m) =>
+            m.id === messageId || (m as any)._id === messageId
+              ? { ...m, isDeleted: true, message: "", fileUrl: undefined, fileName: undefined }
+              : m
+          );
         }
         return updated;
       });
+
+      // Keep the sidebar "last message" preview in sync if this is the
+      // room's latest message.
+      setConversations((prev) =>
+        prev.map((c) => {
+          const lastMsgId = (c.lastMessage as any)?.id || (c.lastMessage as any)?._id;
+          if (lastMsgId && String(lastMsgId) === String(messageId)) {
+            const existing =
+              c.lastMessage && typeof c.lastMessage === "object" ? (c.lastMessage as any) : {};
+            return {
+              ...c,
+              lastMessage: { ...existing, id: lastMsgId, message: "", isDeleted: true },
+            };
+          }
+          return c;
+        })
+      );
     },
     [sendEvent]
   );
@@ -261,7 +428,7 @@ export function useWebSocketChat(): UseWebSocketChatReturn {
       // 2. Initial Data Request (after small delay to allow token registration)
       setTimeout(() => {
         if (socket.readyState === WebSocket.OPEN) {
-          socket.send(JSON.stringify({ event: "messageList" }));
+          fetchMessageList();
           socket.send(JSON.stringify({ event: "onlineUsers" }));
         }
       }, 200);
@@ -270,7 +437,7 @@ export function useWebSocketChat(): UseWebSocketChatReturn {
       pingIntervalRef.current = setInterval(() => {
         if (socket.readyState === WebSocket.OPEN) {
           socket.send(JSON.stringify({ event: "ping" }));
-          socket.send(JSON.stringify({ event: "messageList" }));
+          fetchMessageList();
           socket.send(JSON.stringify({ event: "onlineUsers" }));
         }
       }, 15000);
@@ -278,7 +445,7 @@ export function useWebSocketChat(): UseWebSocketChatReturn {
 
     const handleFocus = () => {
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-        wsRef.current.send(JSON.stringify({ event: "messageList" }));
+        fetchMessageList();
         wsRef.current.send(JSON.stringify({ event: "onlineUsers" }));
       }
     };
@@ -307,19 +474,70 @@ export function useWebSocketChat(): UseWebSocketChatReturn {
             data.data?.messageList ||
             data.conversations ||
             data.messageList ||
-            data.data ||
-            (Array.isArray(data) ? data : []);
-          setConversations(Array.isArray(list) ? list : []);
+            (Array.isArray(data.data) ? data.data : []);
+          const isAppend = typeof messageListRequestCursorRef.current === "string";
+
+          setConversations((prev) =>
+            mergeConversations(prev, Array.isArray(list) ? list : [], isAppend)
+          );
+
+          // Only advance pagination state on append requests; refresh
+          // responses keep the existing hasMore/nextCursor so loaded older
+          // pages are never dropped by the periodic poll.
+          if (isAppend) {
+            conversationPaginationRef.current = {
+              hasMore: Boolean(data.data?.hasMore),
+              nextCursor: data.data?.nextCursor || null,
+            };
+            setHasMoreConversations(Boolean(data.data?.hasMore));
+          }
+
+          setIsLoadingMoreConversations(false);
+          isLoadingMoreConversationsRef.current = false;
           setIsLoadingConversations(false);
+          messageListRequestCursorRef.current = undefined;
         } else if (eventType === "fetchChats" || eventType === "chatHistory" || data.chats || data.messages) {
-          const chatList = data.data?.chats || data.chats || data.messages || data.data || [];
+          const dataObj = data.data && typeof data.data === "object" && !Array.isArray(data.data) ? data.data : data;
+          const chatList =
+            dataObj.messages ||
+            dataObj.chats ||
+            data.messages ||
+            data.chats ||
+            (Array.isArray(data.data) ? data.data : []);
           const receiverId = data.receiverId || selectedReceiverIdRef.current;
           if (receiverId && Array.isArray(chatList)) {
-            setMessagesMap((prev) => ({
-              ...prev,
-              [receiverId]: chatList,
-            }));
+            const mode = chatRequestModeRef.current[receiverId] || "initial";
+            if (mode === "older") {
+              // Prepend the older page, deduping by message id in case the
+              // server's strict "< cursor" filter ever overlaps.
+              setMessagesMap((prev) => {
+                const existing = prev[receiverId] || [];
+                const seen = new Set(
+                  existing
+                    .map((m) => m.id || (m as any)._id)
+                    .filter(Boolean) as string[]
+                );
+                const fresh = chatList.filter((m: any) => !seen.has(m.id || (m as any)._id));
+                return { ...prev, [receiverId]: [...fresh, ...existing] };
+              });
+            } else {
+              setMessagesMap((prev) => ({
+                ...prev,
+                [receiverId]: chatList,
+              }));
+            }
+
+            chatPaginationRef.current[receiverId] = {
+              hasMore: Boolean(dataObj.hasMore),
+              nextCursor: dataObj.nextCursor || null,
+            };
+            if (receiverId === selectedReceiverIdRef.current) {
+              setChatHasMore(Boolean(dataObj.hasMore));
+            }
           }
+          chatRequestModeRef.current[receiverId || ""] = "initial";
+          isLoadingOlderChatsRef.current = false;
+          setIsLoadingOlderChats(false);
           setIsLoadingChats(false);
         } else if (
           eventType === "editMessage" ||
@@ -328,13 +546,21 @@ export function useWebSocketChat(): UseWebSocketChatReturn {
           data.editedMessage ||
           data.action === "editMessage"
         ) {
-          const targetId = data.messageId || data.data?.messageId || data.id || data._id || data.data?.id;
-          let newMsg = data.message || data.data?.message || data.updatedMessage || data.text;
+          const editedData = data.data && typeof data.data === "object" && !Array.isArray(data.data) ? data.data : data;
+          const targetId =
+            editedData.id ||
+            editedData._id ||
+            editedData.messageId ||
+            data.messageId ||
+            data.id ||
+            data._id;
+          let newMsg = editedData.message || editedData.text || data.message || data.updatedMessage;
           if (typeof newMsg === "object" && newMsg !== null) {
             newMsg = newMsg.message || newMsg.text || newMsg.content || "";
           }
+          const editedAt = editedData.editedAt || null;
 
-          if (targetId && newMsg) {
+          if (targetId) {
             setMessagesMap((prev) => {
               const updated: Record<string, ChatMessage[]> = {};
               for (const [key, list] of Object.entries(prev)) {
@@ -343,8 +569,9 @@ export function useWebSocketChat(): UseWebSocketChatReturn {
                   if (mId && (mId === targetId || mId.toString() === targetId.toString())) {
                     return {
                       ...m,
-                      message: newMsg,
+                      message: newMsg || m.message,
                       isEdited: true,
+                      editedAt: editedAt || m.editedAt || new Date().toISOString(),
                       updatedAt: new Date().toISOString(),
                     };
                   }
@@ -354,13 +581,26 @@ export function useWebSocketChat(): UseWebSocketChatReturn {
               return updated;
             });
 
+            // Clear the pending-edit snapshot once the server confirms.
+            if (editPendingRef.current && String(editPendingRef.current.messageId) === String(targetId)) {
+              editPendingRef.current = null;
+            }
+
             setConversations((prev) =>
               prev.map((c) => {
                 const lastMsgId = (c.lastMessage as any)?.id || (c.lastMessage as any)?._id;
                 if (lastMsgId && (lastMsgId === targetId || lastMsgId.toString() === targetId.toString())) {
+                  const existing =
+                    c.lastMessage && typeof c.lastMessage === "object" ? (c.lastMessage as any) : {};
                   return {
                     ...c,
-                    lastMessage: newMsg,
+                    lastMessage: {
+                      ...existing,
+                      id: lastMsgId,
+                      message: newMsg || "",
+                      isEdited: true,
+                      editedAt: editedAt || undefined,
+                    },
                     updatedAt: new Date().toISOString(),
                   };
                 }
@@ -375,18 +615,48 @@ export function useWebSocketChat(): UseWebSocketChatReturn {
           data.deletedMessage ||
           data.action === "deleteMessage"
         ) {
-          const targetId = data.messageId || data.data?.messageId || data.id || data._id || data.data?.id;
+          const deletedData = data.data && typeof data.data === "object" && !Array.isArray(data.data) ? data.data : data;
+          const targetId = deletedData.messageId || data.messageId || deletedData.id || data.id || data._id;
           if (targetId) {
+            // Soft delete: mark the message and clear its content instead of
+            // removing it, so the layout doesn't jump.
             setMessagesMap((prev) => {
               const updated: Record<string, ChatMessage[]> = {};
               for (const [key, list] of Object.entries(prev)) {
-                updated[key] = list.filter((m) => {
+                updated[key] = list.map((m) => {
                   const mId = m.id || (m as any)._id;
-                  return !(mId && (mId === targetId || mId.toString() === targetId.toString()));
+                  if (mId && (mId === targetId || mId.toString() === targetId.toString())) {
+                    return { ...m, isDeleted: true, message: "", fileUrl: undefined, fileName: undefined };
+                  }
+                  return m;
                 });
               }
               return updated;
             });
+
+            // Clear the pending-unsend snapshot once the server confirms.
+            if (deletePendingRef.current && String(deletePendingRef.current.messageId) === String(targetId)) {
+              deletePendingRef.current = null;
+            }
+
+            // Sync the sidebar "last message" preview if the deleted message
+            // is the room's latest one.
+            const roomId = deletedData.roomId || data.data?.roomId || data.roomId;
+            setConversations((prev) =>
+              prev.map((c) => {
+                const lastMsgId = (c.lastMessage as any)?.id || (c.lastMessage as any)?._id;
+                const matchesRoom = roomId && c.roomId && String(c.roomId) === String(roomId);
+                if (matchesRoom || (lastMsgId && String(lastMsgId) === String(targetId))) {
+                  const existing =
+                    c.lastMessage && typeof c.lastMessage === "object" ? (c.lastMessage as any) : {};
+                  return {
+                    ...c,
+                    lastMessage: { ...existing, id: lastMsgId || targetId, message: "", isDeleted: true },
+                  };
+                }
+                return c;
+              })
+            );
           }
         } else if (
           eventType === "message" ||
@@ -442,6 +712,75 @@ export function useWebSocketChat(): UseWebSocketChatReturn {
                 [otherUserId]: [...existing, msgObj],
               };
             });
+
+            // Keep the sidebar conversation's last message in sync and move it
+            // to the top (most recently active first).
+            setConversations((prev) => {
+              const idx = prev.findIndex(
+                (c) =>
+                  c.userId === otherUserId ||
+                  c.receiverId === otherUserId ||
+                  c.senderId === otherUserId ||
+                  c.user?.id === otherUserId ||
+                  c.receiver?.id === otherUserId ||
+                  c.sender?.id === otherUserId
+              );
+              if (idx === -1) return prev;
+              const conv = {
+                ...prev[idx],
+                lastMessage: msgObj,
+                updatedAt: new Date().toISOString(),
+              };
+              const next = [...prev];
+              next.splice(idx, 1);
+              next.unshift(conv);
+              return next;
+            });
+          }
+        } else if (eventType === "error" || data.error) {
+          const errMsg =
+            data.data?.message ||
+            data.message ||
+            (typeof data.error === "string" ? data.error : data.error?.message) ||
+            "Something went wrong";
+          toast.error(errMsg);
+
+          // Revert the last optimistic edit/unsend back to its original
+          // content — the error event carries no message id.
+          const revertPending = (pending: { messageId: string; original: ChatMessage | null } | null) => {
+            if (!pending) return;
+            const { messageId, original } = pending;
+            if (original) {
+              setMessagesMap((prev) => {
+                const updated: Record<string, ChatMessage[]> = {};
+                for (const [key, list] of Object.entries(prev)) {
+                  updated[key] = list.map((m) => {
+                    const mId = m.id || (m as any)._id;
+                    if (mId && String(mId) === String(messageId)) return { ...m, ...original };
+                    return m;
+                  });
+                }
+                return updated;
+              });
+
+              setConversations((prev) =>
+                prev.map((c) => {
+                  const lastMsgId = (c.lastMessage as any)?.id || (c.lastMessage as any)?._id;
+                  if (lastMsgId && String(lastMsgId) === String(messageId)) {
+                    return { ...c, lastMessage: original, updatedAt: original.updatedAt || c.updatedAt };
+                  }
+                  return c;
+                })
+              );
+            }
+          };
+          if (editPendingRef.current) {
+            revertPending(editPendingRef.current);
+            editPendingRef.current = null;
+          }
+          if (deletePendingRef.current) {
+            revertPending(deletePendingRef.current);
+            deletePendingRef.current = null;
           }
         } else if (eventType === "onlineUsers" || data.onlineUsers || data.users) {
           const users = data.onlineUsers || data.data?.onlineUsers || data.data || data.users;
@@ -479,6 +818,7 @@ export function useWebSocketChat(): UseWebSocketChatReturn {
   // When selected receiver changes, fetch chats if not loaded
   useEffect(() => {
     if (selectedReceiverId) {
+      setChatHasMore(false);
       fetchChats(selectedReceiverId);
     }
   }, [selectedReceiverId, fetchChats]);
@@ -489,6 +829,8 @@ export function useWebSocketChat(): UseWebSocketChatReturn {
     isConnected,
     isLoadingConversations,
     isLoadingChats,
+    isLoadingOlderChats,
+    chatHasMore,
     conversations,
     currentMessages,
     onlineUsers,
@@ -498,7 +840,11 @@ export function useWebSocketChat(): UseWebSocketChatReturn {
     editMessage,
     deleteMessage,
     fetchChats,
+    loadOlderChats,
     fetchMessageList,
+    fetchMoreConversations,
+    hasMoreConversations,
+    isLoadingMoreConversations,
     fetchOnlineUsers,
     fetchUnreadMessages,
   };

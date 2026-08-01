@@ -19,9 +19,10 @@ import {
   WifiOff,
   User as UserIcon,
   Pencil,
-  Trash2,
+  MoreVertical,
   Check,
   ArrowLeft,
+  Loader2,
 } from "lucide-react";
 
 interface MessagingViewProps {
@@ -32,6 +33,7 @@ function formatMessageContent(content: any): string {
   if (!content) return "";
   if (typeof content === "string") return content;
   if (typeof content === "object") {
+    if (content.isDeleted) return "This message was unsent";
     if (typeof content.message === "string") return content.message;
     if (typeof content.text === "string") return content.text;
     if (typeof content.content === "string") return content.content;
@@ -39,6 +41,34 @@ function formatMessageContent(content: any): string {
     if (content.fileUrl) return "[File Attachment]";
   }
   return "";
+}
+
+// Single source of truth for "should this bubble render as unsent". Deleted
+// messages can enter state in two ways: via the live messageDeleted event
+// (isDeleted: true) or via fetchChats history, where some backend versions
+// send isDeleted: true but older ones just clear the content (message: '',
+// fileUrl: null, fileName: null). Treat a content-less message as deleted too,
+// so a cleared message never renders as an empty bubble.
+function isDeletedMessage(msg: any): boolean {
+  if (!msg || typeof msg !== "object") return false;
+  if (msg.isDeleted === true) return true;
+  const hasText =
+    (typeof msg.message === "string" && msg.message.trim() !== "") ||
+    (typeof msg.text === "string" && msg.text.trim() !== "") ||
+    (typeof msg.content === "string" && msg.content.trim() !== "");
+  return !hasText && !msg.fileUrl && !msg.fileName;
+}
+
+// Sidebar "last message" preview: handles unsent placeholders and shows a
+// muted "(edited)" marker when the last message was edited.
+function formatSidebarPreview(content: any): string {
+  const text = formatMessageContent(content);
+  if (isDeletedMessage(content)) return "This message was unsent";
+  if (!text) return "Click to open conversation";
+  const isEdited = Boolean(
+    content && typeof content === "object" && content.isEdited && !content.isDeleted
+  );
+  return isEdited ? `${text} (edited)` : text;
 }
 
 function getDisplayName(userObj: any): string {
@@ -146,6 +176,8 @@ export default function MessagingView({ role }: MessagingViewProps) {
     isConnected,
     isLoadingConversations,
     isLoadingChats,
+    isLoadingOlderChats,
+    chatHasMore,
     conversations,
     currentMessages,
     onlineUsers,
@@ -154,6 +186,10 @@ export default function MessagingView({ role }: MessagingViewProps) {
     sendMessage,
     editMessage,
     deleteMessage,
+    loadOlderChats,
+    fetchMoreConversations,
+    hasMoreConversations,
+    isLoadingMoreConversations,
   } = useWebSocketChat();
 
   // Hydration & Mount state to prevent browser extension mismatch (e.g. Bitwarden bis_skin_checked)
@@ -167,6 +203,22 @@ export default function MessagingView({ role }: MessagingViewProps) {
   const [messageInput, setMessageInput] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [editingMessage, setEditingMessage] = useState<ChatMessage | null>(null);
+  // Which message's "⋮" menu is currently open (matches BookingsTable pattern).
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  // Message id awaiting an inline "Unsend?" confirmation.
+  const [confirmUnsendId, setConfirmUnsendId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!openMenuId) return;
+    const handlePointerDown = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [openMenuId]);
 
   // New Chat Modal state (Admin/Super Admin only)
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -178,13 +230,99 @@ export default function MessagingView({ role }: MessagingViewProps) {
     { skip: !isModalOpen || !isAdminOrSuperAdmin }
   );
 
-  const messageEndRef = useRef<HTMLDivElement | null>(null);
+  const messageStreamRef = useRef<HTMLDivElement | null>(null);
+  const conversationListRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Auto-scroll to bottom of chat window
+  // Scroll handling for the message stream. We must distinguish:
+  //  - older messages prepended (preserve scroll offset, don't jump to bottom)
+  //  - a room opened / initial history loaded (anchor to the bottom — even when
+  //    the refetch returns the same number of messages, which previously left
+  //    the view stranded mid-list)
+  //  - a new message appended at the bottom (smooth scroll down)
+  //  - nothing actually changed (leave scroll alone)
+  const prevMessagesLengthRef = useRef(0);
+  const prevReceiverRef = useRef<string | null>(null);
+  const prevIsLoadingChatsRef = useRef(false);
+  const prevScrollHeightRef = useRef(0);
+  const isAppendingOlderRef = useRef(false);
+  // While true, any growth of the stream (images, lazy content, the skeleton →
+  // real-list swap) re-pins the view to the bottom. Cleared the moment the user
+  // scrolls up, and only re-armed when a conversation is (re)opened.
+  const anchorToBottomRef = useRef(false);
+
   useEffect(() => {
-    messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [currentMessages]);
+    const len = currentMessages.length;
+    const roomChanged = selectedReceiverId !== prevReceiverRef.current;
+    const justFinishedInitialLoad =
+      !isLoadingChats && prevIsLoadingChatsRef.current === true;
+    prevIsLoadingChatsRef.current = isLoadingChats;
+    const el = messageStreamRef.current;
+
+    if (isAppendingOlderRef.current && len > prevMessagesLengthRef.current) {
+      if (el) {
+        el.scrollTop = el.scrollHeight - prevScrollHeightRef.current;
+      }
+      isAppendingOlderRef.current = false;
+    } else if (roomChanged || justFinishedInitialLoad) {
+      // Opening a conversation: anchor to the bottom. The ResizeObserver below
+      // keeps us pinned as the real list renders taller than the loading
+      // skeleton, so we land exactly at the newest message instead of mid-list.
+      anchorToBottomRef.current = true;
+      if (el) el.scrollTop = el.scrollHeight;
+    } else if (len > prevMessagesLengthRef.current) {
+      // New message appended while the user is (near) the bottom: glide down.
+      if (el && el.scrollHeight - el.scrollTop - el.clientHeight < 120) {
+        el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+      }
+    }
+
+    prevMessagesLengthRef.current = len;
+    prevReceiverRef.current = selectedReceiverId;
+  }, [currentMessages, selectedReceiverId, isLoadingChats]);
+
+  // While anchored (a conversation was just opened), re-pin to the bottom
+  // whenever the stream grows. Images and lazy content load after the effect
+  // above runs, so a single scroll assignment leaves the view stranded mid-list.
+  useEffect(() => {
+    const el = messageStreamRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => {
+      if (anchorToBottomRef.current) {
+        el.scrollTop = el.scrollHeight;
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // When the user scrolls to the top of the message stream and more history
+  // exists, request the next (older) page and prepend it.
+  const handleMessageStreamScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    // The user has taken manual control of the scroll: stop auto-anchoring so
+    // the stream doesn't yank them back down while they read older messages.
+    if (el.scrollHeight - el.scrollTop - el.clientHeight > 120) {
+      anchorToBottomRef.current = false;
+    }
+    if (!selectedReceiverId || el.scrollTop > 40) return;
+    if (!chatHasMore || isLoadingOlderChats) return;
+
+    prevScrollHeightRef.current = el.scrollHeight;
+    isAppendingOlderRef.current = true;
+    loadOlderChats(selectedReceiverId);
+  };
+
+  // Infinite scroll for the conversation sidebar: when the user scrolls to
+  // the bottom and more older conversations exist, request the next page.
+  // Disabled while searching, since appended pages wouldn't match the filter.
+  const handleConversationListScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (searchQuery) return;
+    const el = e.currentTarget;
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+    if (!nearBottom || !hasMoreConversations || isLoadingMoreConversations) return;
+    fetchMoreConversations();
+  };
 
   // Edit & Delete handlers
   const handleStartEdit = (msg: ChatMessage) => {
@@ -197,15 +335,22 @@ export default function MessagingView({ role }: MessagingViewProps) {
     setMessageInput("");
   };
 
-  const handleDeleteMsg = (msg: ChatMessage) => {
+  const handleConfirmUnsend = (msg: ChatMessage) => {
     const messageId = msg.id || (msg as any)._id;
     if (!messageId) {
-      toast.error("Unable to delete message.");
+      toast.error("Unable to unsend message.");
       return;
     }
-    deleteMessage({ messageId });
-    toast.success("Message deleted");
+    deleteMessage({ messageId, original: msg });
+    setConfirmUnsendId(null);
+    toast.success("Message unsent");
   };
+
+  // Close any open message menu / unsend confirm when switching rooms.
+  useEffect(() => {
+    setOpenMenuId(null);
+    setConfirmUnsendId(null);
+  }, [selectedReceiverId]);
 
   // Handle File Selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -238,6 +383,7 @@ export default function MessagingView({ role }: MessagingViewProps) {
         editMessage({
           messageId,
           message: messageInput.trim(),
+          original: editingMessage,
         });
         toast.success("Message updated");
       }
@@ -358,7 +504,11 @@ export default function MessagingView({ role }: MessagingViewProps) {
           </div>
 
           {/* Conversations List */}
-          <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
+          <div
+            ref={conversationListRef}
+            onScroll={handleConversationListScroll}
+            className="flex-1 overflow-y-auto divide-y divide-gray-100"
+          >
             {isLoadingConversations ? (
               <div className="p-4 space-y-4">
                 {[1, 2, 3, 4, 5].map((i) => (
@@ -447,12 +597,30 @@ export default function MessagingView({ role }: MessagingViewProps) {
                         )}
                       </div>
                       <p className="text-xs text-gray-500 truncate">
-                        {formatMessageContent(conv.lastMessage) || "Click to open conversation"}
+                        {formatSidebarPreview(conv.lastMessage)}
                       </p>
                     </div>
                   </button>
                 );
               })}
+
+            {!isLoadingConversations &&
+              !searchQuery &&
+              hasMoreConversations && (
+                <div className="p-3 flex flex-col items-center gap-1.5">
+                  {isLoadingMoreConversations ? (
+                    <Loader2 size={16} className="animate-spin text-[#00B2D6]" />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={fetchMoreConversations}
+                      className="text-xs font-medium text-[#00B2D6] hover:underline"
+                    >
+                      Load more conversations
+                    </button>
+                  )}
+                </div>
+              )}
           </div>
         </div>
 
@@ -512,7 +680,17 @@ export default function MessagingView({ role }: MessagingViewProps) {
               </div>
 
               {/* Message Stream */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              <div
+                ref={messageStreamRef}
+                onScroll={handleMessageStreamScroll}
+                className="flex-1 overflow-y-auto p-4 space-y-3"
+              >
+                {isLoadingOlderChats && (
+                  <div className="flex justify-center py-1" aria-live="polite">
+                    <Loader2 size={16} className="animate-spin text-[#00B2D6]" />
+                  </div>
+                )}
+
                 {isLoadingChats ? (
                   <div className="space-y-6 p-3 animate-pulse">
                     {/* Date Separator Skeleton */}
@@ -595,31 +773,74 @@ export default function MessagingView({ role }: MessagingViewProps) {
                         (senderId === currentUser?.id ||
                           ((currentUser as any)?._id && senderId === (currentUser as any)._id))
                     );
+                    const msgId = msg.id || (msg as any)._id;
 
                     return (
                       <div
                         key={msg.id || index}
                         className={`group flex flex-col ${isSelf ? "items-end" : "items-start"}`}
                       >
+                        {confirmUnsendId === msgId && (
+                          <div className="flex items-center gap-2 mt-1 mb-1 text-xs">
+                            <span className="text-gray-500">Unsend this message?</span>
+                            <button
+                              type="button"
+                              onClick={() => handleConfirmUnsend(msg)}
+                              className="font-medium text-red-600 hover:underline"
+                            >
+                              Unsend
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmUnsendId(null)}
+                              className="text-gray-400 hover:underline"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        )}
+
                         <div className="flex items-center gap-1.5 max-w-full">
-                          {isSelf && (
-                            <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 px-1">
+                          {isSelf && !isDeletedMessage(msg) && (
+                            <div
+                              ref={openMenuId === msgId ? menuRef : null}
+                              className="relative opacity-0 group-hover:opacity-100 transition-opacity flex items-center px-1"
+                            >
                               <button
                                 type="button"
-                                onClick={() => handleStartEdit(msg)}
-                                className="p-1 text-gray-400 hover:text-blue-600 hover:bg-gray-100 rounded-md transition-colors"
-                                title="Edit message"
+                                onClick={() => setOpenMenuId((current) => (current === msgId ? null : msgId))}
+                                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+                                title="Message actions"
+                                aria-label="Message actions"
+                                aria-expanded={openMenuId === msgId}
                               >
-                                <Pencil size={13} />
+                                <MoreVertical size={14} />
                               </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteMsg(msg)}
-                                className="p-1 text-gray-400 hover:text-red-600 hover:bg-gray-100 rounded-md transition-colors"
-                                title="Delete message"
-                              >
-                                <Trash2 size={13} />
-                              </button>
+
+                              {openMenuId === msgId && (
+                                <div className="absolute right-0 top-8 z-20 w-40 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 text-left shadow-lg">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setOpenMenuId(null);
+                                      handleStartEdit(msg);
+                                    }}
+                                    className="block w-full px-3 py-2 text-left text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setOpenMenuId(null);
+                                      setConfirmUnsendId(msgId);
+                                    }}
+                                    className="block w-full px-3 py-2 text-left text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
+                                  >
+                                    Unsend
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           )}
 
@@ -630,6 +851,10 @@ export default function MessagingView({ role }: MessagingViewProps) {
                                 : "bg-white text-gray-800 border border-gray-200 rounded-bl-none shadow-2xs"
                             }`}
                           >
+                            {isDeletedMessage(msg) ? (
+                              <p className="italic opacity-70">This message was unsent</p>
+                            ) : (
+                              <>
                             {Boolean(formatMessageContent(msg.message)) && (
                               <p className="leading-relaxed whitespace-pre-wrap break-words">{formatMessageContent(msg.message)}</p>
                             )}
@@ -680,6 +905,8 @@ export default function MessagingView({ role }: MessagingViewProps) {
                                 )}
                               </div>
                             )}
+                              </>
+                            )}
                           </div>
                         </div>
 
@@ -687,12 +914,18 @@ export default function MessagingView({ role }: MessagingViewProps) {
                           {msg.createdAt
                             ? new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
                             : "Just now"}
-                          {msg.isEdited && <span className="italic text-gray-400 font-normal">(edited)</span>}
+                          {msg.isEdited && !isDeletedMessage(msg) && (
+                            <span
+                              className="italic text-gray-400 font-normal"
+                              title={msg.editedAt ? `Edited ${new Date(msg.editedAt).toLocaleString()}` : undefined}
+                            >
+                              (edited)
+                            </span>
+                          )}
                         </span>
                       </div>
                     );
                   })}
-                <div ref={messageEndRef} />
               </div>
 
               {/* Message Input Form */}
