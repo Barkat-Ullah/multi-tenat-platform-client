@@ -48,7 +48,7 @@ export default function ReportDetailsModal({
         year: "numeric",
       })
     : "N/A";
-  const driverName = report.driver?.fullName || report.driverId;
+  const driverName = report?.driver?.fullName || "Driver Name N/A";
   const title = report.booking?.service?.title || "Medical Report";
 
   return createPortal(
