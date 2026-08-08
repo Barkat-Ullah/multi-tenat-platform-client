@@ -156,8 +156,9 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, menu }) => {
         breakpoint="lg"
         collapsed={false}
         theme="light"
-        className={`!bg-[#F0F9FF] !border-r !border-sky-100/50 fixed lg:relative h-full z-50 transition-transform duration-300 ${mobileOpen ? "translate-x-0" : "-translate-x-full"
-          } lg:translate-x-0`}
+        className={`!bg-[#F0F9FF] !border-r !border-sky-100/50 fixed lg:relative h-full z-50 transition-transform duration-300 ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        } lg:translate-x-0`}
       >
         <div className="flex flex-col h-full justify-between">
           <div className="flex-1 overflow-y-auto">
@@ -233,7 +234,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, menu }) => {
               <Bell size={20} className="stroke-[2.25]" />
             </Link>
 
-            <Dropdown menu={{ items: profileMenuItems }} placement="bottomRight" arrow>
+            <Dropdown
+              menu={{ items: profileMenuItems }}
+              placement="bottomRight"
+              arrow
+            >
               <div className="hidden items-center gap-3 rounded-lg p-2 transition-colors hover:bg-gray-50 lg:flex">
                 <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
                   {avatarUrl ? (
@@ -274,31 +279,33 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, menu }) => {
 
         <style jsx global>{`
           .ant-menu-light .ant-menu-item {
-            color: #0F2E4A !important;
+            color: #0f2e4a !important;
             font-weight: 600 !important;
-            font-family: 'Poppins', sans-serif !important;
+            font-family: "Poppins", sans-serif !important;
             border-radius: 12px !important;
             transition: all 0.2s ease-in-out !important;
             margin: 4px 0 !important;
           }
           .ant-menu-light .ant-menu-item .ant-menu-item-icon {
-            color: #00B2D6 !important;
+            color: #00b2d6 !important;
             font-size: 16px !important;
           }
           /* Hover state for normal (unselected) items */
           .ant-menu-light .ant-menu-item:not(.ant-menu-item-selected):hover {
-            background-color: #E6FAFF !important;
-            color: #00B2D6 !important;
+            background-color: #e6faff !important;
+            color: #00b2d6 !important;
           }
-          .ant-menu-light .ant-menu-item:not(.ant-menu-item-selected):hover .ant-menu-item-icon {
-            color: #00B2D6 !important;
+          .ant-menu-light
+            .ant-menu-item:not(.ant-menu-item-selected):hover
+            .ant-menu-item-icon {
+            color: #00b2d6 !important;
           }
           .ant-menu-light .ant-menu-item:not(.ant-menu-item-selected):hover a {
-            color: #00B2D6 !important;
+            color: #00b2d6 !important;
           }
           /* Selected item states */
           .ant-menu-light .ant-menu-item-selected {
-            background-color: #00B2D6 !important;
+            background-color: #00b2d6 !important;
             color: white !important;
             border-radius: 12px !important;
             box-shadow: 0 4px 12px rgba(0, 178, 214, 0.15) !important;
@@ -311,7 +318,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, menu }) => {
           }
           /* Selected item hover states (remains solid cyan/teal) */
           .ant-menu-light .ant-menu-item-selected:hover {
-            background-color: #0092B0 !important; /* Slightly darker shade on hover for premium depth effect */
+            background-color: #0092b0 !important; /* Slightly darker shade on hover for premium depth effect */
             color: white !important;
           }
           .ant-menu-light .ant-menu-item-selected:hover a {
@@ -323,6 +330,21 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, menu }) => {
           .ant-dropdown-menu-item-danger {
             color: #ff4d4f !important;
           }
+          .ant-layout-sider-zero-width-trigger {
+            display: none !important;
+          }
+          .ant-dropdown-menu-item-danger {
+            color: #ff4d4f !important;
+          }
+          .ant-dropdown-menu-item-danger:hover {
+            background-color: #ff4d4f !important;
+            color: #ffffff !important;
+          }
+          .ant-dropdown-menu-item-danger:hover svg {
+            color: #ffffff !important;
+            stroke: #ffffff !important;
+          }
+
           .ant-layout-sider-zero-width-trigger {
             display: none !important;
           }

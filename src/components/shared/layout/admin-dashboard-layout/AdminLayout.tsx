@@ -34,19 +34,24 @@ const navItems = [
     icon: <CalendarCheck size={18} />,
   },
   {
-    key: "/dashboard/admin/location",
-    label: <Link href="/dashboard/admin/location">Location</Link>,
-    icon: <MapPin size={18} />,
-  },
-  {
-    key: "/dashboard/admin/reports",
-    label: <Link href="/dashboard/admin/reports">Reports</Link>,
-    icon: <FileText size={18} />,
-  },
-  {
     key: "/dashboard/admin/calender",
     label: <Link href="/dashboard/admin/calender">Calender</Link>,
     icon: <Calendar size={18} />,
+  },
+  {
+    key: "/dashboard/admin/manage-user",
+    label: <Link href="/dashboard/admin/manage-user">Manage User</Link>,
+    icon: <Users size={18} />,
+  },
+  {
+    key: "/dashboard/admin/services",
+    label: <Link href="/dashboard/admin/services">Services</Link>,
+    icon: <HeartPulse size={18} />,
+  },
+  {
+    key: "/dashboard/admin/location",
+    label: <Link href="/dashboard/admin/location">Location</Link>,
+    icon: <MapPin size={18} />,
   },
   {
     key: "/dashboard/admin/schedule-slots",
@@ -64,15 +69,11 @@ const navItems = [
     icon: <Building2 size={18} />,
   },
   {
-    key: "/dashboard/admin/services",
-    label: <Link href="/dashboard/admin/services">Services</Link>,
-    icon: <HeartPulse size={18} />,
+    key: "/dashboard/admin/reports",
+    label: <Link href="/dashboard/admin/reports">Reports</Link>,
+    icon: <FileText size={18} />,
   },
-  {
-    key: "/dashboard/admin/add-faq",
-    label: <Link href="/dashboard/admin/add-faq">Add FAQ</Link>,
-    icon: <HelpCircle size={18} />,
-  },
+
   {
     key: "/dashboard/admin/support-center",
     label: <Link href="/dashboard/admin/support-center">Support Center</Link>,
@@ -83,15 +84,17 @@ const navItems = [
     label: <Link href="/dashboard/admin/messages">Messages</Link>,
     icon: <MessageSquare size={18} />,
   },
-  {
-    key: "/dashboard/admin/manage-user",
-    label: <Link href="/dashboard/admin/manage-user">Manage User</Link>,
-    icon: <Users size={18} />,
-  },
+
   {
     key: "/dashboard/admin/send-email",
     label: <Link href="/dashboard/admin/send-email">Send Email</Link>,
     icon: <Mail size={18} />,
+  },
+
+  {
+    key: "/dashboard/admin/add-faq",
+    label: <Link href="/dashboard/admin/add-faq">Add FAQ</Link>,
+    icon: <HelpCircle size={18} />,
   },
   {
     key: "/dashboard/admin/privacy-policy",
@@ -100,7 +103,9 @@ const navItems = [
   },
   {
     key: "/dashboard/admin/terms-of-service",
-    label: <Link href="/dashboard/admin/terms-of-service">Terms of Service</Link>,
+    label: (
+      <Link href="/dashboard/admin/terms-of-service">Terms of Service</Link>
+    ),
     icon: <FileText size={18} />,
   },
   {

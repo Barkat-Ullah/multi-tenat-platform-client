@@ -49,7 +49,7 @@ const navItems = [
   },
   {
     key: "/dashboard/clinic/documents",
-    label: <Link href="/dashboard/clinic/documents">Docoments</Link>,
+    label: <Link href="/dashboard/clinic/documents">Documents</Link>,
     icon: <Folder size={18} />,
   },
   {
