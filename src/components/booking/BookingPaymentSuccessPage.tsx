@@ -19,7 +19,13 @@ type StoredBooking = {
   } | null;
 };
 
-const DetailRow = ({ label, value }: { label: string; value?: string | number | null }) => (
+const DetailRow = ({
+  label,
+  value,
+}: {
+  label: string;
+  value?: string | number | null;
+}) => (
   <div className="grid grid-cols-[minmax(0,0.4fr)_minmax(0,0.6fr)] items-start gap-4 border-b border-slate-100 pb-3 text-xs sm:text-sm">
     <span className="font-bold uppercase tracking-wider text-slate-400">
       {label}
@@ -46,16 +52,22 @@ export default function BookingPaymentSuccessPage() {
 
 function BookingPaymentSuccessContent() {
   const searchParams = useSearchParams();
+  // ⚠️ backend redirect এখন ?bookingId=... পাঠাবে (Stripe এর session_id আর দরকার নেই,
+  // কারণ backend আগেই session verify করে redirect করেছে)
   const bookingId =
     searchParams.get("bookingId") ||
     searchParams.get("booking_id") ||
     searchParams.get("booking") ||
     searchParams.get("id");
-  const sessionId = searchParams.get("session_id") || searchParams.get("sessionId");
-  const paymentId = searchParams.get("paymentId") || searchParams.get("payment_id");
-  const status = searchParams.get("status") || searchParams.get("payment_status");
-  const [storedBooking, setStoredBooking] = useState<StoredBooking | null>(null);
+  const paymentId =
+    searchParams.get("paymentId") || searchParams.get("payment_id");
+  const [storedBooking, setStoredBooking] = useState<StoredBooking | null>(
+    null,
+  );
 
+  // backend redirect করার আগেই DB তে booking/payment status confirm করে ফেলেছে,
+  // তাই এখানে শুধু fresh data fetch করলেই সঠিক status পাওয়া যাবে —
+  // frontend থেকে আলাদা কোনো verify কলের দরকার নেই
   const {
     data: bookingResponse,
     isLoading,
@@ -64,6 +76,9 @@ function BookingPaymentSuccessContent() {
     refetch,
   } = useGetDriverBookingDetailsQuery(bookingId || "", {
     skip: !bookingId,
+    // redirect এ আসা মানেই payment সদ্য confirm হয়েছে —
+    // RTK Query এর cache যেন পুরনো (pre-confirm) ডেটা না দেখায়
+    refetchOnMountOrArgChange: true,
   });
 
   useEffect(() => {
@@ -81,10 +96,13 @@ function BookingPaymentSuccessContent() {
   const payment = booking?.payment || storedBooking?.payment || null;
   const isBusy = isLoading || isFetching;
 
-  const paymentStatus = useMemo(() => {
-    if (status) return status;
-    return payment?.status || "SUCCESS";
-  }, [payment?.status, status]);
+  // ── আগে এখানে fallback ছিল: payment?.status || "SUCCESS"
+  // এটা সরানো হলো — কারণ payment object না এলে জোর করে "SUCCESS" দেখানো misleading।
+  // এখন সরাসরি booking.status (CONFIRMED/PENDING/...) বা payment.status দেখানো হচ্ছে,
+  // fetch এখনো চলাকালীন কিছু guess করা হচ্ছে না।
+  const paymentStatus = payment?.status || booking?.status || null;
+  const isConfirmed =
+    paymentStatus === "SUCCESS" || booking?.status === "CONFIRMED";
 
   return (
     <div className="min-h-screen bg-[#FCFDFE] px-4 py-14 poppins sm:px-6 lg:px-8">
@@ -98,7 +116,8 @@ function BookingPaymentSuccessContent() {
             Payment Successful
           </h1>
           <p className="mt-3 max-w-sm text-sm font-semibold text-[#55697A] sm:text-base">
-            Thanks. Your payment return has been received and your booking details are shown below.
+            Thanks. Your payment has been verified and your booking is confirmed
+            below.
           </p>
 
           {isBusy ? (
@@ -108,7 +127,9 @@ function BookingPaymentSuccessContent() {
           ) : isError ? (
             <div className="my-8 w-full rounded-2xl border border-red-100 bg-red-50/40 p-6 text-center">
               <ReceiptText className="mx-auto mb-3 h-9 w-9 text-red-300" />
-              <p className="text-sm font-bold text-red-500">Could not load booking details.</p>
+              <p className="text-sm font-bold text-red-500">
+                Could not load booking details.
+              </p>
               <button
                 type="button"
                 onClick={() => refetch()}
@@ -121,12 +142,21 @@ function BookingPaymentSuccessContent() {
             <div className="my-8 w-full space-y-3.5 rounded-2xl border border-slate-100 bg-[#FCFDFE] p-5 text-left">
               <DetailRow label="Booking ID" value={booking?.id || bookingId} />
               <DetailRow label="Payment ID" value={payment?.id || paymentId} />
-              <DetailRow label="Session ID" value={sessionId} />
               <DetailRow label="Payment Status" value={paymentStatus} />
-              <DetailRow label="Amount" value={payment?.amount ? `£${payment.amount.toFixed(2)}` : null} />
-              <DetailRow label="Medical Assessment" value={booking?.service?.title} />
+              <DetailRow label="Booking Status" value={booking?.status} />
+              <DetailRow
+                label="Amount"
+                value={payment?.amount ? `£${payment.amount.toFixed(2)}` : null}
+              />
+              <DetailRow
+                label="Medical Assessment"
+                value={booking?.service?.title}
+              />
               <DetailRow label="Clinic" value={booking?.clinic?.fullName} />
-              <DetailRow label="Location" value={booking?.clinic?.location?.locationName} />
+              <DetailRow
+                label="Location"
+                value={booking?.clinic?.location?.locationName}
+              />
               <DetailRow
                 label="Slot"
                 value={
