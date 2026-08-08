@@ -187,7 +187,7 @@ export default function Step4YourDetails({
                 </div>
               </label>
 
-              <label className="flex cursor-pointer select-none items-center gap-3">
+              <label className="flex disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer select-none items-center gap-3">
                 <input
                   type="radio"
                   name="paymentMethod"

@@ -158,6 +158,20 @@ export interface CreateDriverBookingResponse {
   };
 }
 
+export interface VerifyStripePaymentData {
+  status: "success" | "pending";
+  message?: string;
+  bookingId?: string;
+  booking?: DriverBooking;
+}
+
+export interface VerifyStripePaymentResponse {
+  success: boolean;
+  statusCode: number;
+  message: string;
+  data: VerifyStripePaymentData;
+}
+
 const userBookingFlowApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getBookingServices: builder.query<
@@ -171,7 +185,10 @@ const userBookingFlowApi = baseApi.injectEndpoints({
       }),
       providesTags: ["services"],
     }),
-    getBookingServiceDetails: builder.query<BookingServiceDetailsResponse, string>({
+    getBookingServiceDetails: builder.query<
+      BookingServiceDetailsResponse,
+      string
+    >({
       query: (id) => ({
         url: `/services/${id}`,
         method: "GET",
@@ -187,7 +204,12 @@ const userBookingFlowApi = baseApi.injectEndpoints({
       providesTags: ["timeslots"],
     }),
     getDriverBookingDetails: builder.query<
-      { success: boolean; statusCode: number; message: string; data: DriverBooking },
+      {
+        success: boolean;
+        statusCode: number;
+        message: string;
+        data: DriverBooking;
+      },
       string
     >({
       query: (id) => ({
@@ -207,9 +229,20 @@ const userBookingFlowApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["bookings", "timeslots", "dashboard"],
     }),
-  }),
 
-  
+    verifyStripePayment: builder.query<VerifyStripePaymentResponse, string>({
+      query: (sessionId) => ({
+        url: "/bookings/payment/verify-stripe",
+        method: "GET",
+        params: { sessionId },
+      }),
+     
+      providesTags: (result) =>
+        result?.data?.bookingId
+          ? [{ type: "bookings" as const, id: result.data.bookingId }]
+          : ["bookings"],
+    }),
+  }),
 });
 
 export const {
@@ -219,4 +252,5 @@ export const {
   useLazyGetBookingSlotsQuery,
   useGetDriverBookingDetailsQuery,
   useCreateDriverBookingMutation,
+  useVerifyStripePaymentQuery,
 } = userBookingFlowApi;

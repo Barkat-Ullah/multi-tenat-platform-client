@@ -3,10 +3,11 @@
 import React, { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { CheckCircle2, Loader2, ReceiptText } from "lucide-react";
+import { CheckCircle2, Loader2, ReceiptText, Clock } from "lucide-react";
 import {
   type DriverBooking,
   useGetDriverBookingDetailsQuery,
+  useVerifyStripePaymentQuery,
 } from "@/redux/service/user/userBookingFlowApi";
 
 type StoredBooking = {
@@ -52,22 +53,34 @@ export default function BookingPaymentSuccessPage() {
 
 function BookingPaymentSuccessContent() {
   const searchParams = useSearchParams();
-  // ⚠️ backend redirect এখন ?bookingId=... পাঠাবে (Stripe এর session_id আর দরকার নেই,
-  // কারণ backend আগেই session verify করে redirect করেছে)
   const bookingId =
     searchParams.get("bookingId") ||
     searchParams.get("booking_id") ||
     searchParams.get("booking") ||
     searchParams.get("id");
+  const sessionId =
+    searchParams.get("session_id") || searchParams.get("sessionId");
   const paymentId =
     searchParams.get("paymentId") || searchParams.get("payment_id");
   const [storedBooking, setStoredBooking] = useState<StoredBooking | null>(
     null,
   );
+  const [secondsLeft, setSecondsLeft] = useState(8);
 
-  // backend redirect করার আগেই DB তে booking/payment status confirm করে ফেলেছে,
-  // তাই এখানে শুধু fresh data fetch করলেই সঠিক status পাওয়া যাবে —
-  // frontend থেকে আলাদা কোনো verify কলের দরকার নেই
+  // STEP 1: sessionId থাকলে আগে verify করো — এটাই DB তে status confirm করার একমাত্র trigger
+  const {
+    data: verifyResponse,
+    isLoading: isVerifying,
+    isFetching: isVerifyFetching,
+    isError: isVerifyError,
+  } = useVerifyStripePaymentQuery(sessionId || "", {
+    skip: !sessionId,
+  });
+
+  const verifyDone = !sessionId || (!isVerifying && !isVerifyFetching);
+  const isPaymentPending = verifyResponse?.data?.status === "pending";
+
+  // STEP 2: verify শেষ হলে এবং pending না হলে fresh booking fetch করো
   const {
     data: bookingResponse,
     isLoading,
@@ -75,9 +88,7 @@ function BookingPaymentSuccessContent() {
     isError,
     refetch,
   } = useGetDriverBookingDetailsQuery(bookingId || "", {
-    skip: !bookingId,
-    // redirect এ আসা মানেই payment সদ্য confirm হয়েছে —
-    // RTK Query এর cache যেন পুরনো (pre-confirm) ডেটা না দেখায়
+    skip: !bookingId || !verifyDone || isPaymentPending,
     refetchOnMountOrArgChange: true,
   });
 
@@ -92,18 +103,119 @@ function BookingPaymentSuccessContent() {
     }
   }, []);
 
-  const booking = bookingResponse?.data || storedBooking?.booking || null;
+  // pending state এ থাকলে কয়েক সেকেন্ড পর নিজে থেকেই রিফ্রেশ ট্রাই করো
+  useEffect(() => {
+    if (!isPaymentPending || secondsLeft <= 0) return;
+    const timer = setTimeout(() => setSecondsLeft((s) => s - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [isPaymentPending, secondsLeft]);
+
+  useEffect(() => {
+    if (isPaymentPending && secondsLeft === 0) {
+      window.location.reload();
+    }
+  }, [isPaymentPending, secondsLeft]);
+
+  const booking =
+    bookingResponse?.data ||
+    verifyResponse?.data?.booking ||
+    storedBooking?.booking ||
+    null;
   const payment = booking?.payment || storedBooking?.payment || null;
-  const isBusy = isLoading || isFetching;
+  const isBusy =
+    !verifyDone || (!isPaymentPending && (isLoading || isFetching));
 
-  // ── আগে এখানে fallback ছিল: payment?.status || "SUCCESS"
-  // এটা সরানো হলো — কারণ payment object না এলে জোর করে "SUCCESS" দেখানো misleading।
-  // এখন সরাসরি booking.status (CONFIRMED/PENDING/...) বা payment.status দেখানো হচ্ছে,
-  // fetch এখনো চলাকালীন কিছু guess করা হচ্ছে না।
-  const paymentStatus = payment?.status || booking?.status || null;
-  const isConfirmed =
-    paymentStatus === "SUCCESS" || booking?.status === "CONFIRMED";
+  const paymentStatus = useMemo(() => {
+    if (isPaymentPending) return "PENDING";
+    return (
+      payment?.status ||
+      (verifyResponse?.data?.status === "success" ? "SUCCESS" : "PENDING")
+    );
+  }, [payment?.status, verifyResponse, isPaymentPending]);
 
+  // ── PENDING state — inline, আলাদা পেজে redirect করা হচ্ছে না ──
+  if (verifyDone && isPaymentPending) {
+    return (
+      <div className="min-h-screen bg-[#FCFDFE] px-4 py-14 poppins sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-xl">
+          <div className="flex flex-col items-center rounded-3xl border border-slate-200/80 bg-white p-8 text-center shadow-lg shadow-slate-100 sm:p-12">
+            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 text-amber-500">
+              <Clock size={40} className="stroke-[2.5]" />
+            </div>
+            <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-[#0F2E4A] sm:text-3xl">
+              Payment Still Processing
+            </h1>
+            <p className="mt-3 max-w-sm text-sm font-semibold text-[#55697A] sm:text-base">
+              We haven&apos;t received confirmation from Stripe yet. The page
+              will refresh automatically.
+            </p>
+            <p className="my-6 flex items-center gap-2 text-xs font-bold text-[#55697A]">
+              <Loader2 className="h-4 w-4 animate-spin text-[#00B2D6]" />
+              Rechecking in {secondsLeft}s...
+            </p>
+            <div className="flex w-full flex-col gap-3 sm:flex-row sm:justify-center">
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="rounded-full bg-[#00B2D6] px-8 py-3.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#0092B3] sm:text-base"
+              >
+                Refresh Now
+              </button>
+              <Link
+                href="/dashboard/user/bookings"
+                className="rounded-full border border-slate-200 px-8 py-3.5 text-sm font-bold text-[#0F2E4A] transition-colors hover:border-[#00B2D6] hover:text-[#00B2D6] sm:text-base"
+              >
+                View My Bookings
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── VERIFY FAILED state — inline ──
+  if (verifyDone && isVerifyError) {
+    return (
+      <div className="min-h-screen bg-[#FCFDFE] px-4 py-14 poppins sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-xl">
+          <div className="flex flex-col items-center rounded-3xl border border-slate-200/80 bg-white p-8 text-center shadow-lg shadow-slate-100 sm:p-12">
+            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-red-50 text-red-500">
+              <ReceiptText size={40} className="stroke-[2.5]" />
+            </div>
+            <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-[#0F2E4A] sm:text-3xl">
+              Payment Verification Failed
+            </h1>
+            <p className="mt-3 max-w-sm text-sm font-semibold text-[#55697A] sm:text-base">
+              We couldn&apos;t verify your payment. If you were charged, please
+              contact support with your Booking ID — don&apos;t book again
+              before checking with us.
+            </p>
+            {bookingId && (
+              <div className="my-6 w-full rounded-2xl border border-slate-100 bg-[#FCFDFE] p-5">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Booking ID
+                </p>
+                <p className="mt-1 break-all text-sm font-extrabold text-[#0F2E4A]">
+                  {bookingId}
+                </p>
+              </div>
+            )}
+            <div className="flex w-full flex-col gap-3 sm:flex-row sm:justify-center">
+              <Link
+                href="/dashboard/user/bookings"
+                className="rounded-full bg-[#00B2D6] px-8 py-3.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#0092B3] sm:text-base"
+              >
+                View My Bookings
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── SUCCESS / LOADING state ──
   return (
     <div className="min-h-screen bg-[#FCFDFE] px-4 py-14 poppins sm:px-6 lg:px-8">
       <div className="mx-auto max-w-xl">
@@ -116,8 +228,8 @@ function BookingPaymentSuccessContent() {
             Payment Successful
           </h1>
           <p className="mt-3 max-w-sm text-sm font-semibold text-[#55697A] sm:text-base">
-            Thanks. Your payment has been verified and your booking is confirmed
-            below.
+            Thanks. Your payment has been verified and your booking details are
+            shown below.
           </p>
 
           {isBusy ? (
@@ -142,8 +254,8 @@ function BookingPaymentSuccessContent() {
             <div className="my-8 w-full space-y-3.5 rounded-2xl border border-slate-100 bg-[#FCFDFE] p-5 text-left">
               <DetailRow label="Booking ID" value={booking?.id || bookingId} />
               <DetailRow label="Payment ID" value={payment?.id || paymentId} />
+              <DetailRow label="Session ID" value={sessionId} />
               <DetailRow label="Payment Status" value={paymentStatus} />
-              <DetailRow label="Booking Status" value={booking?.status} />
               <DetailRow
                 label="Amount"
                 value={payment?.amount ? `£${payment.amount.toFixed(2)}` : null}
