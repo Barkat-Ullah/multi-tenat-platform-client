@@ -10,11 +10,11 @@ export const TopBar = () => {
       <div className="container mx-auto grid h-[45px] grid-cols-3 items-center px-8">
         {/* Left: Phone */}
         <a
-          href="tel:02039855800"
+          href="tel:+000000 000"
           className="flex items-center gap-3 justify-self-start text-[18px] font-medium leading-none text-[#1F5662] transition-colors hover:text-[#00B2D6]"
         >
           <Phone size={17} strokeWidth={2.4} />
-          <span>020 3985 5800</span>
+          <span>+000 0000 000</span>
         </a>
         
         {/* Center: Trustpilot */}

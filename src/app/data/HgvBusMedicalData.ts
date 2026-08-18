@@ -107,8 +107,8 @@ export const hgvBusServicesData: HgvBusServicesData = {
   arrangeMedical: {
     title: "How to arrange your medical?",
     phoneLabel: "Speak to our team",
-    phoneNumber: "020 3985 5800", // using standard phone number from footer
-    phoneHref: "tel:+02039855800",
+    phoneNumber: "+000000 000", // using standard phone number from footer
+    phoneHref: "tel:+000000 000",
     bookTodayLabel: "Book in Today",
     bookTodayHref: "/booking?type=hgv-bus",
     visitClinicsLabel: "Visit one of our 40+ clinics",

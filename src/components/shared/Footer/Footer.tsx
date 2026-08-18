@@ -88,16 +88,16 @@ const Footer = () => (
                 <span className="flex h-[34px] w-[34px] flex-shrink-0 items-center justify-center rounded-full bg-white/50 text-[#00B2D6]">
                   <Phone className="h-[17px] w-[17px]" />
                 </span>
-                +020 3985 5800
+                +00000000000000
               </a>
               <a
-                href="mailto:Bookings@compliancemedicals.uk"
+                href="mailto:info@booking.com"
                 className="flex items-start gap-4 text-[16px] font-medium leading-tight text-[#1D2B34] transition-colors hover:text-[#00B2D6]"
               >
                 <span className="flex h-[34px] w-[34px] flex-shrink-0 items-center justify-center rounded-full bg-white/50 text-[#00B2D6]">
                   <Mail className="h-[17px] w-[17px]" />
                 </span>
-                <span className="break-words">Bookings@compliancemedicals.uk</span>
+                <span className="break-words">info@booking.com</span>
               </a>
             </div>
           </div>
